@@ -4299,7 +4299,8 @@ function padKey(k,down){const key=k==='escape'?'Escape':k;if(down)padSt.sent[k]=
   dispatchEvent(new KeyboardEvent(down?'keydown':'keyup',{key,bubbles:true,cancelable:true}));}
 function padLayer(){for(const id of PADL){const el=document.getElementById(id);if(el&&!el.hidden&&el.getClientRects().length&&getComputedStyle(el).visibility!=='hidden')return el;}return null;}
 function padTargets(layer){return [...layer.querySelectorAll(PADT)].filter(el=>{if(el.closest('[hidden]'))return false;const r=el.getBoundingClientRect();return r.width>0&&r.height>0;}).sort((a,b)=>(b.tagName==='CANVAS')-(a.tagName==='CANVAS'));}
-function padFocus(el){if(padSt.cur&&padSt.cur!==el)padSt.cur.classList.remove('padfocus');padSt.cur=el;padCur.hidden=!el||el.tagName!=='CANVAS';if(!el)return;el.classList.add('padfocus');
+const padSig=el=>el.tagName+'|'+(el.id||'')+'|'+Object.entries(el.dataset).join(';')+'|'+el.textContent.trim().slice(0,40);
+function padFocus(el){if(padSt.cur&&padSt.cur!==el)padSt.cur.classList.remove('padfocus');padSt.cur=el;if(el){const r=el.getBoundingClientRect();padSt.sig=padSig(el);padSt.px=r.left+r.width/2;padSt.py=r.top+r.height/2;}padCur.hidden=!el||el.tagName!=='CANVAS';if(!el)return;el.classList.add('padfocus');
   if(el.tagName==='CANVAS'){const r=el.getBoundingClientRect();if(padSt.cvs!==el){padSt.cvs=el;padSt.cx=r.left+r.width/2;padSt.cy=r.top+r.height/2;}padCurAt();}else el.scrollIntoView({block:'nearest',inline:'nearest'});}
 function padCurAt(){const r=padSt.cur.getBoundingClientRect();padSt.cx=clamp(padSt.cx,r.left,r.right);padSt.cy=clamp(padSt.cy,r.top,r.bottom);padCur.style.transform=`translate(${padSt.cx}px,${padSt.cy}px)`;}
 function padMove(layer,dx,dy){const T=padTargets(layer);if(!T.length)return;const cur=T.includes(padSt.cur)?padSt.cur:null;if(!cur){padFocus(T[0]);return;}
@@ -4326,7 +4327,10 @@ function padTick(dt){const gp=[...(navigator.getGamepads?navigator.getGamepads()
   const layer=padLayer();
   if(layer){const quick=layer.id==='cf'||layer.id==='callouts';Object.assign(pad,{lx:0,ly:0,rx:0,ry:0,thr:0,brk:0,run:false,fire:false,hb:false,aim:false,lt:false});if(quick&&!P.car){pad.lx=lx;pad.ly=ly;}for(const k in padSt.sent)padKey(k,false);
     if(layer.id==='intro'){if(hit('a')||hit('menu')){padKey('Enter',true);padKey('Enter',false);}return;}
-    let cur=padSt.cur;if(!cur||!layer.contains(cur)||!cur.isConnected||!padTargets(layer).includes(cur)){const T=padTargets(layer);cur=T[0]||null;padFocus(cur);}
+    let cur=padSt.cur;if(!cur||!layer.contains(cur)||!cur.isConnected||!padTargets(layer).includes(cur)){const T=padTargets(layer);cur=null;
+      if(padSt.cur&&padSt.layer===layer){cur=T.find(t=>padSig(t)===padSt.sig)||null;if(!cur){let bd=1e9;for(const t of T){const q=t.getBoundingClientRect(),d=Math.hypot(q.left+q.width/2-padSt.px,q.top+q.height/2-padSt.py);if(d<bd){bd=d;cur=t;}}}}
+      if(cur){padSt.cur=null;padFocus(cur);if(cur.tagName!=='CANVAS')cur.classList.add('padfocus');}else padFocus(T[0]||null);cur=padSt.cur;}
+    padSt.layer=layer;
     const onCv=(cur&&cur.tagName==='CANVAS')||quick;
     if(onCv&&!quick&&Math.hypot(lx,ly)>0){padSt.cx+=lx*620*dt;padSt.cy+=ly*620*dt;padCurAt();}
     const sx=(now.right?1:0)-(now.left?1:0)||(onCv?0:Math.abs(lx)>0.6?Math.sign(lx):0),sy=(now.down?1:0)-(now.up?1:0)||(onCv?0:Math.abs(ly)>0.6?Math.sign(ly):0);
