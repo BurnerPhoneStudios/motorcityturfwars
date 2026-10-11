@@ -442,7 +442,7 @@ body.touch #prompt{bottom:calc(206px + env(safe-area-inset-bottom,0px))}
     <div class="st-head">
       <div class="st-title">
         <h2 id="stTitle">The Stash</h2>
-        <div class="sub">Midtown backroom. Grow weed, sell it, reinvest. Grow kits (pot, light, soil) are $200 at Home Despot in TechTown. Each plant costs $50 and pays back about $280.</div>
+        <div class="sub">Midtown backroom. Grow weed, sell it, reinvest. Grow kits (pot, light, soil) are $200 at House Depo in TechTown. Each plant costs $50 and pays back about $280.</div>
       </div>
       <div class="inv">
         <div><span class="lbl">Cash</span><span class="val" id="sCash"></span></div>
@@ -588,7 +588,7 @@ body.touch #prompt{bottom:calc(206px + env(safe-area-inset-bottom,0px))}
   <div class="startbox">
     <div class="kicker">Greater Downtown Detroit · 20 hoods · roads closed at the edges</div>
     <h1 class="title">Motor City<span>Turf Wars</span></h1>
-    <p class="lead">Nobody knows your name yet. You start with one weed plant in the backroom and three people in Midtown who want to try it. Free samples turn them into clients. Grow, sell, reinvest. Set your price, answer texts on your burner, meet clients on time and build them from Neutral to Loyal. Your Dodge Viper is parked outside the stash. The Ambassador Bridge to Canada stays closed for now.</p>
+    <p class="lead">Nobody knows your name yet. You start with one weed plant in the backroom and three people in Midtown who want to try it. Free samples turn them into clients. Grow, sell, reinvest. Set your price, answer texts on your burner, meet clients on time and build them from Neutral to Loyal. Your Dodgy Venom is parked outside the stash. The Ambassador Bridge to Canada stays closed for now.</p>
     <div class="sec">Save slots</div>
     <div class="slots" id="slots"></div>
     <div class="filerow"><button type="button" class="ghost" id="btnImport">Load a save file</button><button type="button" class="ghost" id="btnFolder" hidden>Choose a save folder</button><input type="file" id="fileIn" accept=".json,application/json" hidden></div>
@@ -725,8 +725,8 @@ function genHomes(ix0,iy0,ix1,iy1,hood,vic){
       if(hf.yr[1]>=hf.yr[0]&&(cond>0?srnd()<0.6:srnd()<0.3))DECOR.push({k:'fence',x:lx*T+3,y:Math.min(hf.yr[0],hf.hr[0])*T+3,w:(lx2-lx+1)*T-6,h:(Math.max(hf.yr[1],hf.hr[1])-Math.min(hf.yr[0],hf.hr[0])+1)*T-6,gate:hf.face,s:srnd(),house:true});}}
 }
 // block (column i, row j) → real Detroit landmark or store
-const LANDMARK={'6,2':['brushpark','Brush Park'],'1,3':['casino','MotorCity Casino'],'5,2':['arena','Little Caesars Arena'],'8,2':['shed','Eastern Market'],'6,3':['ballpark','Comerica Park'],'7,3':['stadium','Ford Field'],'2,4':['station','Michigan Central'],'7,4':['casino2','Greektown Casino'],'4,6':['conv','Huntington Place'],'7,6':['rencen','Renaissance Center'],'5,6':['hart','Hart Plaza'],'6,6':['tunnel','Detroit-Windsor Tunnel'],'2,6':['plaza','Ambassador Bridge'],'0,6':['plaza2','Gordie Howe Intl Bridge'],'8,0':['factory','Fisher Body 21'],'6,0':['fisher','Fisher Building']};
-const SPECIAL={'3,2':['club','Motor City Titties'],'4,3':['liquor','Cass Ave Liquor'],'8,4':['liquor','Greektown Party Store'],'0,2':['liquor','Grand River Liquor'],'10,1':['liquor','Mack Ave Party Store'],'1,4':['liquor','Vernor Hwy Liquor'],'3,4':['gas','Michigan Ave Fuel'],'8,6':['gas','Jefferson Gas & Go'],'9,3':['gas','Gratiot Gas'],'1,1':['gas','Warren Ave Fuel'],'6,5':['gun','Motor City Arms'],'1,5':['black',"Uncle Rell's Tires"],'9,2':['chop','Dequindre Auto Body'],'6,4':['coney','Motor Coney Island'],'4,1':['hardware','Home Despot'],'5,0':['clothes','Avenue Threads'],'7,0':['kustom','Junction Kustoms'],'6,1':['hospital','Detroit Receiving']};
+const LANDMARK={'6,2':['brushpark','Brush Park'],'1,3':['casino','Motor Town Casino'],'5,2':['arena','Big Caesar\'s Arena'],'8,2':['shed','Eastern Market'],'6,3':['ballpark','Commerce Park'],'7,3':['stadium','Fjord Field'],'2,4':['station','Central Depot'],'7,4':['casino2','Olympus Casino'],'4,6':['conv','Hunter Place'],'7,6':['rencen','Resurgence Center'],'5,6':['hart','Hart Plaza'],'6,6':['tunnel','Detroit-Windsor Tunnel'],'2,6':['plaza','Ambassador Bridge'],'0,6':['plaza2','Gordie Howe Intl Bridge'],'8,0':['factory','Fisher Body 21'],'6,0':['fisher','Fisher Building']};
+const SPECIAL={'3,2':['club','Motor City Titties'],'4,3':['liquor','Cass Ave Liquor'],'8,4':['liquor','Greektown Party Store'],'0,2':['liquor','Grand River Liquor'],'10,1':['liquor','Mack Ave Party Store'],'1,4':['liquor','Vernor Hwy Liquor'],'3,4':['gas','Michigan Ave Fuel'],'8,6':['gas','Jefferson Gas & Go'],'9,3':['gas','Gratiot Gas'],'1,1':['gas','Warren Ave Fuel'],'6,5':['gun','Motor City Arms'],'1,5':['black',"Uncle Rell's Tires"],'9,2':['chop','Dequindre Auto Body'],'6,4':['coney','Motor Coney Island'],'4,1':['hardware','House Depo'],'5,0':['clothes','Avenue Threads'],'7,0':['kustom','Junction Kustoms'],'6,1':['hospital','Detroit Receiving']};
 let STASH={x:0,y:0},HQ={x:0,y:0},STASHB=null;
 for(let i=0;i<RX.length;i++)for(let j=0;j<RY.length;j++){
   const bx0=RX[i]+2,bx1=i+1<RX.length?RX[i+1]-1:124,by0=RY[j]+2,by1=j+1<RY.length?RY[j+1]-1:78;
@@ -777,10 +777,10 @@ const SKIND={liquor:{sign:'LIQUOR',col:'#ff4f5e',sub:'Corner liquor store. Pop, 
   coney:{sign:'CONEY ISLAND',col:'#ffd34f',sub:'Coneys, chili fries and a manager who always needs drivers.',rob:[120,280]},
   gun:{sign:'GUNS · AMMO',col:'#e9e6df',sub:'Licensed dealer downtown. More rep opens the back case.'},
   black:{sign:'TIRES',col:'#a6a6a6',sub:"Uncle Rell sells out of the tire shop's back room. No receipts."},
-  hospital:{sign:'EMERGENCY',col:'#ff5a5a',sub:'Detroit Receiving Hospital. Walk in, get patched up, no questions.'},
+  hospital:{sign:'EMERGENCY',col:'#ff5a5a',sub:'Detroit General Hospital. Walk in, get patched up, no questions.'},
   kustom:{sign:'KUSTOMS',col:'#c77dff',sub:'Paint, rims, underglow and engine work. Drive in.'},
   clothes:{sign:'THREADS',col:'#e05fa8',sub:'Fits, hats, kicks and Buffs.'},
-  hardware:{sign:'HOME DESPOT',col:'#f47a20',sub:'Big-box hardware in TechTown. Pots, grow lights, potting soil. Nobody asks what it is for.'},
+  hardware:{sign:'HOUSE DEPO',col:'#f47a20',sub:'Big-box hardware in TechTown. Pots, grow lights, potting soil. Nobody asks what it is for.'},
   club:{sign:'XXX',col:'#ff2a6d',sub:'Gentlemen\'s club. $20 cover.'},
   gunvan:{sign:'GUN VAN',col:'#c9a24a',sub:'Back doors open, no questions. 20% off, different stock every day.'},
   chop:{sign:'AUTO BODY',col:'#f2a33a',sub:'Dequindre fences one stolen car a day. Pays about 30% of what it is worth, less for dents.'}};
@@ -862,7 +862,7 @@ const bagCap=()=>BAGS[S.bag||''][1];const bagName=()=>BAGS[S.bag||''][0];
 const load=()=>PRODS.reduce((n,p)=>n+inv(p)*UNITW[p],0);
 let carryMsg='';
 function takeOut(p,n){const nm=DRUGS[p].slang;const room=Math.max(0,Math.floor((bagCap()-load())/UNITW[p]));const q=Math.max(0,Math.min(n,stored(p),room));
-  if(q<=0){carryMsg=stored(p)<=0?`No ${nm} left in the stash. ${DRUGS[p].more}`:`Your ${bagName().toLowerCase()} ${S.bag?'is':'are'} full (${Math.round(load())}/${bagCap()}). ${inv('chrome')>0&&p==='weed'?`Meth takes 4 spaces a bag. `:''}${S.bag==='gym'?'':'A backpack or gym bag from Avenue Threads or Home Despot holds more.'}`;return 0;}
+  if(q<=0){carryMsg=stored(p)<=0?`No ${nm} left in the stash. ${DRUGS[p].more}`:`Your ${bagName().toLowerCase()} ${S.bag?'is':'are'} full (${Math.round(load())}/${bagCap()}). ${inv('chrome')>0&&p==='weed'?`Meth takes 4 spaces a bag. `:''}${S.bag==='gym'?'':'A backpack or gym bag from Avenue Threads or House Depo holds more.'}`;return 0;}
   S.store[p]-=q;S.inv[p]+=q;goalHit('grab');carryMsg=q<n&&n<999?`Only room for ${fmtQ(p,q)} more. Took ${fmtQ(p,q)}.`:`Took ${fmtQ(p,q)}. ${fmtQ(p,inv(p))} on you now.`;return q;}
 function dealNeeds(){const need={};for(const p of PRODS)need[p]=0;for(const d of S.deals)need[d.p||'weed']+=d.qty;return need;}
 function stashIn(p){const q=inv(p);if(q>0){S.inv[p]=0;S.store[p]+=q;}return q;}
@@ -1231,7 +1231,7 @@ function spawnRival(g,own,minD){const home=own.length?own[(R()*own.length)|0]:(g
 function mkCop(x,y,chase){return mkNPC('cop',x,y,{chase:!!chase,hp:70});}
 
 // ================= cars =================
-const MODELS=[['Chevy Impala',420,'sedan'],['Ford F-150',560,'truck'],['Dodge Charger',780,'muscle'],['Cadillac Escalade',1100,'suv'],['Jeep Grand Cherokee',640,'suv'],['Chrysler 300',520,'sedan'],['Buick LeSabre',260,'sedan'],['Ford Crown Vic',300,'sedan'],['Dodge Challenger',950,'muscle'],['Chevy Malibu',340,'sedan'],['Lincoln Town Car',480,'sedan'],['Ram 1500',600,'truck']];
+const MODELS=[['Chevalier Imperial',420,'sedan'],['Fjord F-160',560,'truck'],['Dodgy Charjer',780,'muscle'],['Cadavac Escapade',1100,'suv'],['Jeap Grand Chieftain',640,'suv'],['Chryslur 3000',520,'sedan'],['Buik LeSaber',260,'sedan'],['Fjord Crown Victory',300,'sedan'],['Dodgy Challenjer',950,'muscle'],['Chevalier Maliboo',340,'sedan'],['Lincon Towne Car',480,'sedan'],['Ramm 1600',600,'truck']];
 const CARC=['#8c2f2a','#2b4f7a','#c9c2b0','#1f1f22','#5d6b4a','#a8a9ad','#6b3d74','#b8862f','#2f6b6b','#7a1f2b','#e8e6e1','#3a3f47'];
 const isBike=c=>!!c&&(c.type==='rocket'||c.type==='chopper');
 const CDIM={rocket:[34,10],chopper:[40,11],sedan:[46,22],suv:[48,25],truck:[54,25],muscle:[48,23],sport:[52,24],cop:[48,23],ems:[58,26]};
@@ -1239,7 +1239,7 @@ const CDIM={rocket:[34,10],chopper:[40,11],sedan:[46,22],suv:[48,25],truck:[54,2
 const PERF={rocket:[480,340,3.3,6],chopper:[370,240,2.75,5],sedan:[335,215,2.6,5],suv:[318,190,2.4,5],truck:[305,185,2.3,5],muscle:[370,250,2.65,6],sport:[430,285,2.95,6],cop:[360,235,2.7,5],ems:[300,200,2.4,5]};
 const gearTop=(c,i)=>{const p=PERF[c.type]||PERF.sedan;return p[0]*(1+0.08*(c.eng||0))*Math.pow((i+1)/p[3],0.8);};
 function baseCar(o){const m=MODELS[(R()*MODELS.length)|0];return Object.assign({x:0,y:0,a:0,v:0,mode:'parked',color:CARC[(R()*CARC.length)|0],hp:100,model:m[0],value:m[1],type:m[2],bcd:0,blk:0,stk:0,rev:0,box:0,t:0},o);}
-function viperCar(o){return baseCar(Object.assign({model:'Dodge Viper',value:4200,type:'sport',color:'#c8102e',stripes:true},o));}
+function viperCar(o){return baseCar(Object.assign({model:'Dodgy Venom',value:4200,type:'sport',color:'#c8102e',stripes:true},o));}
 function setLane(c){c.lane=c.hz?(c.dir>0?c.r*T+72:c.r*T+24):(c.dir>0?c.r*T+24:c.r*T+72);}
 function syncTraffic(c){c.x=c.hz?c.pos:c.lane;c.y=c.hz?c.lane:c.pos;c.a=c.hz?(c.dir>0?0:Math.PI):(c.dir>0?Math.PI/2:-Math.PI/2);}
 function mkTraffic(farFrom){for(let k=0;k<12;k++){const hz=R()<.55;const arr=hz?RY:RX;const r=arr[(R()*arr.length)|0];const dir=R()<.5?1:-1;
@@ -1375,9 +1375,9 @@ function actE(){
 function actF(){if(paused||rob)return;if(P.car){exitCar();return;}const c=nearestCar(52);if(c)enterCar(c);}
 function enterCar(c){
   if(c.gunvan){log('The Gun Van stays locked. Walk up to it and press E to shop.','#c9a24a');return;}
-  if(!canBreakIn(c)){const t=TIERS[carTier(c)];log(`The ${c.model} is ${t.n.toLowerCase()}. You need a ${t.tn}${t.tool==='slim'?' (Home Despot)':' (Uncle Rell, rep 2)'}.`,'#f2a33a');AU.ping&&AU.ping(c.x,c.y);return;}
+  if(!canBreakIn(c)){const t=TIERS[carTier(c)];log(`The ${c.model} is ${t.n.toLowerCase()}. You need a ${t.tn}${t.tool==='slim'?' (House Depo)':' (Uncle Rell, rep 2)'}.`,'#f2a33a');AU.ping&&AU.ping(c.x,c.y);return;}
   if(c.mode==='resp'||(c.type==='cop'&&!c.stolenCop)){c.stolenCop=true;c.police=false;c.mode='parked';const w=witness(c.x,c.y);addHeat(1.5+w.cop*1.5,c.x,c.y);P.lkx=c.x;P.lky=c.y;log(w.cop?'You jacked a DPD cruiser right in front of them.':'You stole an empty DPD cruiser. Every cop in the city knows that car.','#e0574b');}
-  else if(c.owned){if(!S.vipHint){S.vipHint=true;log('Your Viper. 8.4 liters of Detroit V10. Hold W.',GANG.crew.color);}}
+  else if(c.owned){if(!S.vipHint){S.vipHint=true;log('Your Venom. 8.4 liters of Detroit V10. Hold W.',GANG.crew.color);}}
   else if(c.mode==='traffic'){const w=witness(c.x,c.y);addHeat(Math.min(.8,.25+w.civ*.12)+w.cop*1.3);
     const s=spotNear(c.x,c.y,30,60,false)||{x:c.x,y:c.y};mkNPC('civ',s.x,s.y,{flee:6});log(`Carjacked a ${c.model}.`,'#f2a33a');}
   else if(c.mode==='parked'&&c!==P.lastCar){if(R()<.4){const w=witness(c.x,c.y);addHeat(.4+w.cop);AU.carAlarm(c.x,c.y);log(`Car alarm on the ${c.model} went off.`,'#f2a33a');}else log(`Popped the lock on a ${c.model}.`,'#d7dbe1');}
@@ -1414,7 +1414,7 @@ const ITEMS={
   labkit:{name:'Lab setup',desc:'Burner, glassware and a vent fan. Set it up at the stash for one more meth station (max 4).',cost:1000,lvl:2,can:()=>(S.labs||0)+(S.labKits||0)<COOK.max,act:()=>{S.labKits=(S.labKits||0)+1;return `Lab setup in the trunk. You have ${S.labKits}. Set it up at the stash.`;}},
   coke:{name:'Cocaine · an ounce',desc:'28 g from Rell\'s plug, dropped at your stash. Big spenders pay $60 to $100 a gram.',cost:1200,lvl:2,act:()=>{S.store.coke=stored('coke')+28;if(!S.cokeOn)cokeUnlock();return 'An ounce is waiting at your stash.';}},
   slim:{name:'Slim jim',desc:'Pops the lock on older locked cars. Newer cars need a key cloner.',cost:40,has:()=>(S.closet||[]).includes('slim'),act:()=>{(S.closet||(S.closet=[])).push('slim');return 'Slim jim in your back pocket.';}},
-  cloner:{name:'Key cloner',desc:'Opens secure cars: sports cars, Escalades, anything over $900. Watch for trackers.',cost:1500,lvl:2,has:()=>(S.closet||[]).includes('cloner'),act:()=>{(S.closet||(S.closet=[])).push('cloner');return 'Key cloner. Every nice car in Detroit is yours now.';}},
+  cloner:{name:'Key cloner',desc:'Opens secure cars: sports cars, Escapades, anything over $900. Watch for trackers.',cost:1500,lvl:2,has:()=>(S.closet||[]).includes('cloner'),act:()=>{(S.closet||(S.closet=[])).push('cloner');return 'Key cloner. Every nice car in Detroit is yours now.';}},
   charge:{name:'Safe charge',desc:'Blows a store safe open in a second. Loud, and about half the cash burns.',cost:200,lvl:1,act:()=>{(S.closet||(S.closet=[])).push('charge');return `Charge packed. You have ${S.closet.filter(x=>x==='charge').length}.`;}},
   heal:{name:'Get patched up',desc:'Full health. Stitches, painkillers and a lollipop.',cost:120,can:()=>P.hp<100,act:()=>{P.hp=100;P.hurtT=0;return 'Patched up. Full health.';}},
   heal50:{name:'Quick bandage',desc:'Restores 40 health.',cost:45,can:()=>P.hp<100,act:()=>{P.hp=Math.min(100,P.hp+40);return '+40 health.';}},
@@ -1528,7 +1528,7 @@ function renderStashLive(){if(!renderStashLive.open){carryMsg='';}renderStashLiv
     if(!p){gh+=`<div class="pl"><i class="pa art-weed-pot-soil"></i><b>Empty</b><span>Plant a seed</span></div>`;continue;}
     const ready=p.g>=1,dry=!ready&&p.w<=0;const left=Math.ceil((1-p.g)*GROW.time/60/(p.boost||1));
     gh+=`<div class="pl ${ready?'ready click':dry?'dry':''}" ${ready?`data-pl="${i}" title="Harvest this plant"`:''}><i class="pa art-${plantArt(p.g).replace('/','-')}"></i><b>${ready?'Harvest':dry?'Thirsty':Math.floor(p.g*100)+'%'}</b><span>${ready?(p.yl||28)+' g':dry?'Needs water':'~'+left+'h left'}</span><span class="bar" title="Water"><i style="width:${(S.drip?1:p.w)*100}%;background:#5f86d6"></i></span></div>`;}
-  for(let i=S.slots;i<S.space;i++)gh+=`<div class="pl empty"><svg width="40" height="46" viewBox="0 0 40 46" aria-hidden="true"><path d="M10 38h20l-2 8h-16z" fill="none" stroke="#5a5d63" stroke-dasharray="3 3"/></svg><b>Open spot</b><span>Grow kit from Home Despot</span></div>`;
+  for(let i=S.slots;i<S.space;i++)gh+=`<div class="pl empty"><svg width="40" height="46" viewBox="0 0 40 46" aria-hidden="true"><path d="M10 38h20l-2 8h-16z" fill="none" stroke="#5a5d63" stroke-dasharray="3 3"/></svg><b>Open spot</b><span>Grow kit from House Depo</span></div>`;
   $('growGrid').innerHTML=gh;
   const nReady=S.plants.filter(p=>p.g>=1).length,free=S.slots-S.plants.length;
   $('gLbl').textContent=`Grow room · ${S.slots} pot${S.slots>1?'s':''} · room for ${S.space} · each plant $50 → 10 to 28 g, based on how well you plant it`;
@@ -1999,7 +1999,7 @@ const paintCol=c=>c.paint==='crew'?GANG.crew.color:c.color;
 const GARAGE_MAX=5;
 const gSpot=k=>{if(!GD.on)return {x:VIPER_SPOT.x+[0,-64,64,-128,128][k%5],y:VIPER_SPOT.y,a:0};const L=(GD.x0+0.5)*T,Rr=(GD.x1+0.5)*T,M=(GD.x0+GD.x1+1)/2*T;return [{x:L,y:(GD.y0+1.3)*T,a:Math.PI/2},{x:Rr,y:(GD.y0+1.3)*T,a:Math.PI/2},{x:L,y:(GD.y0+3.6)*T,a:Math.PI/2},{x:Rr,y:(GD.y0+3.6)*T,a:Math.PI/2},{x:M,y:(GD.y0+0.65)*T,a:0}][k%5];};
 const MODKEYS=['model','type','value','color','paint','stripes','rims','tint','glow','eng','armor'];
-function garageCar(en,k){const sp=gSpot(k);const c=en.model==='Dodge Viper'?viperCar({}):baseCar({});for(const key of MODKEYS)if(en[key]!==undefined)c[key]=en[key];
+function garageCar(en,k){const sp=gSpot(k);const c=en.model==='Dodgy Venom'?viperCar({}):baseCar({});for(const key of MODKEYS)if(en[key]!==undefined)c[key]=en[key];
   Object.assign(c,{x:sp.x,y:sp.y,a:sp.a,mode:'parked',owned:true,gid:en.gid,hp:100,v:0});return c;}
 function spawnGarage(only){(S.garage||[]).forEach((en,k)=>{if(only!=null&&en.gid!==only)return;cars.push(garageCar(en,k));});}
 function syncGarage(c){if(c.gid==null)return;const en=(S.garage||[]).find(e=>e.gid===c.gid);if(!en)return;for(const key of MODKEYS)en[key]=c[key];}
@@ -2291,7 +2291,7 @@ function carPhys(dt){
       if(wa&&!hit(a.x+ax,a.y+ay,carR(a))){a.x+=ax;a.y+=ay;}else if(wa){b.x+=nx*ov;b.y+=ny*ov;}
       if(wb&&!hit(b.x+bx,b.y+by,carR(b))){b.x+=bx;b.y+=by;}else if(wb&&!fixA){a.x-=nx*ov;a.y-=ny*ov;}}}}
 // ================= motorcycles + MC gangs =================
-const BIKEM=[['Suzooki Hayabusta',900,'rocket'],['Kawasucky Ninja',750,'rocket'],['Yamahaha R1',820,'rocket'],['Hardly Davidson Fat Boy',1100,'chopper'],['Indigo Chief',950,'chopper'],['Hardly Davidson Road King',1000,'chopper']];
+const BIKEM=[['Suzooki Hayabusta',900,'rocket'],['Kawasucky Shinobi',750,'rocket'],['Yamahaha R-Won',820,'rocket'],['Hardly Davidsun Big Boy',1100,'chopper'],['Indigo Big Chief',950,'chopper'],['Hardly Davidsun Road Queen',1000,'chopper']];
 const HELMETS=['#e9e6df','#1d1e21','#c8102e','#2b4f7a','#e3b341','#5ec4f2'];
 function baseBike(o,kind){const pool=BIKEM.filter(m=>!kind||m[2]===kind);const m=pick(pool);
   return baseCar(Object.assign({model:m[0],value:m[1],type:m[2],hp:60,helmet:m[2]==='rocket'?pick(HELMETS):null,riderLook:makeLook('civ'),color:m[2]==='rocket'?pick(['#c8102e','#2f6b4f','#1f1f22','#e3b341','#3f6fe0','#e8e6e1','#ff7a1a']):pick(['#1f1f22','#7a1f2b','#2b2b30','#a8a9ad','#3a2a22'])},o));}
@@ -2670,7 +2670,7 @@ function drawGarageTop(){if(!GD.on)return;const x=GD.x0*T-camX,y=GD.y0*T-camY,w=
   const ph=T*(1-open);if(ph>1){ctx.fillStyle='#8c9198';ctx.fillRect(x,dy,w,ph);ctx.strokeStyle='rgba(0,0,0,.28)';ctx.lineWidth=1;for(let yy=dy+5;yy<dy+ph;yy+=5){ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+w,yy);ctx.stroke();}ctx.fillStyle='#e8762b';ctx.fillRect(x,dy+ph-4,w,4);}
   ctx.fillStyle='#f2a33a';ctx.fillRect(x-8,dy+2,4,10);ctx.fillRect(x+w+4,dy+2,4,10);}
 // ================= repair kits =================
-function useKit(){if(!(S.kitsR>0)){log('No repair kits. Gas stations and Home Despot sell them for $25.','#8a8f98');return;}
+function useKit(){if(!(S.kitsR>0)){log('No repair kits. Gas stations and House Depo sell them for $25.','#8a8f98');return;}
   const c=P.car||nearestCarAny(70);if(!c){log('No car close enough to fix.','#8a8f98');return;}if(c.mode==='wreck'){log("That one's totaled. Not even duct tape can save it.",'#8a8f98');return;}if(c.hp>=99){log(`The ${c.model} is already running right.`,'#8a8f98');return;}
   S.kitsR--;c.hp=100;AU.ping(c.x,c.y);AU.door();floatText(c.x,c.y-24,'REPAIRED','#6cc28a');log(`Patched up the ${c.model}. ${S.kitsR} kit${S.kitsR===1?'':'s'} left.`,'#6cc28a');}
 function nearestCarAny(r){let b=null,bd=r;for(const c of cars){if(c.dead||c.mode==='cop'||c.mode==='resp'||c.mode==='ems'||c.mode==='gangcar'||c.mode==='pack')continue;const d=Math.hypot(c.x-P.x,c.y-P.y);if(d<bd){bd=d;b=c;}}return b;}
@@ -2792,7 +2792,7 @@ const SCENE={hours:3,max:6};
 function addScene(x,y,what){if(!running)return;S.scenes=(S.scenes||[]).filter(s=>s.until>nowM()&&Math.hypot(s.x-x,s.y-y)>200);S.scenes.push({x,y,what,until:nowM()+SCENE.hours*60,up:false});if(S.scenes.length>SCENE.max)S.scenes.shift();}
 function sceneTick(){if(!running||!S.scenes||!S.scenes.length)return;const n=nowM();
   for(const s of S.scenes){if(s.until<=n||s.up||Math.hypot(s.x-P.x,s.y-P.y)>1100||onScreen(s,40))continue;s.up=true;
-    const sp=spotNear(s.x,s.y,40,220,true)||spotNear(s.x,s.y,40,200,false);if(sp)cars.push(baseCar({x:sp.x,y:sp.y,a:R()*6.28,mode:'parked',type:'cop',model:'DPD Crown Vic',value:300,police:false,color:'#1b2a4a',scene:true}));
+    const sp=spotNear(s.x,s.y,40,220,true)||spotNear(s.x,s.y,40,200,false);if(sp)cars.push(baseCar({x:sp.x,y:sp.y,a:R()*6.28,mode:'parked',type:'cop',model:'DPD Crown Victory',value:300,police:false,color:'#1b2a4a',scene:true}));
     for(let k=0;k<2;k++){const p=spotNear(s.x,s.y,30,120,false);if(p){const c=mkCop(p.x,p.y,false);c.scene={x:s.x,y:s.y,until:s.until};}}}
   if(S.scenes.some(s=>s.until<=n)){S.scenes=S.scenes.filter(s=>s.until>n);for(const e of npcs)if(e.scene&&e.scene.until<=n)e.scene=null;}}
 function sceneWalk(e,dt){if(!e.scene)return false;if(dist(e,e.scene)>150){seek(e,e.scene.x,e.scene.y,55,dt);return true;}return false;}
@@ -3108,7 +3108,7 @@ function busted(){const dt0=dirtyNow(),clean=S.cash-dt0,lost=Math.round(dt0*(S.l
   const guns=S.weapons.filter(w=>!WD[w].melee);S.weapons=S.weapons.filter(w=>WD[w].melee);if(!S.weapons.includes(S.cur))S.cur='fists';S.ammo={'9mm':0,shells:0,'7.62':0};S.clip={glock:0,sawed:0,draco:0};S.extMag=false;S.glockSw=false;
   AU.sting();card('Busted',`Lost ${lossTxt(lostM)}${lost?`, $${lost}`:''}${guns.length?` and your ${guns.map(g=>WD[g].name).join(', ')}`:''}.${dt0?(S.lawyer?' Your lawyer got half the dirty cash back.':' They seized every dirty dollar on you.'):''}`,'#e0574b');respawn();save();}
 function wasted(){const lostM={};for(const p of PRODS){lostM[p]=Math.ceil(inv(p)/2);S.inv[p]=inv(p)-lostM[p];}const lost=Math.round(S.cash*0.2);S.cash-=lost;
-  AU.sting();card('Wasted',`They took ${lossTxt(lostM)}. Hospital bill: $${lost}. You woke up at Detroit Receiving.`,'#e0574b');respawn();{const h=STORES.find(s=>s.kind==='hospital');if(h){P.x=h.x;P.y=h.y+26;}}save();}
+  AU.sting();card('Wasted',`They took ${lossTxt(lostM)}. Hospital bill: $${lost}. You woke up at Detroit General.`,'#e0574b');respawn();{const h=STORES.find(s=>s.kind==='hospital');if(h){P.x=h.x;P.y=h.y+26;}}save();}
 
 // ================= render: static world chunks =================
 const cv=cvEl,ctx=cv.getContext('2d');
@@ -3220,7 +3220,7 @@ function drawBuildingStatic(g,b,ox,oy){
   g.textAlign='center';g.textBaseline='middle';
   if(b.kind==='stash'){const lw=w-4*T;g.fillStyle=GANG.crew.color;g.font=`900 26px ${FD}`;g.fillText('THE STASH',x+lw/2,y+h/2-8);g.fillStyle='rgba(215,219,225,.55)';g.font=`600 11px ${FB}`;g.fillText('PRESS E AT THE DOOR',x+lw/2,y+h/2+16);
     g.fillStyle='#f2a33a';g.fillRect(STASH.x-ox-14,y+h-6,28,6);}
-  if(b.kind==='hq'){g.fillStyle='#5f86d6';g.font=`900 32px ${FD}`;g.fillText('DPD HQ',x+w/2,y+h/2-6);g.fillStyle='rgba(215,219,225,.5)';g.font=`600 13px ${FB}`;g.fillText('DETROIT POLICE · 1301 THIRD ST',x+w/2,y+h/2+20);
+  if(b.kind==='hq'){g.fillStyle='#5f86d6';g.font=`900 32px ${FD}`;g.fillText('DPD HQ',x+w/2,y+h/2-6);g.fillStyle='rgba(215,219,225,.5)';g.font=`600 13px ${FB}`;g.fillText('DETROIT POLICE',x+w/2,y+h/2+20);
     g.fillStyle='#d8dde6';g.beginPath();g.arc(x+30,y+30,16,0,7);g.fill();g.fillStyle='#232c45';g.font=`900 18px ${FD}`;g.fillText('H',x+30,y+31);}
 }
 function lmText(g,txt,x,y,size,col,font){g.save();g.textAlign='center';g.textBaseline='middle';g.font=`${font||900} ${size}px ${font===600?FB:FD}`;g.fillStyle='rgba(0,0,0,.55)';g.fillText(txt,x+1.5,y+2);g.fillStyle=col;g.fillText(txt,x,y);g.restore();}
@@ -3265,13 +3265,13 @@ const LMDRAW={
   },
   arena(g,b,x,y,w,h){g.fillStyle='#24262b';g.fillRect(x,y,w,h);g.fillStyle='#17181c';rr(g,x+14,y+14,w-28,h-28,60);g.fill();g.strokeStyle='#c8102e';g.lineWidth=5;rr(g,x+22,y+22,w-44,h-44,52);g.stroke();
     g.fillStyle='#2f3238';rr(g,x+36,y+36,w-72,h-72,40);g.fill();g.strokeStyle='rgba(255,255,255,.08)';g.lineWidth=1;for(let k=1;k<6;k++){g.beginPath();g.moveTo(x+36+k*(w-72)/6,y+40);g.lineTo(x+36+k*(w-72)/6,y+h-40);g.stroke();}
-    lmText(g,'LITTLE CAESARS',x+w/2,y+h/2-12,24,'#e9e6df');lmText(g,'ARENA',x+w/2,y+h/2+14,24,'#c8102e');},
+    lmText(g,'BIG CAESAR\'S',x+w/2,y+h/2-12,24,'#e9e6df');lmText(g,'ARENA',x+w/2,y+h/2+14,24,'#c8102e');},
   casino(g,b,x,y,w,h){g.fillStyle='#2c2220';g.fillRect(x,y,w,h);g.fillStyle='#3d2e2a';g.fillRect(x+8,y+8,w-16,h-16);g.strokeStyle='#d4a94a';g.lineWidth=3;g.strokeRect(x+12,y+12,w-24,h-24);
     g.fillStyle='#f3d27a';for(let k=0;k<w-30;k+=14){g.fillRect(x+15+k,y+15,3,3);g.fillRect(x+15+k,y+h-18,3,3);}
-    g.fillStyle='#4a3a35';g.fillRect(x+w*0.3,y+h*0.25,w*0.4,h*0.35);lmText(g,'MOTORCITY',x+w/2,y+h/2+28,26,'#f3d27a');lmText(g,'CASINO · HOTEL',x+w/2,y+h/2+52,14,'#d7c69a',600);},
+    g.fillStyle='#4a3a35';g.fillRect(x+w*0.3,y+h*0.25,w*0.4,h*0.35);lmText(g,'MOTOR TOWN',x+w/2,y+h/2+28,26,'#f3d27a');lmText(g,'CASINO · HOTEL',x+w/2,y+h/2+52,14,'#d7c69a',600);},
   casino2(g,b,x,y,w,h){g.fillStyle='#211d2e';g.fillRect(x,y,w,h);g.fillStyle='#2e2842';g.fillRect(x+8,y+8,w-16,h-16);g.strokeStyle='#9c74d9';g.lineWidth=3;g.strokeRect(x+12,y+12,w-24,h-24);
     g.fillStyle='#3a3354';g.fillRect(x+w*0.55,y+18,w*0.35,h*0.5);g.fillStyle='rgba(255,230,160,.35)';for(let r=0;r<6;r++)for(let c=0;c<4;c++)g.fillRect(x+w*0.58+c*16,y+26+r*22,8,10);
-    lmText(g,'GREEKTOWN',x+w*0.3+10,y+h/2-10,24,'#e9e6df');lmText(g,'CASINO',x+w*0.3+10,y+h/2+16,24,'#d4a94a');},
+    lmText(g,'OLYMPUS',x+w*0.3+10,y+h/2-10,24,'#e9e6df');lmText(g,'CASINO',x+w*0.3+10,y+h/2+16,24,'#d4a94a');},
   ballpark(g,b,x,y,w,h){g.fillStyle='#4f5258';g.fillRect(x,y,w,h);g.fillStyle='#3f4247';g.fillRect(x+6,y+6,w-12,h-12);
     g.fillStyle='#2f6b30';g.beginPath();g.moveTo(x+30,y+h-30);g.lineTo(x+30,y+40);g.quadraticCurveTo(x+w-30,y+30,x+w-40,y+h-30);g.closePath();g.fill();
     g.strokeStyle='rgba(255,255,255,.06)';g.lineWidth=10;for(let k=0;k<8;k++){g.beginPath();g.arc(x+30,y+h-30,40+k*28,-Math.PI/2,0);g.stroke();}
@@ -3279,25 +3279,25 @@ const LMDRAW={
     g.fillStyle='#2f6b30';g.fillRect(x+44,y+h-86,42,42);g.fillStyle='#fff';for(const [a,c] of [[30,30],[100,30],[100,100],[30,100]]){g.fillRect(x+a-3,y+h-c-3,6,6);}
     g.fillStyle='#9a6b45';g.beginPath();g.arc(x+65,y+h-65,6,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=1.5;g.beginPath();g.moveTo(x+30,y+h-30);g.lineTo(x+w-50,y+h-30);g.moveTo(x+30,y+h-30);g.lineTo(x+30,y+44);g.stroke();
     g.fillStyle='#16181c';g.fillRect(x+w-120,y+14,96,26);g.fillStyle='#f2a33a';g.fillRect(x+w-114,y+20,30,6);g.fillStyle='#6cc28a';g.fillRect(x+w-80,y+20,22,6);
-    lmText(g,'COMERICA PARK',x+w/2+20,y+h/2-20,26,'#e9e6df');},
+    lmText(g,'COMMERCE PARK',x+w/2+20,y+h/2-20,26,'#e9e6df');},
   stadium(g,b,x,y,w,h){g.fillStyle='#4a4d53';g.fillRect(x,y,w,h);g.fillStyle='#c9ced4';rr(g,x+12,y+12,w-24,h-24,18);g.fill();g.strokeStyle='#a9aeb5';g.lineWidth=2;for(let k=1;k<8;k++){g.beginPath();g.moveTo(x+12+k*(w-24)/8,y+14);g.lineTo(x+12+k*(w-24)/8,y+h-14);g.stroke();}
-    g.fillStyle='rgba(255,255,255,.35)';g.fillRect(x+w/2-30,y+18,60,h-36);lmText(g,'FORD FIELD',x+w/2,y+h/2,30,'#1d4f91');},
+    g.fillStyle='rgba(255,255,255,.35)';g.fillRect(x+w/2-30,y+18,60,h-36);lmText(g,'FJORD FIELD',x+w/2,y+h/2,30,'#1d4f91');},
   station(g,b,x,y,w,h){g.fillStyle='#5f574a';g.fillRect(x,y,w,h);g.fillStyle='#7a705f';g.fillRect(x+8,y+h*0.55,w-16,h*0.45-8);
     g.fillStyle='#8a806c';g.fillRect(x+w*0.18,y+10,w*0.64,h*0.55);g.fillStyle='rgba(0,0,0,.35)';g.fillRect(x+w*0.18+6,y+10+h*0.55,w*0.64,6);
     g.fillStyle='#2a2c30';for(let r=0;r<7;r++)for(let c=0;c<9;c++)g.fillRect(x+w*0.18+12+c*((w*0.64-24)/9),y+20+r*((h*0.55-24)/7),6,7);
     g.fillStyle='#a69a82';for(let k=0;k<4;k++)g.fillRect(x+22+k*((w-60)/3),y+h*0.62,10,h*0.3);
-    lmText(g,'MICHIGAN CENTRAL',x+w/2,y+h-30,22,'#efe6d2');},
+    lmText(g,'CENTRAL DEPOT',x+w/2,y+h-30,22,'#efe6d2');},
   shed(g,b,x,y,w,h){g.fillStyle='#3d3a36';g.fillRect(x,y,w,h);const n=3,gap=18,sh=(h-gap*(n+1))/n;
     for(let k=0;k<n;k++){const sy=y+gap+k*(sh+gap);g.fillStyle='rgba(0,0,0,.35)';g.fillRect(x+16,sy+6,w-24,sh);g.fillStyle=k%2?'#a5342c':'#8a2f2a';g.fillRect(x+12,sy,w-24,sh);g.strokeStyle='rgba(255,255,255,.12)';g.lineWidth=1;for(let q=x+16;q<x+w-14;q+=8){g.beginPath();g.moveTo(q,sy+2);g.lineTo(q,sy+sh-2);g.stroke();}
       g.fillStyle='rgba(0,0,0,.25)';g.fillRect(x+12,sy+sh/2-1,w-24,2);lmText(g,'SHED '+(k+2),x+w/2,sy+sh/2,18,'#f4efe2');}
     lmText(g,'EASTERN MARKET',x+w/2,y+gap/2+1,14,'#f2a33a',600);},
   conv(g,b,x,y,w,h){g.fillStyle='#6d7278';g.fillRect(x,y,w,h);g.fillStyle='#8e949a';g.fillRect(x+8,y+8,w-16,h-16);g.fillStyle='#a9c2d1';for(let k=0;k<4;k++)g.fillRect(x+20,y+24+k*((h-60)/3),w-40,8);
-    lmText(g,'HUNTINGTON PLACE',x+w/2,y+h/2,22,'#1e2229');},
+    lmText(g,'HUNTER PLACE',x+w/2,y+h/2,22,'#1e2229');},
   rencen(g,b,x,y,w,h){g.fillStyle='#2a2d33';g.fillRect(x,y,w,h);g.fillStyle='#33373e';g.fillRect(x+8,y+8,w-16,h-16);
     const cx=x+w/2,cy=y+h/2-6,R0=Math.min(w,h)*0.2;const tower=(tx,ty,r)=>{g.fillStyle='rgba(0,0,0,.45)';g.beginPath();g.arc(tx+r*0.5,ty+r*0.6,r,0,7);g.fill();g.fillStyle='#3d4b5c';g.beginPath();g.arc(tx,ty,r,0,7);g.fill();const gr=g.createRadialGradient(tx-r*0.4,ty-r*0.4,r*0.1,tx,ty,r);gr.addColorStop(0,'rgba(170,200,225,.5)');gr.addColorStop(1,'rgba(20,30,40,.1)');g.fillStyle=gr;g.beginPath();g.arc(tx,ty,r,0,7);g.fill();g.strokeStyle='rgba(255,255,255,.12)';g.lineWidth=1;g.beginPath();g.arc(tx,ty,r*0.7,0,7);g.stroke();};
     for(const [dx,dy] of [[-1,-1],[1,-1],[-1,1],[1,1]])tower(cx+dx*R0*1.45,cy+dy*R0*1.3,R0*0.62);tower(cx,cy,R0);
-    g.fillStyle='#2f5fb3';g.font=`900 ${Math.round(R0*0.55)}px ${FD}`;g.textAlign='center';g.textBaseline='middle';g.fillText('GM',cx,cy+1);
-    lmText(g,'RENAISSANCE CENTER',x+w/2,y+h-18,16,'#d7dbe1',600);},
+    g.fillStyle='#2f5fb3';g.font=`900 ${Math.round(R0*0.55)}px ${FD}`;g.textAlign='center';g.textBaseline='middle';g.fillText('RC',cx,cy+1);
+    lmText(g,'RESURGENCE CENTER',x+w/2,y+h-18,16,'#d7dbe1',600);},
   tunnel(g,b,x,y,w,h){g.fillStyle='#34363b';g.fillRect(x,y,w,h);g.fillStyle='#26282c';g.fillRect(x+w*0.3,y+6,w*0.4,h-12);g.fillStyle='#0b0c0e';rr(g,x+w*0.35,y+h-30,w*0.3,28,10);g.fill();
     for(let k=0;k<8;k++){g.fillStyle=k%2?'#e8762b':'#111';g.fillRect(x+w*0.35+k*(w*0.3/8),y+h-8,w*0.3/8,6);}
     lmText(g,'DETROIT–WINDSOR TUNNEL',x+w/2,y+18,16,'#e9e6df',600);lmText(g,'CLOSED · CANADA',x+w/2,y+40,14,'#e8762b',600);},
@@ -3531,7 +3531,7 @@ function drawCrane(c){
   ctx.fillStyle='#d9a930';ctx.fillRect(x-14,y-14,28,28);ctx.fillStyle='#3a3a3a';ctx.fillRect(bx-16,by-16,32,32);
   const hx=x+Math.cos(c.a)*360,hy=y+Math.sin(c.a)*360;ctx.strokeStyle='#999';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(hx,hy);ctx.lineTo(hx+10,hy+30);ctx.stroke();ctx.fillStyle='#6b6b6b';ctx.fillRect(hx+4,hy+28,14,10);
 }
-const PM=[[59*T,48*T],[81*T,48*T],[81*T,70*T],[59*T,70*T]];const PMST=[['Grand Circus',70*T,48*T],['Greektown',81*T,55*T],['Renaissance Center',76*T,70*T],['Fort / Cass',59*T,62*T]];
+const PM=[[59*T,48*T],[81*T,48*T],[81*T,70*T],[59*T,70*T]];const PMST=[['Grand Circus',70*T,48*T],['Greektown',81*T,55*T],['Resurgence Center',76*T,70*T],['Fort / Cass',59*T,62*T]];
 const PMLEN=PM.reduce((a,p,i)=>{const q=PM[(i+1)%PM.length];return a+Math.hypot(q[0]-p[0],q[1]-p[1]);},0);
 function pmAt(s){s=((s%PMLEN)+PMLEN)%PMLEN;for(let i=0;i<PM.length;i++){const p=PM[i],q=PM[(i+1)%PM.length],l=Math.hypot(q[0]-p[0],q[1]-p[1]);if(s<=l){const t=s/l;return{x:p[0]+(q[0]-p[0])*t,y:p[1]+(q[1]-p[1])*t,a:Math.atan2(q[1]-p[1],q[0]-p[0])};}s-=l;}return{x:PM[0][0],y:PM[0][1],a:0};}
 function drawHideout(){if(!S.banner||!STASHB)return;const b=STASHB,bx=b.x*T-camX,by=b.y*T-camY,w=b.w*T,h=b.h*T;if(bx>vw+50||by>vh+50||bx+w<-50||by+h<-50)return;const col=GANG.crew.color,tag=crewTag();
@@ -3543,7 +3543,7 @@ function drawHospital(){const st=STORES.find(s=>s.kind==='hospital');if(!st||!st
   const cx=x+w*0.35,cy=y+h*0.48,r=Math.min(w,h)*0.22;ctx.fillStyle='#3a3d42';ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.fill();ctx.strokeStyle='#f2d24f';ctx.lineWidth=3;ctx.beginPath();ctx.arc(cx,cy,r-5,0,7);ctx.stroke();
   ctx.fillStyle='#f1efe9';ctx.font=`900 ${Math.round(r*1.1)}px ${FD}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('H',cx,cy+2);
   const kx=x+w*0.75,ky=y+h*0.48,s2=Math.min(w,h)*0.16;ctx.fillStyle='#d9473c';ctx.fillRect(kx-s2,ky-s2*0.33,s2*2,s2*0.66);ctx.fillRect(kx-s2*0.33,ky-s2,s2*0.66,s2*2);
-  ctx.fillStyle='#d9473c';ctx.font=`900 18px ${FD}`;ctx.fillText('DETROIT RECEIVING',x+w/2,y+h-18);}
+  ctx.fillStyle='#d9473c';ctx.font=`900 18px ${FD}`;ctx.fillText('DETROIT GENERAL',x+w/2,y+h-18);}
 function drawPeopleMover(){
   if(camX>82*T||camX+vw<58*T||camY>71*T||camY+vh<47*T)return;
   ctx.lineJoin='miter';
@@ -3589,7 +3589,7 @@ function renderWorld(){
   RX.forEach((r,i)=>{for(let k=8;k<79;k+=11){const x=r*T+14-camX,y=k*T+T/2-camY;if(x>-20&&x<vw+20&&y>-100&&y<vh+100){ctx.save();ctx.translate(x,y);ctx.rotate(-Math.PI/2);ctx.fillText((RXN[i]+RXS[i]).toUpperCase(),0,0);ctx.restore();}}});
   ctx.font=`900 46px ${FD}`;ctx.fillStyle='rgba(140,180,210,.16)';for(const k of [30,58,88]){const x=k*T-camX,y=82.6*T-camY;if(x>-400&&x<vw+400&&y>-60&&y<vh+60)ctx.fillText('DETROIT RIVER',x,y);}
   ctx.font=`900 22px ${FD}`;ctx.fillStyle='rgba(215,219,225,.5)';for(const k of [22,50,98]){const x=k*T-camX,y=87.6*T-camY;if(y<vh+40&&x>-200&&x<vw+200)ctx.fillText('WINDSOR, ONTARIO · CANADA',x,y);}
-  {const x=74*T-camX,y=87.6*T-camY;if(y<vh+40&&x>-200&&x<vw+200){ctx.save();ctx.shadowColor='#ffd34f';ctx.shadowBlur=nightAmt()>0.3?14:0;ctx.fillStyle='#ffd34f';ctx.font=`900 20px ${FD}`;ctx.fillText('CAESARS WINDSOR',x,y);ctx.restore();}}
+  {const x=74*T-camX,y=87.6*T-camY;if(y<vh+40&&x>-200&&x<vw+200){ctx.save();ctx.shadowColor='#ffd34f';ctx.shadowBlur=nightAmt()>0.3?14:0;ctx.fillStyle='#ffd34f';ctx.font=`900 20px ${FD}`;ctx.fillText('ROYALE WINDSOR',x,y);ctx.restore();}}
   for(const d of DECOR)if(d.k==='label'){const x=d.x-camX,y=d.y-camY;if(x>-200&&y>-40&&x<vw+200&&y<vh+40){ctx.fillStyle='rgba(235,232,224,.55)';ctx.font=`900 26px ${FD}`;ctx.fillText(d.name,x,y);}}
   {const x=113*T-camX,y=82.9*T-camY;if(y<vh+40&&y>-40&&x>-200&&x<vw+200){ctx.fillStyle='rgba(235,232,224,.75)';ctx.font=`900 22px ${FD}`;ctx.fillText('BELLE ISLE',x,y);ctx.font=`700 12px ${FB}`;ctx.fillText('MACARTHUR BRIDGE CLOSED',x,y+20);}}
   for(const b of buildings){const x=b.x*T-camX,y=b.y*T-camY;if(x>vw+20||y>vh+20||x+b.w*T<-20||y+b.h*T<-20)continue;if(b.kind==='store')drawStoreSign(b);else drawTag(b);}
@@ -3716,7 +3716,7 @@ function updHud(){
       else{const c=wantCust();if(c){const sp=sellP(CL(c.cid));txt=inv(sp)>0?`<kbd>${kE}</kbd>Sell to ${esc(CL(c.cid).name)} · $${S.prices[sp]} a ${DRUGS[sp].per}`:outMsg(sp);}
         else{const p=prospect();if(p&&inv(sampleP(CL(p.cid)))>0)txt=`<kbd>${kE}</kbd>Give ${esc(CL(p.cid).name)} a free sample · ${Math.round(pitchChance(CL(p.cid))*100)}%`;
           else{const kn=knownNear();if(kn&&anyInv())txt=`<kbd>${kE}</kbd>Offer ${esc(CL(kn.cid).name)} a deal`;
-            else{const hm=nearHomie(46);if(hm)txt=followers().length>=2?'You already roll with two homies':`<kbd>${kE}</kbd>Recruit ${esc(nickOf(hm))}`;else{const car=nearestCar(52);if(car)txt=car.owned?`<kbd>${kF}</kbd>Get in your Viper`:car.mode==='traffic'?`<kbd>${kF}</kbd>Carjack the ${car.model}`:car===P.lastCar?`<kbd>${kF}</kbd>Get in the ${car.model}`:canBreakIn(car)?`<kbd>${kF}</kbd>Break into the ${car.model}${scanTxt(car)}`:`${car.model}${scanTxt(car)} · needs a ${TIERS[carTier(car)].tn}`;}}}}}}}
+            else{const hm=nearHomie(46);if(hm)txt=followers().length>=2?'You already roll with two homies':`<kbd>${kE}</kbd>Recruit ${esc(nickOf(hm))}`;else{const car=nearestCar(52);if(car)txt=car.owned?`<kbd>${kF}</kbd>Get in your Venom`:car.mode==='traffic'?`<kbd>${kF}</kbd>Carjack the ${car.model}`:car===P.lastCar?`<kbd>${kF}</kbd>Get in the ${car.model}`:canBreakIn(car)?`<kbd>${kF}</kbd>Break into the ${car.model}${scanTxt(car)}`:`${car.model}${scanTxt(car)} · needs a ${TIERS[carTier(car)].tn}`;}}}}}}}
   if(txt){pr.innerHTML=txt;pr.hidden=false;}else pr.hidden=true;
   if(!elStash.hidden)renderStashLive();
   updPhoneBadges();
@@ -3802,7 +3802,7 @@ $('paFile').onclick=()=>{save();exportSlot(S.slot||1);};
 $('paSave').onclick=()=>{const ok=save();$('paSave').textContent=ok?'Saved ✓':'Could not save';};
 $('paQuit').onclick=()=>{save();running=false;location.reload();};
 $('menuBtn').onclick=()=>{$('menuBtn').blur();openPause();};
-function defaults(){return {crew:'Woodward Boys',cash:200,supplies:0,kitsR:1,radio:1,store:{weed:0,chrome:0,coke:0},bag:'',followers:0,newGangs:[],goneGangs:[],war:null,garage:[{gid:0,model:'Dodge Viper',type:'sport',value:4200,color:'#c8102e',stripes:true}],crewStance:'defend',closet:['chain'],outfit:{head:'band',bandCol:'crew'},crewFit:{},crewColor:'#4caf50',colV2:1,crewTag:'',led:{in:0,out:0,sold:0},ledPrev:null,inv:{weed:7,chrome:0,coke:0},q:{weed:1,chrome:1,coke:2},prices:{weed:10,chrome:40,coke:80},seeds:1,kits:0,slots:1,space:4,plants:[{g:.62,w:.55,yl:20}],drip:false,chromeOn:false,labs:0,labKits:0,cooks:[],fastCook:false,lawyer:false,cookQ:0,cookP:0,clock:18*60,day:1,won:false,hoods:freshHoods(),rep:0,
+function defaults(){return {crew:'Woodward Boys',cash:200,supplies:0,kitsR:1,radio:1,store:{weed:0,chrome:0,coke:0},bag:'',followers:0,newGangs:[],goneGangs:[],war:null,garage:[{gid:0,model:'Dodgy Venom',type:'sport',value:4200,color:'#c8102e',stripes:true}],crewStance:'defend',closet:['chain'],outfit:{head:'band',bandCol:'crew'},crewFit:{},crewColor:'#4caf50',colV2:1,crewTag:'',led:{in:0,out:0,sold:0},ledPrev:null,inv:{weed:7,chrome:0,coke:0},q:{weed:1,chrome:1,coke:2},prices:{weed:10,chrome:40,coke:80},seeds:1,kits:0,slots:1,space:4,plants:[{g:.62,w:.55,yl:20}],drip:false,chromeOn:false,labs:0,labKits:0,cooks:[],fastCook:false,lawyer:false,cookQ:0,cookP:0,clock:18*60,day:1,won:false,hoods:freshHoods(),rep:0,
   weapons:['fists'],cur:'fists',ammo:{'9mm':0,shells:0,'7.62':0},clip:{glock:0,sawed:0,draco:0},extMag:false,armor:0,job:null,price:20,listed:true,offers:{},deals:[],track:null,roster:null,vipHint:false};}
 function begin(fromSave){
   for(const k in S)delete S[k];
@@ -3812,16 +3812,18 @@ function begin(fromSave){
     S.space=Math.max(S.space||4,S.slots||1,4);for(const o of Object.values(S.offers||{}))if(!o.p)o.p=S.chromeOn?'chrome':'weed';for(const d of S.deals||[])if(!d.p)d.p=S.chromeOn?'chrome':'weed';S.ammo=Object.assign(defaults().ammo,fromSave.S.ammo||{});S.clip=Object.assign(defaults().clip,fromSave.S.clip||{});if(!S.weapons.includes(S.cur))S.cur='fists';S.job=null;dealSeq=1+Math.max(0,...S.deals.map(d=>d.id));}
   else{S.crew=$('crewName').value.trim().slice(0,20)||'Woodward Boys';S.roster=genRoster();S.gangN=+$('gangN').value||4;}
   if(fromSave&&!S.goalsDone&&S.roster.filter(c=>c.known).length>=3)S.goalsOff=true;
+  {const FIX={'Dodge Viper':'Dodgy Venom','Chevy Impala':'Chevalier Imperial','Ford F-150':'Fjord F-160','Dodge Charger':'Dodgy Charjer','Cadillac Escalade':'Cadavac Escapade','Jeep Grand Cherokee':'Jeap Grand Chieftain','Chrysler 300':'Chryslur 3000','Buick LeSabre':'Buik LeSaber','Ford Crown Vic':'Fjord Crown Victory','Dodge Challenger':'Dodgy Challenjer','Chevy Malibu':'Chevalier Maliboo','Lincoln Town Car':'Lincon Towne Car','Ram 1500':'Ramm 1600','Kawasucky Ninja':'Kawasucky Shinobi','Yamahaha R1':'Yamahaha R-Won','Hardly Davidson Fat Boy':'Hardly Davidsun Big Boy','Indigo Chief':'Indigo Big Chief','Hardly Davidson Road King':'Hardly Davidsun Road Queen'};
+    for(const g of S.garage||[])if(FIX[g.model])g.model=FIX[g.model];if(S.jobs&&S.jobs.export)S.jobs.export=S.jobs.export.map(m=>FIX[m]||m);if(S.heist&&FIX[S.heist.getaway])S.heist.getaway=FIX[S.heist.getaway];}
   {const D=defaults();for(const p of PRODS){S.inv[p]=inv(p);S.store[p]=stored(p);S.q[p]=S.q[p]||D.q[p];S.prices[p]=S.prices[p]||D.prices[p];}}
   if(!S.colV2){if(!S.crewColor||S.crewColor==='#39b8c9')S.crewColor='#4caf50';S.colV2=1;}if(!fromSave)S.crewColor=startCol;else if(menuPicked&&(fromSave.S.closet||[]).includes('crewCol:'+startCol))S.crewColor=startCol;
-  GANG.crew.name=S.crew;S.closet=S.closet||['chain'];wardMigrate();if(!S.store)S.store={weed:0,chrome:0};if(S.bag==null)S.bag='';for(const g in GANG)if(!['crew','kings','ghosts'].includes(g))delete GANG[g];restoreGangs();ensureMCs();if(!fromSave)seedGangs();S.war=null;if(!S.garage||!S.garage.length)S.garage=[{gid:0,model:'Dodge Viper',type:'sport',value:4200,color:'#c8102e',stripes:true}];S.outfit=S.outfit||{};S.crewFit=S.crewFit||{};applyCrew();msgs={};unread={};
+  GANG.crew.name=S.crew;S.closet=S.closet||['chain'];wardMigrate();if(!S.store)S.store={weed:0,chrome:0};if(S.bag==null)S.bag='';for(const g in GANG)if(!['crew','kings','ghosts'].includes(g))delete GANG[g];restoreGangs();ensureMCs();if(!fromSave)seedGangs();S.war=null;if(!S.garage||!S.garage.length)S.garage=[{gid:0,model:'Dodgy Venom',type:'sport',value:4200,color:'#c8102e',stripes:true}];S.outfit=S.outfit||{};S.crewFit=S.crewFit||{};applyCrew();msgs={};unread={};
   P.x=STASH.x;P.y=STASH.y;P.hp=100;P.heat=0;P.hood=-1;P.car=null;P.lastCar=null;rob=null;logs=[];fx=[];
   STORES.forEach(s=>s.cd=0);
   S.slot=pickSlot;populate();$('start').hidden=true;$('phoneBtn').hidden=false;$('menuBtn').hidden=false;running=true;paused=false;save();
   log(fromSave?`Welcome back, ${S.crew}.`:`You have 7 g of weed and one plant growing in the backroom. Three people in Midtown want to try it. Find the ? and ${coarse?'tap ACT':'press E'} to hand out free samples.`,'#f2a33a');
-  if(!fromSave){setTimeout(()=>log('Your Dodge Viper is in the stash garage. Walk to the roll-up door, get in with F and drive out.',GANG.crew.color),5000);
+  if(!fromSave){setTimeout(()=>log('Your Dodgy Venom is in the stash garage. Walk to the roll-up door, get in with F and drive out.',GANG.crew.color),5000);
     setTimeout(()=>log('Set your price in Products. Too high and clients haggle. Too low and you leave money on the table.','#d7dbe1'),12000);
-    setTimeout(()=>log('Once someone likes your sample, open their thread on the phone and Offer a deal.','#d7dbe1'),20000);setTimeout(()=>log('More pots: grab a $200 grow kit at Home Despot in TechTown, then set it up at the stash.','#d7dbe1'),26000);setTimeout(()=>log('Gang turf: when somebody asks if you lost, answer them. Disrespect gets you hurt.','#d7dbe1'),32000);}
+    setTimeout(()=>log('Once someone likes your sample, open their thread on the phone and Offer a deal.','#d7dbe1'),20000);setTimeout(()=>log('More pots: grab a $200 grow kit at House Depo in TechTown, then set it up at the stash.','#d7dbe1'),26000);setTimeout(()=>log('Gang turf: when somebody asks if you lost, answer them. Disrespect gets you hurt.','#d7dbe1'),32000);}
 }
 let startCol=(existing&&existing.S.crewColor&&existing.S.colV2)?existing.S.crewColor:'#4caf50',menuPicked=false;
 const startLook=(()=>{const L=makeLook('player');L.style='hoodie';L.hair='short';return L;})();
@@ -3874,7 +3876,7 @@ const GOALS=[
   {id:'grab',t:'Grab product from the stash',hint:'Open the stash (E at the door) and use + 3g, + 7g or Take max. Your pockets hold 14.',done:()=>(S.goalsHit||{}).grab,cash:0,rep:3},
   {id:'plant',t:'Plant a seed',hint:'In the stash, buy a seed and hit Plant. Pour soil to the green line, drop the seed, water it.',done:()=>(S.goalsHit||{}).plant,cash:50,rep:5},
   {id:'harvest',t:'Harvest a plant',hint:'When a plant says Harvest, click it and snip every bud.',done:()=>(S.goalsHit||{}).harvest,cash:100,rep:8},
-  {id:'pot',t:'Set up a second pot',hint:'Buy a $200 grow kit at Home Despot (TechTown). Planting uses it automatically.',done:()=>S.slots>=2,cash:100,rep:8},
+  {id:'pot',t:'Set up a second pot',hint:'Buy a $200 grow kit at House Depo (TechTown). Planting uses it automatically.',done:()=>S.slots>=2,cash:100,rep:8},
   {id:'homie',t:'Recruit a homie',hint:'On your own blocks, walk up to a homie in your crew color and press E.',done:()=>followers().length>0||(S.goalsHit||{}).homie,cash:100,rep:8}];
 function goalHit(id){(S.goalsHit||(S.goalsHit={}))[id]=true;}
 let goalT=0;
@@ -4079,7 +4081,7 @@ const CHEATS=[
   ['nowant','AEZAKMI','Never wanted','nowant'],
   ['max','LJSPQK','Five stars',()=>{const n=DEV.on.nowant;DEV.on.nowant=false;addHeat(5);DEV.on.nowant=n;return 'Every cop in the city wants you.';}],
   ['fast','SPEEDFREAK','Fast cars','fast'],
-  ['viper','VIPER','Spawn a Viper',()=>devSpawn({type:'sport',model:'Dodge Viper',value:4200,color:'#c8102e',stripes:true})],
+  ['viper','VENOM','Spawn a Venom',()=>devSpawn({type:'sport',model:'Dodgy Venom',value:4200,color:'#c8102e',stripes:true})],
   ['bike','HAYABUSA','Spawn a sport bike',()=>devSpawn({bike:'rocket'})],
   ['chopper','CHOPPER','Spawn a chopper',()=>devSpawn({bike:'chopper'})],
   ['boom','BOOM','Blow up cars nearby',()=>{let n=0;for(const c of cars){if(c.mode==='player'||c.mode==='wreck'||c.dead||dist(c,P)>600)continue;c.hp=0;c.mode='wreck';c.t=60;c.burn=6;c.v=0;fx.push({k:'boom',x:c.x,y:c.y,t:.7});n++;}if(n){AU.explode(P.x,P.y);shake=8;}return `${n} cars went up.`;}],
