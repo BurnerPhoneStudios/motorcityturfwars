@@ -655,7 +655,7 @@ body.pad #game{cursor:none}
           <kbd>C</kbd><span>Crew callouts: hit that fool, open fire, chill, don't shoot 12</span>
           <kbd>1-6 Q</kbd><span>Switch weapon (wheel works)</span>
           <kbd>R</kbd><span>Reload</span>
-          <kbd>Shift</kbd><span>Sprint</span>
+          <kbd>Shift</kbd><span>Sprint · wheelie on a bike</span>
           <kbd class="v3only">T</kbd><span class="v3only">Camera: overhead, first person, third person</span>
         </div>
         <div class="keys" id="keysPad" hidden>
@@ -664,7 +664,7 @@ body.pad #game{cursor:none}
           <kbd>RT</kbd><span>Shoot or swing · gas in a car, LT brakes</span>
           <kbd>A</kbd><span>Hand off, sample, enter a store</span>
           <kbd>Y</kbd><span>Get in or out of a car</span>
-          <kbd>B</kbd><span>Sprint · back out of menus</span>
+          <kbd>B</kbd><span>Sprint · wheelie on a bike · back out of menus</span>
           <kbd>X</kbd><span>Reload</span>
           <kbd>LB RB</kbd><span>Switch weapon · in a car RB handbrake, LB shoots</span>
           <kbd>D-pad</kbd><span>▲ phone · ▼ callouts (hold: send homies home) · ◀ stick-up, repair kit in a car · ▶ radio</span>
@@ -5176,7 +5176,7 @@ function damageNPC(e,d,src,nx,ny){
   else if(e.type==='cop'){e.chase=true;
     if(e.hp<=0){e.dead=true;P.heat=5;P.lkx=P.x;P.lky=P.y;P.searchT=0;log('Officer down. The whole DPD is coming.','#e0574b');}
     else{addHeat(src==='melee'?2:2.5);if(src!=='gun')e.stun=2.2;}}
-  else{if(e.hp<=0){e.dead=true;if(e.type!=='homie')addHeat(1.5);else if(e.follow){S.followers=Math.max(0,(S.followers||1)-1);}
+  else{if(e.hp<=0){e.dead=true;if(e.type!=='homie')addHeat(1.5);if(e.type==='civ'||e.type==='cust')dropCash(e.x,e.y,false,true);else if(e.follow){S.followers=Math.max(0,(S.followers||1)-1);}
       if(e.type==='cust'){const c=CL(e.cid);if(e.inj){c.hurt=true;if(c.known)log(`${c.name} is down. Paramedics are on the way.`,'#f2a33a');}else loseClient(c);}}
     else{e.flee=4;const w=witness(e.x,e.y);addHeat(.4+w.cop);if(e.type==='cust')addRel(CL(e.cid),-1);}}
   if(e.dead){floatText(e.x,e.y-30,'DOWN','#d7dbe1');const imp=src==='car'?340:src==='melee'?(d>=40?260:150):170;BODIES.push({x:e.x,y:e.y,vx:nx*imp,vy:ny*imp,a:Math.atan2(ny,nx)+(R()-.5)*0.8,va:(R()-.5)*9,look:e.look,t:90,pool:0,age:0,alive:!!e.inj,kind:{type:e.type,look:e.look,cid:e.cid,gang:e.gang,home:e.home,armed:e.armed}});if(BODIES.length>40){const i=BODIES.findIndex(o=>!o.claim);if(i>=0){bodyDied(BODIES[i]);BODIES.splice(i,1);}}}
@@ -6182,9 +6182,9 @@ const BIKEM=[['Suzooki Hayabusta',900,'rocket'],['Kawasucky Shinobi',750,'rocket
 const HELMETS=['#e9e6df','#1d1e21','#c8102e','#2b4f7a','#e3b341','#5ec4f2'];
 function baseBike(o,kind){const pool=BIKEM.filter(m=>!kind||m[2]===kind);const m=pick(pool);
   return baseCar(Object.assign({model:m[0],value:m[1],type:m[2],hp:60,helmet:m[2]==='rocket'?pick(HELMETS):null,riderLook:makeLook('civ'),color:m[2]==='rocket'?pick(['#c8102e','#2f6b4f','#1f1f22','#e3b341','#3f6fe0','#e8e6e1','#ff7a1a']):pick(['#1f1f22','#7a1f2b','#2b2b30','#a8a9ad','#3a2a22'])},o));}
-function drawBike(c,g,x,y){const [L]=CDIM[c.type]||CDIM.rocket;const hl=L/2,ch=c.type==='chopper';const wreck=c.mode==='wreck';
-  g.save();g.translate(x+3,y+5);g.rotate(c.a);g.fillStyle='rgba(0,0,0,.35)';g.beginPath();g.ellipse(0,0,hl+2,6,0,0,7);g.fill();g.restore();
-  g.save();g.translate(x,y);g.rotate(c.a);
+function drawBike(c,g,x,y){const [L]=CDIM[c.type]||CDIM.rocket;const hl=L/2,ch=c.type==='chopper';const wreck=c.mode==='wreck',wh=wreck?0:(c.wh||0);
+  g.save();g.translate(x+3,y+5);g.rotate(c.a);g.fillStyle='rgba(0,0,0,.35)';g.beginPath();g.ellipse(-wh*3,0,hl+2-wh*3,6,0,0,7);g.fill();if(wh>0.05){g.fillStyle=`rgba(0,0,0,${0.18*wh})`;g.beginPath();g.ellipse(hl+wh*5,0,5,4,0,0,7);g.fill();}g.restore();
+  g.save();g.translate(x,y);g.rotate(c.a);if(wh>0.01){g.translate(-hl*0.12*wh,0);g.scale(1-0.16*wh,1);}
   g.fillStyle='#0c0c0d';rr(g,hl-9,-2.6,9,5.2,2.4);g.fill();rr(g,-hl,-3.2,10,6.4,2.4);g.fill();
   g.fillStyle='#5a5d63';g.fillRect(hl-6,-0.7,3,1.4);g.fillRect(-hl+3.5,-0.8,3,1.6);
   const col=wreck?'#2a2622':paintCol(c);
@@ -6201,7 +6201,7 @@ function drawBike(c,g,x,y){const [L]=CDIM[c.type]||CDIM.rocket;const hl=L/2,ch=c
   if(c.owned&&c.mode!=='player'){g.strokeStyle=hexA(GANG.crew.color,.5);g.lineWidth=1.3;g.setLineDash([3,3]);rr(g,-hl-3,-7,L+6,14,6);g.stroke();g.setLineDash([]);}
   g.restore();
   const rl=c.mode==='player'?P.look:c.riderLook;
-  if(rl&&c.mode!=='parked'&&!wreck){const rx=x-Math.cos(c.a)*(ch?6:2),ry=y-Math.sin(c.a)*(ch?6:2);const ra=c.shootT>0?c.aimA:c.a;
+  if(rl&&c.mode!=='parked'&&!wreck){const lb=(ch?6:2)+wh*5,rx=x-Math.cos(c.a)*lb,ry=y-Math.sin(c.a)*lb;const ra=c.shootT>0?c.aimA:c.a;
     drawHuman(rx,ry,ra,rl,0,false,{g,gun:c.shootT>0?'glock':null});
     const hc=c.mode==='player'?null:c.helmet;if(hc){const hx=rx+Math.cos(ra)*1.2,hy=ry+Math.sin(ra)*1.2;g.fillStyle=hc;g.beginPath();g.arc(hx,hy,5.8,0,7);g.fill();g.fillStyle='rgba(15,22,30,.85)';g.beginPath();g.arc(hx,hy,5.8,ra-0.9,ra+0.9);g.lineTo(hx,hy);g.fill();}}}
 function bikeBail(c){const v=Math.abs(c.v),ma=c.ma!=null?c.ma:c.a;c.mode='parked';c.v=0;c.hp-=12;P.car=null;
@@ -6232,7 +6232,13 @@ function spawnPack(g,n){n=n||2+((R()*2)|0)+(S.war&&S.war.g===g?2:0);let s=null;f
     const L=makeLook('rival',g);const c=baseBike({mode:'pack',gang:g,x:bx,y:by,a:da,v:160,riderLook:L,helmet:null,lt:0,cd:1+R(),st:'ride',slot:k,side:(k%2)?1:-1,bold:R()<0.25},'chopper');
     c.color=k===0?shade(GANG[g].color,-0.45):pick(['#1f1f22','#2b2b30','#3a2a22',shade(GANG[g].color,-0.55)]);if(lead)c.lead=lead;else lead=c;cars.push(c);}
   if(dist(s,P)<1100)log(`You hear pipes. The ${GANG[g].name} are riding through.`,GANG[g].color);AU.horn&&AU.horn(s.x,s.y);return n;}
-function updPack(c,dt){c.lt+=dt;c.cd-=dt;c.shootT=Math.max(0,(c.shootT||0)-dt);const g=c.gang;
+// Bikers pop wheelies on open straights and split lanes around traffic instead of riding into it.
+function wheelieTick(c,dt,want){if(want&&!(c.whT>0))c.whT=1.2+R()*2.2;if(c.whT>0)c.whT-=dt;const tgt=c.whT>0&&Math.abs(c.v)>90?1:0;c.wh=(c.wh||0)+(tgt-(c.wh||0))*Math.min(1,dt*(tgt?3:5));if(c.wh<0.01)c.wh=0;}
+function bikeWeave(c,dt){const ca=Math.cos(c.a),sa=Math.sin(c.a);let best=null,bd=1e9;
+  for(const o of cars){if(o===c||o.dead||o.mode==='pack')continue;const dx=o.x-c.x,dy=o.y-c.y,ahead=dx*ca+dy*sa;if(ahead<10||ahead>150)continue;const lat=-dx*sa+dy*ca;if(Math.abs(lat)>30)continue;if(ahead<bd){bd=ahead;best=lat;}}
+  if(best==null){c.weave=(c.weave||0)*0.9;return false;}
+  let side=best>=0?-1:1;const px=c.x-sa*side*28+ca*40,py=c.y+ca*side*28+sa*40;if(hit(px,py,8))side=-side;c.weave=side;c.a+=side*(2.6-bd/90)*dt;if(bd<45)c.v=Math.max(c.v*0.985,60);return true;}
+function updPack(c,dt){c.lt+=dt;c.cd-=dt;c.shootT=Math.max(0,(c.shootT||0)-dt);const g=c.gang;{const weaving=bikeWeave(c,dt);wheelieTick(c,dt,!weaving&&c.v>150&&!c.wh&&R()<dt*(c.slot===0?0.09:0.05));}
   if(!GANG[g]||GANG[g].gone)c.st='leave';
   if(c.st==='leave'||c.lt>110){c.st='leave';driveAway(c,dt,240,200);return;}
   const hostile=(GANG[g].mad>LAWT)||(S.war&&S.war.g===g)||beefOf(g)>=4.5;c.hostile=hostile;
@@ -6698,7 +6704,7 @@ function frontsHtml(){return FRONTS.filter(f=>!f.club||(S.fronts||{}).club).map(
 document.getElementById('frontList').addEventListener('click',ev=>{const b=ev.target.closest('[data-front]');if(b)buyFront(b.dataset.front);});
 // ================= input =================
 const keys={};let joyV={x:0,y:0},runHeld=false,hitHeld=false,mouse={x:0,y:0,on:false,down:false};
-const pad={on:false,ps:false,lx:0,ly:0,rx:0,ry:0,thr:0,brk:0,run:false,fire:false,hb:false,lt:false,aim:false,ax:1,ay:0};
+const pad={on:false,ps:false,lx:0,ly:0,rx:0,ry:0,thr:0,brk:0,run:false,fire:false,hb:false,wh:false,lt:false,aim:false,ax:1,ay:0};
 const coarse=matchMedia('(pointer:coarse)').matches;
 addEventListener('keydown',e=>{if(MG.on){mgKey(e,true);return;}if(W8.open){if(e.key==='Escape')closeWard();return;}if(KU.open){if(e.key==='Escape')closeKustom();return;}if(CLUB.open){if(e.key==='Escape')closeClub();return;}const k=e.key.toLowerCase();
   if(['arrowup','arrowdown','arrowleft','arrowright',' ','tab'].includes(k)&&running)e.preventDefault();
@@ -6752,6 +6758,7 @@ function updPlayerCar(c,dt){
   if(thr>0){if(c.v<0)c.v+=620*dt;else if(c.shiftT>0)c.v-=12*dt;else if(c.v<top)c.v+=acc*gm*torque*thr*dt;else c.v-=(c.v-top)*2*dt;}
   else if(thr<0)c.v+=(c.v>0?560*Math.max(0.5,wxNow().grip):200)*thr*dt;else c.v-=Math.sign(c.v)*Math.min(Math.abs(c.v),(110+Math.abs(c.v)*0.25)*dt);
   const hb=!!(keys[' ']||(coarse&&hitHeld)||pad.hb);if(c.ma==null)c.ma=c.a;
+  if(isBike(c)){wheelieTick(c,dt,false);if((keys.shift||pad.wh)&&thr>0&&c.v>60){c.wh=Math.min(1,(c.wh||0)+dt*3);c.whT=0.1;}st*=1-0.6*(c.wh||0);}
   const spin=hb&&thr>0&&Math.abs(c.v)<70;
   if(spin){c.v=Math.sign(c.v)*Math.min(Math.abs(c.v),6);c.a+=st*2.4*dt;c.spinT=(c.spinT||0)+dt;c.rpm=1;}
   else{if(c.spinT>0.4&&thr>0){c.v=Math.max(c.v,140+Math.min(1.5,c.spinT)*70);shake=Math.max(shake,2);}c.spinT=0;}
@@ -8219,7 +8226,7 @@ function padTick(dt){const gp=[...(navigator.getGamepads?navigator.getGamepads()
   if(padSt.cur)padFocus(null);
   if(!running||paused)return;
   const foot=!P.car;
-  Object.assign(pad,{lx,ly,rx,ry,thr:foot?0:val(PADB.rt),brk:foot?0:val(PADB.lt),lt:foot&&now.lt,run:foot&&(now.b),hb:!foot&&now.rb,fire:foot?now.rt:now.lb});
+  Object.assign(pad,{lx,ly,rx,ry,thr:foot?0:val(PADB.rt),brk:foot?0:val(PADB.lt),lt:foot&&now.lt,run:foot&&(now.b),hb:!foot&&now.rb,wh:!foot&&now.b,fire:foot?now.rt:now.lb});
   for(const b in PADK){if(hit(b))padKey(PADK[b],true);else if(rel(b))padKey(PADK[b],false);}
   if(hit('left')){const k=P.car?'x':nearBank()?'b':'h';padSt.leftK=k;padKey(k,true);}else if(rel('left'))padKey(padSt.leftK||'h',false);
   if(now.down){padSt.downT+=dt;if(padSt.downT>=0.6&&!padSt.dismissed){padSt.dismissed=true;padKey('g',true);padKey('g',false);}}
@@ -8511,12 +8518,13 @@ function v3Say(){const list=[];for(const e of npcs){if(!(e.sayT>0)||!e.say||e.in
   V3M.say.forEach((el,i)=>{const it=list[i];if(!it||P.car&&it[1]!==P){el.hidden=true;return;}const e=it[1];_sv.set(e.x/PXM,(e._b3?e._b3.ht:1.75)+0.32,e.y/PXM).project(v3c);
     if(_sv.z>1||Math.abs(_sv.x)>1.1||Math.abs(_sv.y)>1.1){el.hidden=true;return;}el.hidden=false;if(el.textContent!==e.say)el.textContent=e.say;
     el.style.transform=`translate(${(_sv.x*0.5+0.5)*innerWidth}px,${(-_sv.y*0.5+0.5)*innerHeight}px) translate(-50%,-100%) scale(${Math.max(0.7,1.15-it[0]/500)})`;});}
-// ================= cash drops: gang soldiers drop a few bills you walk over to grab =================
-const CASHDROPS=[],BILLS=[5,5,10,10,20];
-function dropCash(x,y,big){const notes=big?[100,20,20].concat(R()<0.5?[20]:[]):Array.from({length:1+((R()*3)|0)},()=>BILLS[(R()*BILLS.length)|0]);
-  for(const amt of notes){const a=R()*Math.PI*2,d=8+R()*22;CASHDROPS.push({x:x+Math.cos(a)*d,y:y+Math.sin(a)*d,amt,t:120,rot:R()*Math.PI});}}
+// ================= cash drops: bills on the ground you walk or drive over to grab =================
+// Gang soldiers carry dirty money; civilians carry clean pocket money.
+const CASHDROPS=[],BILLS=[5,5,10,10,20],POCKET=[1,1,5,5,10,20];
+function dropCash(x,y,big,clean){const notes=big?[100,20,20].concat(R()<0.5?[20]:[]):clean?Array.from({length:(R()*3)|0},()=>POCKET[(R()*POCKET.length)|0]):Array.from({length:1+((R()*3)|0)},()=>BILLS[(R()*BILLS.length)|0]);
+  for(const amt of notes){const a=R()*Math.PI*2,d=8+R()*22;CASHDROPS.push({x:x+Math.cos(a)*d,y:y+Math.sin(a)*d,amt,clean:!!clean,t:120,rot:R()*Math.PI});}}
 function cashTick(dt){for(let i=CASHDROPS.length-1;i>=0;i--){const c=CASHDROPS[i];c.t-=dt;
-  if(Math.hypot(c.x-P.x,c.y-P.y)<(P.car?34:24)){earnDirty(c.amt);floatText(c.x,c.y-14,'+$'+c.amt,'#6cc28a');CASHDROPS.splice(i,1);continue;}
+  if(Math.hypot(c.x-P.x,c.y-P.y)<(P.car?34:24)){if(c.clean)S.cash+=c.amt;else earnDirty(c.amt);floatText(c.x,c.y-14,'+$'+c.amt,c.clean?'#6cc28a':'#e0a84b');CASHDROPS.splice(i,1);continue;}
   if(c.t<=0)CASHDROPS.splice(i,1);}}
 function drawCashDrops(){for(const c of CASHDROPS){const x=c.x-camX,y=c.y-camY;if(x<-20||y<-20||x>vw+20||y>vh+20)continue;const fade=c.t<10&&((clockT*6)|0)%2;if(fade)continue;
   ctx.save();ctx.translate(x,y);ctx.rotate(c.rot);ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(-7,-3,16,9);ctx.fillStyle=c.amt>=100?'#c9d9a8':c.amt>=20?'#7fae6b':'#9cc28a';ctx.fillRect(-8,-4,16,8);
