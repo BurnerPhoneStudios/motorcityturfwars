@@ -6,6 +6,8 @@ A top-down Detroit crime sandbox you play in the browser. Grow, deal, run your b
 
 **Play free:** https://burnerphonestudios.github.io/motorcityturfwars/
 
+Music by **Saint Reject**, used with permission. The songs in `radio/` are not covered by the game's license and may not be reused.
+
 Game created by Tim Winnie. Inspired by Grand Theft Auto 1 & 2, Schedule I and Drug Dealer Simulator 1 & 2.
 
 © 2026 Burner Phone Studios. All rights reserved. See [LICENSE](LICENSE). Free to play, not to copy, re-host or resell.
