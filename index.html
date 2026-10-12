@@ -668,7 +668,7 @@ body.pad #game{cursor:none}
           <kbd>X</kbd><span>Reload</span>
           <kbd>LB RB</kbd><span>Switch weapon · in a car RB handbrake, LB shoots</span>
           <kbd>D-pad</kbd><span>▲ phone · ▼ callouts (hold: send homies home) · ◀ stick-up, repair kit in a car · ▶ radio</span>
-          <kbd>R3</kbd><span>Focus</span>
+          <kbd>L3 R3</kbd><span>Repair kit · focus</span>
           <kbd class="v3only">L3</kbd><span class="v3only">Camera view</span>
           <kbd>View</kbd><span>City map · Menu pauses</span>
         </div>
@@ -8156,7 +8156,7 @@ function workout(){if(!S.gym||S.cash<0)return;if((S.gymDay===S.day?S.gymN:0)>=BO
 let bodyDay=-1;function bodyTick(){if(!running||bodyDay===S.day)return;if(bodyDay>=0){S.fat=Math.max(0,(S.fat||0)-3);S.fit=Math.max(0,(S.fit||0)-1);if(S.fat<40)S.fatWarn=false;}bodyDay=S.day;}
 // ================= controller (Gamepad API, Xbox and PlayStation layouts) =================
 const PADB={a:0,b:1,x:2,y:3,lb:4,rb:5,lt:6,rt:7,view:8,menu:9,l3:10,r3:11,up:12,down:13,left:14,right:15};
-const PADK={a:'e',y:'f',x:'r',view:'v',menu:'escape',up:'p',right:'n',l3:'t',r3:'z'};
+const PADK={a:'e',y:'f',x:'r',view:'v',menu:'escape',up:'p',right:'n',l3:'x',r3:'z'};
 const PADL=['intro','mg','safe','dev','casino','trap','shop','ward','kust','club','stash','phone','bigmap','pause','callouts','cf','start'];
 const PADT='button:not([disabled]),input:not([type=file]):not([hidden]),[data-pl],[data-lab],canvas#mgC,canvas#bigC';
 const padSt={prev:[],sent:{},nav:{d:'',t:0},cur:null,cx:0,cy:0,hp:null,shk:0,ammo:null,downT:0,gp:null};
@@ -8295,13 +8295,14 @@ function v3Init(){if(v3r)return true;
   v3hemi=new THREE.HemisphereLight('#dfe8f2','#4a453c',2);v3sun=new THREE.DirectionalLight('#fff1d8',1.6);v3sun.position.set(-0.4,1,0.3);v3s.add(v3hemi,v3sun);
   v3Size();addEventListener('resize',v3Size);return true;}
 function v3Size(){if(!v3r)return;v3r.setSize(innerWidth,innerHeight,false);v3c.aspect=innerWidth/innerHeight;v3c.updateProjectionMatrix();}
-if(PUBLIC_BUILD)for(const el of document.querySelectorAll('.v3only'))el.remove();
-function setView(m){if(PUBLIC_BUILD)m='top';if(m!=='top'&&!v3Init())m='top';V3.mode=m;V3.on=m!=='top';try{localStorage.setItem('mctw-view',m);}catch(e){}
+let V3_ALLOWED=false;
+if(!V3_ALLOWED||PUBLIC_BUILD)for(const el of document.querySelectorAll('.v3only'))el.remove();
+function setView(m){if(!V3_ALLOWED||PUBLIC_BUILD)m='top';if(m!=='top'&&!v3Init())m='top';V3.mode=m;V3.on=m!=='top';try{localStorage.setItem('mctw-view',m);}catch(e){}
   v3cv.hidden=!V3.on;cvEl.style.visibility=V3.on?'hidden':'';v3x.hidden=!(V3.on&&!P.car);document.body.classList.toggle('v3',V3.on);
   if(V3.on){if(!V3.built){log('Building the city in 3D…','#8fe3a0');v3BuildCity();}V3.yaw=P.car?P.car.a:Math.atan2(P.ay||0,P.ax||1);V3.pitch=0;V3.camP=null;}
   else{if(document.pointerLockElement)document.exitPointerLock();if(V3M.say)for(const d of V3M.say)d.hidden=true;}
   const b=document.getElementById('paView');if(b)b.textContent=`View: ${V3NAME[m]}`;}
-function cycleView(){if(!running||PUBLIC_BUILD)return;const m=V3MODES[(V3MODES.indexOf(V3.mode)+1)%V3MODES.length];setView(m);log(`${V3NAME[m]}${m==='top'?'':' · click to look around, T to switch'}`,'#8fe3a0');}
+function cycleView(){if(!running||!V3_ALLOWED||PUBLIC_BUILD)return;const m=V3MODES[(V3MODES.indexOf(V3.mode)+1)%V3MODES.length];setView(m);log(`${V3NAME[m]}${m==='top'?'':' · click to look around, T to switch'}`,'#8fe3a0');}
 function v3Move(){const f=((keys.w||keys.arrowup)?1:0)-((keys.s||keys.arrowdown)?1:0)-pad.ly,r=((keys.d||keys.arrowright)?1:0)-((keys.a||keys.arrowleft)?1:0)+pad.lx,c=Math.cos(V3.yaw),s=Math.sin(V3.yaw);return [c*f-s*r,s*f+c*r];}
 v3cv.addEventListener('mousedown',e=>{if(e.button!==0||!V3.on||!running||paused)return;if(document.pointerLockElement!==v3cv){v3cv.requestPointerLock();return;}mouse.down=true;mouse.on=false;attack();});
 addEventListener('mousemove',e=>{if(!V3.on||document.pointerLockElement!==v3cv)return;V3.yaw+=e.movementX*0.0024;V3.pitch=clamp(V3.pitch-e.movementY*0.0024,-1.35,1.35);});
