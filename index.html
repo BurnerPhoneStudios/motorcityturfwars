@@ -5245,12 +5245,13 @@ function startReload(){const w=cw();if(w.melee){knifeFlip();return;}const id=S.c
 function finishReload(){const w=cw();if(w.melee)return;const id=S.cur;const take=Math.min(magOf(id)-S.clip[id],S.ammo[w.ammo]);S.clip[id]+=take;S.ammo[w.ammo]-=take;}
 function switchWeapon(step,idx){const own=WORDER.filter(id=>S.weapons.includes(id));if(own.length<2&&idx==null)return;let i=own.indexOf(S.cur);
   if(idx!=null){const id=WORDER[idx];if(!S.weapons.includes(id))return;S.cur=id;}else S.cur=own[(i+step+own.length)%own.length];P.reloadT=0;}
+const inWarZone=(x,y)=>!!(S.war&&S.war.arrived&&hoodOf(x,y)===S.war.hood);
 function gunNoise(x,y,byPlayer){if(byPlayer)P.firedT=LAWT;
   for(const e of npcs)if((e.type==='civ'||e.type==='cust')&&Math.hypot(e.x-x,e.y-y)<450)e.flee=4;
   if(!byPlayer)return;
-  let h=0.12;let cop=false;for(const e of npcs)if(e.type==='cop'&&!e.dead&&Math.hypot(e.x-x,e.y-y)<520){cop=true;break;}
-  if(cop)h+=0.5;if(S.cur==='glock')h*=GLOCK_HEAT[S.glockTag]||1;const selfDef=npcs.some(o=>o.type==='rival'&&!o.dead&&o.atP>0&&Math.hypot(o.x-x,o.y-y)<650);if(selfDef)h*=0.45;addHeat(h,x,y);
-  if(tShot<=0){tShot=25;log(cop?'Cops heard the shots.':'ShotSpotter picked up gunfire. DPD is looking.','#e0574b');}
+  const war=inWarZone(x,y);let h=0.12;let cop=false;for(const e of npcs)if(e.type==='cop'&&!e.dead&&Math.hypot(e.x-x,e.y-y)<520&&(!war||copSeesPt(e,x,y))){cop=true;break;}
+  if(cop)h+=0.5;if(S.cur==='glock')h*=GLOCK_HEAT[S.glockTag]||1;const selfDef=war||npcs.some(o=>o.type==='rival'&&!o.dead&&o.atP>0&&Math.hypot(o.x-x,o.y-y)<650);if(selfDef)h*=0.45;addHeat(h,x,y);
+  if(tShot<=0){tShot=25;log(war?'DPD is holding a perimeter while the war plays out.':cop?'Cops heard the shots.':'ShotSpotter picked up gunfire. DPD is looking.','#e0574b');}
 }
 function homieShoot(e,t){e.firedT=LAWT;const a=Math.atan2(t.y-e.y,t.x-e.x)+(R()-.5)*0.25;bullets.push({x:e.x+Math.cos(a)*16,y:e.y+Math.sin(a)*16,vx:Math.cos(a)*900,vy:Math.sin(a)*900,life:.5,dmg:11,own:'h',mk:t});fx.push({k:'flash',x:e.x+Math.cos(a)*20,y:e.y+Math.sin(a)*20,a,t:.06});AU.gun('glock',e.x,e.y,false);gunNoise(e.x,e.y,false);}
 function npcShoot(e,dmg){if(e.type==='rival'){e.atP=6;gangFired(e.x,e.y,e);}const a=Math.atan2(P.y-e.y,P.x-e.x)+(R()-.5)*0.28;e.fx=Math.cos(a);e.fy=Math.sin(a);
@@ -6432,6 +6433,7 @@ function arrestNPC(c,t){t.dead=true;c.perp=null;floatText(t.x,t.y-24,'ARRESTED',
   if(dist(t,P)<700&&GANG[t.gang])log(`DPD arrested a ${GANG[t.gang].name} member in ${HN[hi]}.`,'#6f96e0');}
 function lawCop(e,dt,dP){
   if(copHurt(e,dt))return true;
+  if(P.heat<4&&inWarZone(e.x,e.y)&&inWarZone(P.x,P.y)){hangBack(e,dt,P.x,P.y);return true;}
   {const n=shootersNear(e.x,e.y,560);if(n>2&&P.heat<4){let sx=0,sy=0,k=0;for(const o of npcs)if(!o.dead&&(o.type==='rival'||o.type==='homie')&&LAWT-(o.firedT||-99)<4&&Math.hypot(o.x-e.x,o.y-e.y)<560){sx+=o.x;sy+=o.y;k++;}if(LAWT-(P.firedT||-99)<4){sx+=P.x;sy+=P.y;k++;}hangBack(e,dt,sx/k,sy/k);return true;}}
   const pp=e.perp;if(pp&&(pp.dead||pp.down>0||Math.hypot(pp.x-e.x,pp.y-e.y)>720)){if(pp.copOn===e)pp.copOn=null;e.perp=null;}
   if(e.call){e.call.t-=dt;if(e.call.t<=0){e.call=null;e.unit=null;}}
