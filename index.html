@@ -6167,9 +6167,9 @@ function drawPickups(){for(const p of PICKUPS){const x=p.x-camX,y=p.y-camY;if(x<
 const RDUR={alone_on_the_moon:245.4,rings_of_saturn:243.1,space_jazz:113,killmonger:193,no_smoke:97,murder_she_wrote_mix_2:180.4,westcoasttypeshit:214.3,to_the_grave:123.7,projectasteroidz1:122.3,test_run_remastered:208.4,when_the_devil_screams:337.5,the_carnival:265.4,the_assault:158.9,the_art_of_war:291.9,the_clean_up:266.8,underwater:24.4,revenge:11.7};
 const SR=' - Saint Reject';
 const STATIONS=[{name:'Radio off'},
-  {name:'313.7 The Block',pubIdent:'underwater',tracks:[['alone_on_the_moon','Alone on the Moon'+SR,1],['killmonger','Killmonger'+SR],['rings_of_saturn','Rings of Saturn'+SR,1],['no_smoke','No Smoke'+SR],['murder_she_wrote_mix_2','Murder She Wrote (Mix 2)'+SR],['westcoasttypeshit','westcoasttypeshit'+SR],['to_the_grave','To The Grave'+SR,1]]},
-  {name:'101.9 The Moon',ident:'underwater',tracks:[['test_run_remastered','Spacecraft Test Drive'+SR],['projectasteroidz1','ProjectAsteroidZ'+SR]]},
-  {name:"66.6 Devil's Night",ident:'revenge',tracks:[['when_the_devil_screams','When The Devil Screams'+SR],['the_carnival','The Carnival'+SR],['the_assault','The Assault'+SR],['the_art_of_war','The Art Of War'+SR],['the_clean_up','The Clean Up'+SR]]},
+  {name:'313.7 The Block',pubIdent:'underwater',tracks:[['alone_on_the_moon','Alone on the Moon'+SR,1],['killmonger','Killmonger'+SR],['rings_of_saturn','Rings of Saturn'+SR,1],['no_smoke','No Smoke'+SR],['murder_she_wrote_mix_2','Murder She Wrote (Mix 2)'+SR,1],['westcoasttypeshit','westcoasttypeshit'+SR,1],['to_the_grave','To The Grave'+SR,1]]},
+  {name:'101.9 The Moon',ident:'underwater',pubIdent:'underwater',tracks:[['test_run_remastered','Spacecraft Test Drive'+SR,1],['projectasteroidz1','ProjectAsteroidZ'+SR]]},
+  {name:"66.6 Devil's Night",ident:'revenge',tracks:[['when_the_devil_screams','When The Devil Screams'+SR,1],['the_carnival','The Carnival'+SR,1],['the_assault','The Assault'+SR,1],['the_art_of_war','The Art Of War'+SR,1],['the_clean_up','The Clean Up'+SR,1]]},
   {name:'88.7 Paradise Valley Jazz',tracks:[['space_jazz','Space Jazz'+SR,1]]}];
 if(PUBLIC_BUILD){for(let k=STATIONS.length-1;k>0;k--){const st=STATIONS[k];st.tracks=st.tracks.filter(t=>t[2]);st.ident=st.pubIdent;if(!st.tracks.length)STATIONS.splice(k,1);}}
 for(const st of STATIONS){if(!st.tracks)continue;st.seq=[];st.tracks.forEach((t,i)=>{if(st.ident&&i%2===0)st.seq.push({id:st.ident,title:'',ident:true});st.seq.push({id:t[0],title:t[1]});});st.total=st.seq.reduce((a,x)=>a+RDUR[x.id],0);st.off=null;}
