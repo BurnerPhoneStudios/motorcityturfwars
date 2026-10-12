@@ -5245,7 +5245,7 @@ function updBullets(dt){
   for(const b of bullets){for(let s=0;s<3&&!b.dead;s++){b.x+=b.vx*dt/3;b.y+=b.vy*dt/3;
       if(solidPx(b.x,b.y)){b.dead=true;fx.push({k:'spark',x:b.x,y:b.y,t:.15});break;}
       if(b.own==='p'||b.own==='h'){const hc=carAt(b.x,b.y,P.car);if(hc){shootCar(hc.c,b.dmg,b.own==='h'?'n':'p',hc.lx,hc.ly,b.x,b.y);b.dead=true;break;}for(const e of npcs){if(e.dead||e.inCar||e.follow||(b.own==='h'&&!(e.type==='rival'||(e.type==='cop'&&e.chase&&!S.no12)||e===b.mk)))continue;if(Math.hypot(e.x-b.x,e.y-b.y)<e.r+3){damageNPC(e,b.dmg,'gun',b.vx,b.vy);b.dead=true;break;}}}
-      else if(b.own==='g'){let hitE=null;for(const e of npcs){if(e.dead||e.inCar||e===b.src||(e.type==='rival'&&e.gang===b.gang)||(b.gang==='dpd'&&(e.type==='cop'||e.type==='homie'&&e.follow)))continue;if(Math.hypot(e.x-b.x,e.y-b.y)<e.r+3){hitE=e;break;}}
+      else if(b.own==='g'){let hitE=null;for(const e of npcs){if(e.dead||e.inCar||e===b.src||(e.type==='rival'&&e.gang===b.gang)||(b.gang==='dpd'&&(e.type==='cop'||e.type==='homie'&&e.follow&&b.src?.perp!==e)))continue;if(Math.hypot(e.x-b.x,e.y-b.y)<e.r+3){hitE=e;break;}}
         if(hitE){DMG_BY=b.gang;damageNPC(hitE,b.dmg,'npc',b.vx,b.vy);DMG_BY=null;b.dead=true;break;}
         if(b.gang!=='dpd'&&!P.car&&Math.hypot(P.x-b.x,P.y-b.y)<P.r+3){hurtPlayer(b.dmg*0.7);b.dead=true;break;}const hc=carAt(b.x,b.y,null);if(hc){shootCar(hc.c,b.dmg,'n',hc.lx,hc.ly,b.x,b.y);b.dead=true;break;}}
       else{if(P.car){const l=carLocal(P.car,b.x,b.y),dm=CDIM[P.car.type]||CDIM.sedan;if(Math.abs(l[0])<dm[0]/2+1&&Math.abs(l[1])<dm[1]/2+1){shootCar(P.car,b.dmg,'n',l[0],l[1],b.x,b.y);hurtPlayer(b.dmg*(isBike(P.car)?0.9:0.5));b.dead=true;break;}}else if(Math.hypot(P.x-b.x,P.y-b.y)<P.r+3){hurtPlayer(b.dmg);b.dead=true;break;}const hc=carAt(b.x,b.y,P.car);if(hc){shootCar(hc.c,b.dmg,'n',hc.lx,hc.ly,b.x,b.y);b.dead=true;break;}}}
@@ -6038,12 +6038,14 @@ function recruit(e){if(followers().length>=2){log('You already roll with two hom
 function dismiss(e){if(e.gun){const g=e.gun;crewTake(e,true);log(`${nickOf(e)} handed the ${WD[g].name} back.`,GANG.crew.color);}e.follow=false;e.amb=true;e.inCar=false;S.followers=followers().length;say(e,pick(['Bet. Hit my line.','In a minute, boss.']),2.2);}
 function ensureFollowers(){const want=Math.min(2,S.followers||0);const have=followers().length;for(let k=have;k<want;k++){const s=spotNear(P.x,P.y,40,90,false)||{x:P.x+30,y:P.y};const kit=(S.crewKit||[])[k]||{gun:'glock',ammo:34};const e=mkNPC('homie',s.x,s.y,{follow:true,wasFollower:true,hp:80,aggro:0,gun:kit.gun,ammo:kit.ammo||0,nick:kit.nick,home:hoodOf(P.x,P.y),look:homieLook()});crewArm(e);}}
 function followerTarget(e,r){{const c=crewPick(e,r);if(c!==undefined)return c;}let t=null,bd=r;for(const o of npcs){if(o.dead||o.down>0)continue;const hostile=(o.type==='rival'&&(o.aggro>0||o.war||o.tgt===e))||(o.type==='cop'&&o.chase&&P.heat>=3&&!S.no12);if(!hostile)continue;const d=Math.hypot(o.x-e.x,o.y-e.y);if(d<bd&&los(e.x,e.y,o.x,o.y)){bd=d;t=o;}}return t;}
-function updFollower(e,dt){e.cd-=dt;
+function crewNerve(e,t){if(t===CREW.mark||isCopT(t)||LAWT-(t.firedT||-99)<3||t.tgt===e||t.atP>0||nerveOK(e))return true;
+  if(!(e.heldSaid>LAWT)){e.heldSaid=LAWT+8;say(e,pick(TALK12),2);}return false;}
+function updFollower(e,dt){e.cd-=dt;if(e.wanted>0)e.wanted-=dt;
   if(e.inCar){const c=P.car;if(!c){e.inCar=false;return;}e.x=c.x;e.y=c.y;const t=followerTarget(e,320);
-    if(t&&e.gun&&e.ammo>0){e.aimA=Math.atan2(t.y-c.y,t.x-c.x);e.showT=0.6;if(e.cd<=0)crewShoot(e,t);}else if(e.showT>0)e.showT-=dt;return;}
+    if(t&&e.gun&&e.ammo>0){e.aimA=Math.atan2(t.y-c.y,t.x-c.x);e.showT=0.6;if(e.cd<=0&&crewNerve(e,t))crewShoot(e,t);}else if(e.showT>0)e.showT-=dt;return;}
   const t=followerTarget(e,380);const d=dist(e,P);
   if(t){const a=Math.atan2(t.y-e.y,t.x-e.x);e.fx=Math.cos(a);e.fy=Math.sin(a);if(!e.hyped){e.hyped=true;say(e,pick(["I got you, boss!","Slide on 'em!",'On gang!','Get down!']),2);}
-    if(e.gun&&e.ammo>0&&Math.hypot(t.x-e.x,t.y-e.y)>60){if(e.cd<=0)crewShoot(e,t);if(d>220)seek(e,P.x,P.y,160,dt);}
+    if(e.gun&&e.ammo>0&&Math.hypot(t.x-e.x,t.y-e.y)>60){if(e.cd<=0&&crewNerve(e,t))crewShoot(e,t);if(d>220)seek(e,P.x,P.y,160,dt);}
     else if(!(e.gun&&e.ammo>0)&&Math.hypot(t.x-e.x,t.y-e.y)>26&&t.type){seek(e,t.x,t.y,150,dt);}else if(e.cd<=0){e.cd=0.7;damageNPC(t,10,'homie',t.x-e.x,t.y-e.y);e.punchT=0.18;}return;}
   e.hyped=false;
   if(d>950){const s=spotNear(P.x,P.y,140,240,false);if(s){e.x=s.x;e.y=s.y;}return;}
@@ -6112,7 +6114,7 @@ function crewShoot(e,t){const g=CGUN[e.gun];if(!g)return false;
   if(!(e.ammo>0)){e.armed=false;if(!e.outSaid){e.outSaid=1;say(e,pick(["I'm out!",'Need ammo!',"I'm dry, boss!"]),2);log(`${nickOf(e)} is out of ammo. Give them a mag from the crew card.`,GANG.crew.color);crewCardDirty=true;}return false;}
   e.ammo--;e.firedT=LAWT;const a0=Math.atan2(t.y-e.y,t.x-e.x);
   for(let k=0;k<g.pel;k++){const a=a0+(R()-.5)*g.spr;bullets.push({x:e.x+Math.cos(a)*16,y:e.y+Math.sin(a)*16,vx:Math.cos(a)*900,vy:Math.sin(a)*900,life:g.life,dmg:g.dmg,own:'h',mk:t});}
-  fx.push({k:'flash',x:e.x+Math.cos(a0)*20,y:e.y+Math.sin(a0)*20,a:a0,t:.06});AU.gun(e.gun,e.x,e.y,false);gunNoise(e.x,e.y,false);
+  fx.push({k:'flash',x:e.x+Math.cos(a0)*20,y:e.y+Math.sin(a0)*20,a:a0,t:.06});AU.gun(e.gun,e.x,e.y,false);gunNoise(e.x,e.y,false);gangFired(e.x,e.y,e);
   e.cd=g.cd+R()*g.cd*0.6;crewCardDirty=true;return true;}
 // owned guns the player can hand over (not the one in their hand unless they have nothing else)
 const givable=()=>S.weapons.filter(w=>WD[w]&&!WD[w].melee);
@@ -6394,7 +6396,7 @@ function holdUp(e,dt,dP){e.hold=true;e.aggro=Math.max(e.aggro,2);
   if(dP>460)e.aggro=0;}
 function gangFired(x,y,sh,quiet){if(sh){sh.firedT=LAWT;sh.wanted=Math.max(sh.wanted||0,25);}
   for(const o of npcs){if(o.type!=='cop'||o.dead||o.stun>0)continue;const d=Math.hypot(o.x-x,o.y-y);if(d>560||(d>240&&!los(o.x,o.y,x,y)))continue;
-    if(sh&&sh.type==='rival'&&!sh.dead&&(!o.perp||o.perp.dead)){o.perp=sh;sh.copOn=o;say(o,pick(COPYELL),2);}}
+    if(sh&&(sh.type==='rival'||sh.follow)&&!sh.dead&&(!o.perp||o.perp.dead)){o.perp=sh;sh.copOn=o;say(o,pick(COPYELL),2);}}
   if(Math.hypot(x-P.x,y-P.y)<1000&&tShotG<=0&&(!quiet||R()<0.3)){tShotG=35;dispatchUnit(x,y);}}
 function dispatchUnit(x,y){if(cars.filter(c=>c.mode==='resp'&&!c.dead).length>=2)return;let s=null;for(let k=0;k<8&&!s;k++){const t=spotNear(x,y,520,820,true);if(t&&!onScreen(t,60))s=t;}if(!s)s=spotNear(x,y,450,800,true);if(!s)return;
   cars.push(baseCar({mode:'resp',type:'cop',model:'DPD Interceptor',color:'#15181f',value:0,police:true,x:s.x,y:s.y,a:Math.atan2(y-s.y,x-s.x),v:170,tx:x,ty:y,st:'go',lt:0,stk:0,rev:0}));
@@ -6409,7 +6411,8 @@ function updResp(c,dt){c.lt+=dt;
 function copShoot(e,t){const a=Math.atan2(t.y-e.y,t.x-e.x)+(R()-.5)*0.22;e.fx=Math.cos(a);e.fy=Math.sin(a);
   bullets.push({x:e.x+Math.cos(a)*16,y:e.y+Math.sin(a)*16,vx:Math.cos(a)*900,vy:Math.sin(a)*900,life:.5,dmg:12,own:'g',gang:'dpd',src:e});
   fx.push({k:'flash',x:e.x+Math.cos(a)*20,y:e.y+Math.sin(a)*20,a,t:.06});AU.gun('glock',e.x,e.y,false);gunNoise(e.x,e.y,false);}
-function arrestNPC(c,t){t.dead=true;c.perp=null;floatText(t.x,t.y-24,'ARRESTED','#6f96e0');const hi=hoodOf(t.x,t.y);if(GANG[t.gang]){addInf(hi,t.gang,-2);refreshOwners();}
+function arrestNPC(c,t){t.dead=true;c.perp=null;floatText(t.x,t.y-24,'ARRESTED','#6f96e0');
+  if(t.follow){S.followers=Math.max(0,(S.followers||1)-1);t.follow=false;crewCardDirty=true;say(c,pick(['You have the right to remain silent.','Hands behind your back.']),2.2);log(`DPD arrested ${nickOf(t)}${t.gun?` and took the ${WD[t.gun].name}`:''}.`,'#6f96e0');return;}const hi=hoodOf(t.x,t.y);if(GANG[t.gang]){addInf(hi,t.gang,-2);refreshOwners();}
   say(c,pick(['You have the right to remain silent.','Hands behind your back.','Stop resisting!']),2.2);
   if(dist(t,P)<700&&GANG[t.gang])log(`DPD arrested a ${GANG[t.gang].name} member in ${HN[hi]}.`,'#6f96e0');}
 function lawCop(e,dt,dP){
@@ -6418,7 +6421,7 @@ function lawCop(e,dt,dP){
   const pp=e.perp;if(pp&&(pp.dead||pp.down>0||Math.hypot(pp.x-e.x,pp.y-e.y)>720)){if(pp.copOn===e)pp.copOn=null;e.perp=null;}
   if(e.call){e.call.t-=dt;if(e.call.t<=0){e.call=null;e.unit=null;}}
   e.scanT=(e.scanT||0)-dt;
-  if(!e.perp&&e.scanT<=0){e.scanT=0.5;for(const o of npcs){if(o.type==='rival'&&!o.dead&&o.wanted>0&&!(o.down>0)&&Math.hypot(o.x-e.x,o.y-e.y)<420&&los(e.x,e.y,o.x,o.y)){e.perp=o;o.copOn=e;say(e,pick(COPYELL),2);break;}}}
+  if(!e.perp&&e.scanT<=0){e.scanT=0.5;for(const o of npcs){if((o.type==='rival'||o.follow)&&!o.dead&&o.wanted>0&&!(o.down>0)&&Math.hypot(o.x-e.x,o.y-e.y)<420&&los(e.x,e.y,o.x,o.y)){e.perp=o;o.copOn=e;say(e,pick(COPYELL),2);break;}}}
   if(e.chase&&P.heat>=2&&seesP(e))return false;
   const t=e.perp;
   if(t){e.cd-=dt;const d=Math.hypot(t.x-e.x,t.y-e.y),a=Math.atan2(t.y-e.y,t.x-e.x);
@@ -7339,13 +7342,13 @@ function drawHuman(x,y,a,L,ph,mv,o){
   const sleeve=(L.style==='tee'||L.style==='jersey')?L.skin:shade(top,-0.08);
   const arm=(sx,sy,hx,hy)=>{g.strokeStyle=sleeve;g.lineWidth=5;g.lineCap='round';g.beginPath();g.moveTo(sx,sy);g.lineTo(hx,hy);g.stroke();g.fillStyle=L.skin;g.beginPath();g.arc(hx,hy,2.7,0,7);g.fill();};
   const sp=o.swingP==null?-1:o.swingP,swinging=sp>=0;const ez=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
-  let wth=0,whx=0,why=0;
+  let wth=0,whx=0,why=0;const kO=o.kOpen==null?1:o.kOpen,kPunch=o.melee==='knife'&&kO<1&&swinging;
   if(o.melee==='bat'){wth=swinging?(sp<0.25?2.1+sp*1.2:2.4-ez((sp-0.25)/0.75)*4.0):2.55;whx=2+Math.cos(wth)*8;why=4+Math.sin(wth)*8;}
-  else if(o.melee==='knife'){const s=o.side||1;wth=swinging?(s>0?(1.1-ez(sp)*2.2):(-1.1+ez(sp)*2.2)):0.55;const ext=swinging?Math.sin(sp*Math.PI)*4:0;whx=3+Math.cos(wth)*(9+ext);why=3+Math.sin(wth)*(9+ext);}
+  else if(o.melee==='knife'&&!kPunch){const s=o.side||1;wth=swinging?(s>0?(1.1-ez(sp)*2.2):(-1.1+ez(sp)*2.2)):0.55;const ext=swinging?Math.sin(sp*Math.PI)*4:0;whx=3+Math.cos(wth)*(9+ext);why=3+Math.sin(wth)*(9+ext);}
   if(o.gun){arm(0,9,13,4);arm(0,-9,11,-1);}
   else if(o.melee==='bat'){arm(0,9,whx,why);arm(0,-9,whx-Math.cos(wth)*3,why-Math.sin(wth)*3-1);}
-  else if(o.melee==='knife'){arm(0,9,whx,why);arm(0,-9,swinging?3:-sw*6,-12);}
-  else if(o.melee==='fists'&&swinging){const e2=Math.sin(sp*Math.PI),s=o.side||1;if(s>0){arm(0,9,4+e2*12,7-e2*4);arm(0,-9,5,-7);}else{arm(0,-9,4+e2*12,-7+e2*4);arm(0,9,5,7);}}
+  else if(o.melee==='knife'&&!kPunch){wth+=o.kSpin||0;arm(0,9,whx,why);arm(0,-9,swinging?3:-sw*6,-12);}
+  else if((o.melee==='fists'||kPunch)&&swinging){const e2=Math.sin(sp*Math.PI),s=o.side||1;if(s>0){arm(0,9,4+e2*12,7-e2*4);arm(0,-9,5,-7);whx=4+e2*12;why=7-e2*4;}else{arm(0,-9,4+e2*12,-7+e2*4);arm(0,9,5,7);whx=5;why=7;}}
   else if(o.armsUp){arm(0,9,6,6);arm(0,-9,6,-6);}
   else{arm(0,-9,-sw*6,-12.5);arm(0,9,sw*6,12.5);}
   g.lineCap='butt';
@@ -7363,8 +7366,10 @@ function drawHuman(x,y,a,L,ph,mv,o){
   if(o.gun){const len=o.gun==='draco'?17:o.gun==='sawed'?16:9;g.fillStyle=o.gun==='sawed'?'#5a3a22':'#1d1e21';g.fillRect(11,-1.5,len,3.4);g.fillStyle='#1d1e21';if(o.gun==='draco')g.fillRect(15,1.5,3,5);if(o.gun==='sawed')g.fillRect(17,-1.5,len-6,3.4);}
   if(o.melee==='knife'){const cx=Math.cos(wth),sy=Math.sin(wth);
     if(swinging&&sp>0.1&&sp<0.85){const s=o.side||1,a0=s>0?1.1:-1.1;g.strokeStyle=`rgba(230,236,242,${0.5*(1-sp)})`;g.lineWidth=3;g.lineCap='round';g.beginPath();g.arc(3,3,19,Math.min(a0,wth),Math.max(a0,wth));g.stroke();g.lineCap='butt';}
-    g.strokeStyle='#2a2b2e';g.lineWidth=3;g.beginPath();g.moveTo(whx-cx*3,why-sy*3);g.lineTo(whx+cx*2,why+sy*2);g.stroke();
-    g.strokeStyle='#dfe4ea';g.lineWidth=2;g.beginPath();g.moveTo(whx+cx*2,why+sy*2);g.lineTo(whx+cx*11,why+sy*11);g.stroke();g.fillStyle='#fff';g.fillRect(whx+cx*10-0.8,why+sy*10-0.8,1.6,1.6);}
+    const px=whx+cx*2,py=why+sy*2,ke=kO>=1?1:1-Math.pow(1-kO,3),ba=wth+(1-ke)*Math.PI,bx=Math.cos(ba),by=Math.sin(ba);
+    g.strokeStyle='#dfe4ea';g.lineWidth=2;g.beginPath();g.moveTo(px,py);g.lineTo(px+bx*9,py+by*9);g.stroke();
+    g.strokeStyle='#2a2b2e';g.lineWidth=3;g.beginPath();g.moveTo(whx-cx*7,why-sy*7);g.lineTo(px,py);g.stroke();
+    if(kO>0.85&&kO<1){g.fillStyle=`rgba(255,255,255,${(1-kO)*6})`;g.beginPath();g.arc(px+bx*8,py+by*8,3,0,7);g.fill();}else if(kO>=1){g.fillStyle='#fff';g.fillRect(px+bx*8-0.8,py+by*8-0.8,1.6,1.6);}}
   if(o.melee==='bat'){const cx=Math.cos(wth),sy=Math.sin(wth);
     if(swinging&&sp>0.25){const a1=2.4;g.fillStyle=`rgba(240,236,226,${0.22*(1-sp)})`;g.beginPath();g.moveTo(2,4);g.arc(2,4,37,Math.min(a1,wth),Math.max(a1,wth));g.closePath();g.fill();
       g.strokeStyle=`rgba(255,255,255,${0.45*(1-sp)})`;g.lineWidth=2;g.beginPath();g.arc(2,4,36,Math.min(a1,wth),Math.max(a1,wth));g.stroke();}
@@ -7426,7 +7431,7 @@ function drawNPC(e){
 }
 function drawPlayer(){const x=P.x-camX,y=P.y-camY;const mv=animState(P);const a=Math.atan2(P.ay,P.ax);const w=cw();
   if(S.armor>0){ctx.strokeStyle='rgba(111,154,224,.6)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,15,0,7);ctx.stroke();}
-  drawHuman(x,y,a,P.look,P.ph,mv,{gun:w.melee?null:S.cur,melee:w.melee?S.cur:null,swingP:P.swingT>0?1-P.swingT/(P.swingDur||0.2):null,side:P.side||1,outline:GANG.crew.color});if(P.sayT>0){P.sayT-=1/60;drawSay(x,y,P.say,'#bfe7ec');}}
+  drawHuman(x,y,a,P.look,P.ph,mv,{gun:w.melee?null:S.cur,melee:w.melee?S.cur:null,swingP:P.swingT>0?1-P.swingT/(P.swingDur||0.2):null,side:P.side||1,outline:GANG.crew.color,kOpen:S.cur!=='knife'?1:P.knifeOpen?Math.min(1,(clockT-P.knifeAt)/0.22):0,kSpin:S.cur==='knife'&&P.knifeOpen&&clockT-(P.inspectAt||-9)<0.6?(1-Math.pow(1-(clockT-P.inspectAt)/0.6,3))*Math.PI*2:0});if(P.sayT>0){P.sayT-=1/60;drawSay(x,y,P.say,'#bfe7ec');}}
 let _noT=-1,_no=null;function nearOwned(){if(_noT===clockT)return _no;_noT=clockT;_no=null;let bd=1e9;for(const c of cars){if(!c.owned||c.mode!=='parked')continue;const d=Math.hypot(c.x-P.x,c.y-P.y);if(d<bd){bd=d;_no=c;}}return _no;}
 function drawCar(c,g2,px,py,pv){const g=g2||ctx;if(isBike(c)){drawBike(c,g,px??(c.x-camX),py??(c.y-camY));return;}
   const x=px??(c.x-camX),y=py??(c.y-camY);const [L,Wd]=CDIM[c.type]||CDIM.sedan;const hl=L/2,hw=Wd/2;const rad=c.type==='sport'?9:5;
