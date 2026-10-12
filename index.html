@@ -5408,7 +5408,7 @@ function labSvg(st){const glow=st==='cook'?'#f28a3a':st==='ready'?'#cfe6f2':'#3a
 function renderStashLive(){if(!renderStashLive.open){carryMsg='';}renderStashLive.open=true;$('sCash').textContent='$'+S.cash.toLocaleString();$('sWeed').textContent=fmtQ('weed',stored('weed'));
   {const nd=dealNeeds(),short=PRODS.filter(p=>nd[p]>inv(p)&&stored(p)>0);let ch=`<div class="cmsg">${esc(carryMsg||`Room for ${Math.max(0,bagCap()-Math.round(load()))} more. Weed takes 1 space a gram, meth 4 a bag.`)}</div>`;
     if(short.length)ch+=`<button type="button" data-deal="1">Grab what my deals need · ${short.map(p=>fmtQ(p,nd[p]-inv(p))+' '+DRUGS[p].slang).join(' + ')}</button>`;
-    for(const p of PRODS){if(!prodOn(p)&&!inv(p)&&!stored(p))continue;const nm=DRUGS[p].name,steps=p==='weed'?[3,7,14,28]:p==='coke'?[1,3,7]:[1,3,6];
+    for(const p of PRODS){if(!prodOn(p)&&!inv(p)&&!stored(p))continue;const nm=DRUGS[p].name,steps=p==='weed'?[1,3,7,14,28]:p==='coke'?[1,3,7]:[1,3,6];
     ch+=`<div class="crow2"><div><b>${nm}</b><span>${fmtQ(p,inv(p))} on you · ${fmtQ(p,stored(p))} in the stash</span></div><div class="bt">${steps.map(n=>`<button type="button" class="ghost" data-tk="${p}" data-n="${n}" ${stored(p)<=0?'disabled':''}>+${DRUGS[p].per==='gram'?n+'g':n}</button>`).join('')}<button type="button" data-tk="${p}" data-n="999" ${stored(p)<=0?'disabled':''}>Take max</button><button type="button" class="ghost" data-si="${p}" ${inv(p)<=0?'disabled':''}>Stash</button></div></div>`;}
    $('carryBox').innerHTML=ch;$('cLbl').textContent=`Carrying · ${bagName()} ${Math.round(load())}/${bagCap()}${S.bag?'':' · buy a backpack or gym bag to carry more'}`;}$('sSeeds').textContent=S.seeds;
   let gh='';for(let i=0;i<S.slots;i++){const p=S.plants[i];
