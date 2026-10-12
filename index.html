@@ -391,6 +391,12 @@ body.touch #log{bottom:calc(252px + env(safe-area-inset-bottom,0px))}
   body.touch #mini{top:calc(var(--goalb,150px) + 48px);right:8px;width:112px;height:79px}
   body.touch #menuBtn{top:calc(var(--goalb,150px) + 48px);right:126px;width:38px;height:36px}body.touch #sndBtn{top:calc(var(--goalb,150px) + 90px);right:126px;width:38px;height:36px}
 }
+
+.in-warn{max-width:min(640px,calc(100% - 40px));text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px;color:#c9cdd3}
+.in-warn b{font-family:var(--display);font-weight:900;font-size:clamp(26px,5vw,44px);text-transform:uppercase;letter-spacing:.04em;color:var(--sodium);line-height:1.05}
+.in-warn p{margin:0;font-size:clamp(15px,2.2vw,19px);line-height:1.45}.in-warn .hl{font-size:clamp(13px,1.8vw,16px);color:var(--dim)}.in-warn .hl span{color:#e9ecef;white-space:nowrap}
+.in-warn small{margin-top:10px;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.credits .disc{margin-top:6px;font-size:12px;color:var(--dim)}
 </style>
 
 <canvas id="game"></canvas>
@@ -709,6 +715,7 @@ body.touch #log{bottom:calc(252px + env(safe-area-inset-bottom,0px))}
       <div>Hand-drawn procedural plants by <b>Tim Winnie</b></div>
       <div>Inspired by <b>Grand Theft Auto 1 &amp; 2</b>, <b>Schedule I</b> and <b>Drug Dealer Simulator 1 &amp; 2</b></div>
       <div class="credit">Burner Phone Studios · Michigan made</div>
+      <div class="disc">For entertainment purposes only. A work of fiction. We do not support drug use, drug dealing or violence in real life.</div>
     </div>
     </div>
   </div>
@@ -729,6 +736,12 @@ body.touch #log{bottom:calc(252px + env(safe-area-inset-bottom,0px))}
   <div class="in-mi" id="inMi">
     <svg viewBox="0 0 100 120" aria-hidden="true"><path id="inMiPath" d="M14 112 L10 92 L12 70 L18 52 L16 40 L24 26 L32 14 L42 6 L50 8 L52 20 L56 30 L58 42 L62 48 L64 40 L70 34 L78 36 L82 44 L80 54 L74 62 L72 74 L70 90 L66 104 L64 112 Z"/><circle cx="63" cy="100" r="2.6"/></svg>
     <div><small>A</small><b>Michigan Made</b><span>Production</span></div>
+  </div>
+  <div class="in-warn" id="inWarn">
+    <b>For entertainment purposes only</b>
+    <p>Motor City Turf Wars is a work of fiction. It shows drug dealing, gang violence and crime as part of the game. Burner Phone Studios does not support or encourage using, selling or making drugs, or violence of any kind, in real life.</p>
+    <p class="hl">If you or someone you know is struggling with drugs or alcohol, the SAMHSA National Helpline is free, confidential and open 24/7: <span>1-800-662-4357</span></p>
+    <small id="inWarnGo">Press any key to continue</small>
   </div>
   <div class="in-skip" id="inSkip">Press any key to skip</div>
 </div>
@@ -7951,10 +7964,13 @@ function introPlay(){if(INTRO.started)return;INTRO.started=true;const on=(id,v)=
   introAt(6100,()=>on('inMark',false));
   introAt(6700,()=>on('inMi'));
   introAt(9300,()=>on('inMi',false));
-  introAt(9800,introEnd);}
+  introAt(9800,introWarn);}
+function introWarn(){if(INTRO.warnAt||INTRO.over)return;INTRO.timers.forEach(clearTimeout);INTRO.timers=[];for(const id of ['inGate','inPhone','inMark','inMi','inSkip'])$(id).classList.remove('on');
+  INTRO.warnAt=Date.now();$('inWarn').classList.add('on');introAt(12000,introEnd);}
 if(introSeen())introEnd();
-else{const go=ev=>{if(INTRO.over)return;if(ev&&ev.type==='keydown'){ev.preventDefault();ev.stopImmediatePropagation();}if(!INTRO.started)introPlay();else introEnd();};
+else{const go=ev=>{if(INTRO.over)return;if(ev&&ev.type==='keydown'){ev.preventDefault();ev.stopImmediatePropagation();}if(INTRO.warnAt){if(Date.now()-INTRO.warnAt>1500)introEnd();}else if(!INTRO.started)introPlay();else introWarn();};
   addEventListener('keydown',ev=>{if(!INTRO.over)go(ev);},true);INTRO.el.addEventListener('pointerdown',go);$('inGate').classList.add('on');}
+if(coarse)$('inWarnGo').textContent='Tap to continue';
 // ================= casinos: slots, roulette, blackjack, baccarat, video poker =================
 const CASINOS=buildings.filter(b=>b.kind==='casino'||b.kind==='casino2').map(b=>{const cx=(b.x+b.w/2)*T;const y=[(b.y+b.h)*T+12,b.y*T-12].find(y=>!solidPx(cx,y));return y==null?null:{x:cx,y,name:b.name,b};}).filter(Boolean);
 const nearCasino=()=>CASINOS.find(c=>dist(c,P)<70)||null;
