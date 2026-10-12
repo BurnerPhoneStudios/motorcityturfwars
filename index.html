@@ -5499,7 +5499,7 @@ const UPG=[
   {id:'drip',name:'Drip irrigation',desc:'Plants water themselves.',cost:350,lvl:1,has:()=>S.drip,buy:()=>S.drip=true},
   {id:'led',name:'LED grow lights',desc:'Grow Loud. Market value $14 a gram, and picky clients are happy.',cost:600,lvl:1,has:()=>qOf('weed')>=2,buy:()=>{S.q.weed=2;if(S.prices.weed<14)S.prices.weed=14;}},
   {id:'base',name:'Basement grow room',desc:'Room for 8 pots instead of 4.',cost:1000,lvl:2,has:()=>S.space>=8,buy:()=>S.space=8},
-  {id:'gym',name:'Home gym',desc:'Bench and bag in the back. Work out from here to hit harder and run faster.',cost:300,has:()=>S.gym,buy:()=>S.gym=true},
+  {id:'gym',name:'Home gym',desc:'Bench and bag in the back. Work out from here to hit harder and run faster.',cost:300,lvl:0,has:()=>S.gym,buy:()=>S.gym=true},
   {id:'law',name:'Lawyer on retainer',desc:'Getting busted never costs clean cash, and you get half the dirty cash back.',cost:1200,lvl:2,has:()=>S.lawyer,buy:()=>S.lawyer=true},
   {id:'burn',name:'Pro burners',desc:'Meth batches cook twice as fast.',cost:600,lvl:2,has:()=>S.fastCook,buy:()=>S.fastCook=true,need:()=>S.labs>0},
   {id:'gen',name:'Exotic genetics',desc:'Grow Exotic. Market value $19 a gram.',cost:1800,lvl:3,has:()=>qOf('weed')>=3,buy:()=>{S.q.weed=3;if(S.prices.weed<19)S.prices.weed=19;},need:()=>qOf('weed')>=2},
