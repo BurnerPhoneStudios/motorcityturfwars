@@ -416,6 +416,38 @@ body:not(.touch) #goals .glh{font-size:13px}body:not(.touch) #goals b{font-size:
 @media (max-width:640px){#zoomCtl{right:156px;height:93px}}
 body.touch #zoomCtl{top:calc(212px + env(safe-area-inset-top,0px));bottom:auto;right:156px;height:93px}
 @media (max-width:640px) and (orientation:portrait){body.touch #zoomCtl{top:calc(var(--goalb,150px) + 48px);right:170px;height:79px;width:32px}body.touch #zmR{display:none}}
+
+@media (max-width:640px),(max-height:500px){
+  body.touch #joy{left:14px;bottom:calc(18px + env(safe-area-inset-bottom,0px));width:116px;height:116px}body.touch #knob{width:44px;height:44px;margin:-22px 0 0 -22px}
+  body.touch .tb{opacity:.85;font-size:11px}
+  body.touch #bAct{right:12px;bottom:calc(80px + env(safe-area-inset-bottom,0px));width:50px;height:50px}
+  body.touch #bHit{right:68px;bottom:calc(22px + env(safe-area-inset-bottom,0px));width:56px;height:56px}
+  body.touch #bRun{right:12px;bottom:calc(14px + env(safe-area-inset-bottom,0px));width:44px;height:44px;font-size:10px}
+  body.touch #bCar{right:70px;bottom:calc(86px + env(safe-area-inset-bottom,0px));width:44px;height:44px;font-size:10px}
+  body.touch #bSwp{right:128px;bottom:calc(60px + env(safe-area-inset-bottom,0px));width:42px;height:42px;font-size:10px}
+  body.touch #bDuck{right:128px;bottom:calc(110px + env(safe-area-inset-bottom,0px));width:42px;height:42px;font-size:8px}
+  body.touch #prompt{bottom:calc(164px + env(safe-area-inset-bottom,0px));font-size:14px;padding:5px 10px}
+  body.touch #log{bottom:calc(200px + env(safe-area-inset-bottom,0px))}
+}
+@media (max-width:640px) and (orientation:portrait){
+  body.touch .tl{width:128px;padding:5px 8px}body.touch .tr{width:112px;padding:5px 8px}
+  body.touch .crewname{font-size:12px;margin-bottom:3px;padding-right:20px}body.touch #hudTog{top:2px;right:2px;transform:scale(.85)}
+  body.touch .stats{gap:0 8px}body.touch .stats .lbl,body.touch .stats .val{font-size:11px}
+  body.touch #hudL.min .vit{display:none}body.touch #hudL.min .vit+.bar{margin-top:5px;height:5px}
+  body.touch #hudL .wpn{margin-top:4px;padding-top:4px}body.touch #hWpn{font-size:11px}body.touch #hAmmo{font-size:10px}
+  body.touch .tr>.lbl:first-child{display:none}body.touch .stars{font-size:13px;letter-spacing:1px}body.touch .clock{font-size:10px;margin-top:3px}
+  body.touch .hoodn{font-size:12px;margin-top:3px}body.touch #hOwner{font-size:8px;padding:1px 5px;margin-top:2px}
+  body.touch #goals{padding:4px 10px;gap:0}body.touch #goals:not(.open) .glh{display:none}
+  body.touch #goals:not(.open) b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}body.touch #goals:not(.open) b::before{content:'\25B8  ';color:#6cc28a}
+  body.touch #phoneBtn{font-size:0;gap:0;padding:6px 9px}body.touch #phoneBtn .bdg{font-size:11px;margin-left:5px}
+  body.touch #mini{top:calc(var(--goalb,150px) + 46px);width:96px;height:68px}
+  body.touch #menuBtn{top:calc(var(--goalb,150px) + 46px);right:110px;width:32px;height:32px}body.touch #sndBtn{top:calc(var(--goalb,150px) + 82px);right:110px;width:32px;height:32px}
+  body.touch #zoomCtl{top:calc(var(--goalb,150px) + 46px);right:148px;height:68px;width:30px}
+  body.touch #log div{font-size:12px}body.touch #log div:nth-last-child(n+3){display:none}
+}
+@media (max-width:640px) and (orientation:portrait){
+  body.touch #log{top:calc(var(--goalb,150px) + 8px);bottom:auto;left:8px;max-width:calc(100% - 196px);flex-direction:column}body.touch #log div{font-size:11px;line-height:1.25}
+}
 </style>
 
 <canvas id="game"></canvas>
@@ -6607,7 +6639,9 @@ function gangTick(dt){warTick(dt);raidTick(dt);clashTick(dt);partyTick(dt);tGang
 // ================= stash garage =================
 const inGarage=(x,y)=>GD.on&&tileAt(Math.floor(x/T),Math.floor(y/T))===GARAGE;
 let garMsgT=0;
-function stashGarageTick(dt){if(!GD.on)return;const dcx=(GD.x0+GD.x1+1)/2*T,dcy=(GD.dy+0.5)*T;const near=Math.hypot(P.x-dcx,P.y-dcy)<(P.car?230:120)||inGarage(P.x,P.y)||tileAt(Math.floor(P.x/T),Math.floor(P.y/T))===GDOOR;
+function garageDoorWant(dcx,dcy){const px=P.car?P.car.x:P.x,py=P.car?P.car.y:P.y;if(tileAt(Math.floor(px/T),Math.floor(py/T))===GDOOR)return true;
+  if(inGarage(px,py))return Math.abs(py-dcy)<(P.car?1.9:1.2)*T;return Math.hypot(px-dcx,py-dcy)<(P.car?230:120);}
+function stashGarageTick(dt){if(!GD.on)return;const dcx=(GD.x0+GD.x1+1)/2*T,dcy=(GD.dy+0.5)*T;const near=garageDoorWant(dcx,dcy);
   const want=near?1:0;if(want!==GD.want){GD.want=want;AU.door();}GD.o+=(want-GD.o)*Math.min(1,dt*2.6);if(Math.abs(want-GD.o)<0.01)GD.o=want;
   if(!near&&GD.o<0.85){for(const e of npcs)if(!e.dead&&tileAt(Math.floor(e.x/T),Math.floor(e.y/T))===GDOOR)e.y+=T;}
   const inside=inGarage(P.x,P.y);
@@ -6791,7 +6825,7 @@ cvEl.addEventListener('contextmenu',e=>e.preventDefault());
 cvEl.addEventListener('wheel',e=>{if(running&&!paused){e.preventDefault();switchWeapon(e.deltaY>0?1:-1);}},{passive:false});
 if(coarse){document.body.classList.add('touch');document.getElementById('touch').hidden=false;document.getElementById('phKey').hidden=true;}
 {const joy=document.getElementById('joy'),knob=document.getElementById('knob');let pid=null;
- const upd=ev=>{const r=joy.getBoundingClientRect();let x=ev.clientX-(r.left+r.width/2),y=ev.clientY-(r.top+r.height/2);const d=Math.hypot(x,y),m=55;if(d>m){x*=m/d;y*=m/d;}knob.style.transform=`translate(${x}px,${y}px)`;joyV={x:x/m,y:y/m};};
+ const upd=ev=>{const r=joy.getBoundingClientRect();let x=ev.clientX-(r.left+r.width/2),y=ev.clientY-(r.top+r.height/2);const d=Math.hypot(x,y),m=r.width*0.37;if(d>m){x*=m/d;y*=m/d;}knob.style.transform=`translate(${x}px,${y}px)`;joyV={x:x/m,y:y/m};};
  joy.addEventListener('pointerdown',ev=>{pid=ev.pointerId;joy.setPointerCapture(pid);upd(ev);});
  joy.addEventListener('pointermove',ev=>{if(ev.pointerId===pid)upd(ev);});
  const end=ev=>{if(ev.pointerId===pid){pid=null;joyV={x:0,y:0};knob.style.transform='';}};
@@ -7567,7 +7601,7 @@ function render(){
 }
 function renderWorld(){
   ctx.setTransform(dpr*camZ,0,0,dpr*camZ,0,0);
-  camX=P.x-vw/2;camY=P.y-vh/2;
+  camX=P.x-vw/2;camY=P.y-vh/2-CAMOY/camZ;
   if(shake>0.05){camX+=(R()-.5)*shake*2;camY+=(R()-.5)*shake*2;shake*=0.86;}else shake=0;
   if(running&&!paused)updAim();
   ctx.fillStyle='#3d3226';ctx.fillRect(0,0,vw,vh);
@@ -7728,7 +7762,12 @@ function card(big,sub,color){djNews(big,sub);$('cBig').textContent=big;$('cBig')
   $('goals').addEventListener('click',e=>{if(e.target.id!=='goalsX')$('goals').classList.toggle('open');});
   const lay=()=>{const b=Math.max(L.getBoundingClientRect().bottom,$('hudR').getBoundingClientRect().bottom),g=$('goals'),st=document.body.style;
     st.setProperty('--hudb',Math.round(b)+'px');st.setProperty('--hudrb',Math.round($('hudR').getBoundingClientRect().bottom)+'px');st.setProperty('--goalb',Math.round(g.hidden?b:g.getBoundingClientRect().bottom)+'px');};
+  const centerCam=()=>{lay();if(!document.body.classList.contains('touch')||innerWidth>innerHeight){CAMOY=0;return;}
+    const top=Math.max(...['hudL','hudR','goals','mini','zoomCtl','phoneBtn'].map(id=>{const e=$(id);return e.hidden?0:e.getBoundingClientRect().bottom;}));
+    const bot=Math.min(...['joy','bAct','bCar','bDuck','bSwp'].map(id=>$(id).getBoundingClientRect().top).filter(v=>v>0));CAMOY=isFinite(bot)&&bot>top?Math.round((top+bot)/2-innerHeight/2):0;};
+  addEventListener('resize',centerCam);setInterval(centerCam,1000);
   if(window.ResizeObserver){const ro=new ResizeObserver(lay);for(const id of ['hudL','hudR','goals'])ro.observe($(id));}new MutationObserver(lay).observe($('goals'),{attributes:true,attributeFilter:['hidden']});}
+let CAMOY=0;
 const ZOOMS=[['Far',0.85],['Normal',1],['Close',1.18],['Closer',1.36]],ZMIN=0.7,ZMAX=1.6;
 let zoomV=null;
 function zoomVal(){if(zoomV==null){let v=null,o=null;try{v=localStorage.getItem('mctw-zoomv');o=localStorage.getItem('mctw-zoom');}catch(e){}
