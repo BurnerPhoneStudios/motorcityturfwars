@@ -407,6 +407,15 @@ body.touch #log{bottom:calc(252px + env(safe-area-inset-bottom,0px))}
 body:not(.touch) #goals{left:auto;right:16px;transform:none;top:calc(var(--hudrb,170px) + 10px);width:min(380px,calc(100% - 32px));padding:12px 16px;gap:4px}
 body:not(.touch) #goals .glh{font-size:13px}body:not(.touch) #goals b{font-size:21px;line-height:1.2}body:not(.touch) #goals span{font-size:17px;line-height:1.4}body:not(.touch) #goals i{font-size:15px}
 @media (max-width:640px) and (orientation:portrait){body.touch #goals b{font-size:16px}body.touch #goals span{font-size:15px}}
+
+#zoomCtl{position:fixed;right:264px;bottom:calc(16px + env(safe-area-inset-bottom,0px));height:169px;width:36px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);padding:4px 0;z-index:3}
+#zoomCtl[hidden]{display:none}
+#zoomCtl button{width:30px;height:30px;min-height:0;padding:0;background:transparent;border:0;color:var(--chrome);font-size:20px;font-weight:700;line-height:1;cursor:pointer}
+#zoomCtl button:hover{color:var(--sodium)}
+#zmR{writing-mode:vertical-lr;direction:rtl;width:20px;flex:1;margin:4px 0;accent-color:var(--sodium);cursor:pointer}
+@media (max-width:640px){#zoomCtl{right:156px;height:93px}}
+body.touch #zoomCtl{top:calc(212px + env(safe-area-inset-top,0px));bottom:auto;right:156px;height:93px}
+@media (max-width:640px) and (orientation:portrait){body.touch #zoomCtl{top:calc(var(--goalb,150px) + 48px);right:170px;height:79px;width:32px}body.touch #zmR{display:none}}
 </style>
 
 <canvas id="game"></canvas>
@@ -450,6 +459,7 @@ body:not(.touch) #goals .glh{font-size:13px}body:not(.touch) #goals b{font-size:
 <div id="prompt" hidden></div>
 <div id="cf" hidden><div class="who" id="cfWho"></div><div class="line" id="cfLine"></div><div class="opts" id="cfOpts"></div><div class="tbar"><i id="cfBar"></i></div></div>
 <canvas id="mini" width="320" height="225"></canvas>
+<div id="zoomCtl" hidden><button type="button" id="zmIn" aria-label="Zoom in" title="Zoom in (=)">+</button><input type="range" id="zmR" aria-label="Camera zoom"><button type="button" id="zmOut" aria-label="Zoom out" title="Zoom out (-)">&minus;</button></div>
 <button type="button" id="menuBtn" hidden aria-label="Menu" title="Menu (Esc)"><span></span><span></span><span></span></button>
 <div class="overlay" id="pause" hidden>
   <div class="modal" role="dialog" aria-labelledby="paTitle" style="max-width:380px;margin-top:12vh">
@@ -7719,13 +7729,19 @@ function card(big,sub,color){djNews(big,sub);$('cBig').textContent=big;$('cBig')
   const lay=()=>{const b=Math.max(L.getBoundingClientRect().bottom,$('hudR').getBoundingClientRect().bottom),g=$('goals'),st=document.body.style;
     st.setProperty('--hudb',Math.round(b)+'px');st.setProperty('--hudrb',Math.round($('hudR').getBoundingClientRect().bottom)+'px');st.setProperty('--goalb',Math.round(g.hidden?b:g.getBoundingClientRect().bottom)+'px');};
   if(window.ResizeObserver){const ro=new ResizeObserver(lay);for(const id of ['hudL','hudR','goals'])ro.observe($(id));}new MutationObserver(lay).observe($('goals'),{attributes:true,attributeFilter:['hidden']});}
-const ZOOMS=[['Far',0.85],['Normal',1],['Close',1.18],['Closer',1.36]];
-let zoomI=null;
-function zoomIdx(){if(zoomI==null){let v=null;try{v=localStorage.getItem('mctw-zoom');}catch(e){}zoomI=v!=null&&ZOOMS[+v]?+v:document.body.classList.contains('touch')?1:2;}return zoomI;}
-const zoomMul=()=>ZOOMS[zoomIdx()][1];
-function zoomSet(i){zoomI=Math.max(0,Math.min(ZOOMS.length-1,i));try{localStorage.setItem('mctw-zoom',zoomI);}catch(e){}$('paZoom').textContent='Camera: '+ZOOMS[zoomI][0];}
-function zoomStep(d){if(!running)return;zoomSet(zoomIdx()+d);log(`Camera: ${ZOOMS[zoomI][0]} (- / = to change)`,'#8a8f98');}
-$('paZoom').onclick=()=>zoomSet((zoomIdx()+1)%ZOOMS.length);zoomSet(zoomIdx());
+const ZOOMS=[['Far',0.85],['Normal',1],['Close',1.18],['Closer',1.36]],ZMIN=0.7,ZMAX=1.6;
+let zoomV=null;
+function zoomVal(){if(zoomV==null){let v=null,o=null;try{v=localStorage.getItem('mctw-zoomv');o=localStorage.getItem('mctw-zoom');}catch(e){}
+  zoomV=v!=null&&isFinite(+v)?+v:o!=null&&ZOOMS[+o]?ZOOMS[+o][1]:document.body.classList.contains('touch')?1:1.18;zoomV=Math.max(ZMIN,Math.min(ZMAX,zoomV));}return zoomV;}
+const zoomMul=()=>zoomVal();
+function zoomName(){const v=zoomVal(),z=ZOOMS.find(z=>Math.abs(z[1]-v)<0.02);return z?z[0]:Math.round(v*100)+'%';}
+function zoomSet(v){zoomV=Math.round(Math.max(ZMIN,Math.min(ZMAX,v))*100)/100;try{localStorage.setItem('mctw-zoomv',zoomV);}catch(e){}$('paZoom').textContent='Camera: '+zoomName();const r=$('zmR');if(r&&+r.value!==zoomV)r.value=zoomV;}
+function zoomStep(d){if(!running)return;zoomSet(zoomVal()+d*0.1);log(`Camera: ${zoomName()} (- / = or the slider by the map)`,'#8a8f98');}
+$('paZoom').onclick=()=>{const v=zoomVal(),k=ZOOMS.findIndex(z=>z[1]>v+0.02);zoomSet(ZOOMS[k<0?0:k][1]);};
+{const r=$('zmR');r.min=ZMIN;r.max=ZMAX;r.step=0.01;r.oninput=()=>zoomSet(+r.value);r.onchange=()=>r.blur();
+  $('zmIn').onclick=()=>zoomSet(zoomVal()+0.1);$('zmOut').onclick=()=>zoomSet(zoomVal()-0.1);
+  $('zoomCtl').addEventListener('wheel',e=>{e.preventDefault();e.stopPropagation();zoomSet(zoomVal()+(e.deltaY<0?0.05:-0.05));},{passive:false});}
+zoomSet(zoomVal());
 // ================= save =================
 // ---- save slots ----
 const SLOTS=3;const slotKey=n=>'mctw-slot-'+n;
@@ -7817,7 +7833,7 @@ function begin(fromSave){
   GANG.crew.name=S.crew;S.closet=S.closet||['chain'];wardMigrate();if(!S.store)S.store={weed:0,chrome:0};if(S.bag==null)S.bag='';for(const g in GANG)if(!['crew','kings','ghosts'].includes(g))delete GANG[g];restoreGangs();ensureMCs();if(!fromSave)seedGangs();S.war=null;if(!S.garage||!S.garage.length)S.garage=[{gid:0,model:'Dodgy Venom',type:'sport',value:4200,color:'#c8102e',stripes:true}];S.outfit=S.outfit||{};S.crewFit=S.crewFit||{};applyCrew();msgs={};unread={};
   P.x=STASH.x;P.y=STASH.y;P.hp=100;P.heat=0;P.hood=-1;P.car=null;P.lastCar=null;rob=null;logs=[];fx=[];
   STORES.forEach(s=>s.cd=0);
-  S.slot=pickSlot;populate();$('start').hidden=true;$('phoneBtn').hidden=false;$('menuBtn').hidden=false;running=true;paused=false;save();
+  S.slot=pickSlot;populate();$('start').hidden=true;$('phoneBtn').hidden=false;$('menuBtn').hidden=false;$('zoomCtl').hidden=false;running=true;paused=false;save();
   log(fromSave?`Welcome back, ${S.crew}.`:`You have 7 g of weed and one plant growing in the backroom. Three people in Midtown want to try it. Find the ? and ${coarse?'tap ACT':'press E'} to hand out free samples.`,'#f2a33a');
   if(!fromSave){setTimeout(()=>log('Your Dodgy Venom is in the stash garage. Walk to the roll-up door, get in with F and drive out.',GANG.crew.color),5000);
     setTimeout(()=>log('Set your price in Products. Too high and clients haggle. Too low and you leave money on the table.','#d7dbe1'),12000);
