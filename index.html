@@ -7949,6 +7949,7 @@ function closeMap(){elMap.hidden=true;paused=false;}
 function mapLoop(){if(elMap.hidden)return;{const b=document.getElementById('mapRyde'),why=rydeWhyNot();b.textContent=S.wp?`RydeMe to waypoint · $${rydeCost()}`:'RydeMe to waypoint';b.disabled=!!why;b.title=why;}bigX.setTransform(1,0,0,1,0,0);bigX.imageSmoothingEnabled=false;bigX.fillStyle='#0c0d0f';bigX.fillRect(0,0,bigC.width,bigC.height);drawMap(bigX,true);
   bigX.font=`700 13px ${FB}`;bigX.textAlign='left';bigX.textBaseline='alphabetic';bigX.fillStyle='rgba(215,219,225,.75)';
   for(let i=0;i<NH;i++){const r=hoodRect(i),k=bigC.width/(W*T);bigX.fillText(HN[i].toUpperCase(),r.x*k+6,r.y*k+16);}
+  drawMapLabels(bigX,bigC.width/(W*T));
   requestAnimationFrame(mapLoop);}
 bigC.addEventListener('click',ev=>{const r=bigC.getBoundingClientRect();const x=(ev.clientX-r.left)/r.width*W*T,y=(ev.clientY-r.top)/r.height*H*T;
   if(S.wp&&Math.hypot(S.wp.x-x,S.wp.y-y)<120){S.wp=null;$('mapNote').textContent='Waypoint cleared.';}else{S.wp={x,y};$('mapNote').textContent=`Waypoint set in ${HN[hoodOf(x,y)]}. Follow the pink arrow.`;}});
@@ -7976,6 +7977,24 @@ function renderGoals(){const el=$('goals');const left=GOALS.filter(g=>!(S.goalsD
   if(!running||S.goalsOff||!left.length){el.hidden=true;return;}const g=left[0];
   el.innerHTML=`<div class="glh"><span>Getting started · ${GOALS.length-left.length}/${GOALS.length}</span><button type="button" id="goalsX" aria-label="Hide the checklist" title="Hide">×</button></div><b>${esc(g.t)}</b><span>${esc(g.hint)}</span>${g.cash?`<i>Reward: $${g.cash}</i>`:''}`;el.hidden=false;
   $('goalsX').onclick=()=>{S.goalsOff=true;el.hidden=true;};}
+function drawMapLabels(g,k){g.save();g.textBaseline='middle';g.lineJoin='round';const used=[];
+  const txt=(t,x,y,col,font,al)=>{g.font=font;g.textAlign=al||'left';g.lineWidth=3;g.strokeStyle='rgba(8,9,11,.85)';g.strokeText(t,x,y);g.fillStyle=col;g.fillText(t,x,y);};
+  const street='rgba(215,219,225,.55)',sf=`600 9px ${FB}`;
+  RY.forEach((r,i)=>{for(const tx of [19,63,107])txt((RYN[i]+RYS[i]).toUpperCase(),tx*T*k,(r+1)*T*k,street,sf,'center');});
+  RX.forEach((r,i)=>{for(const ty of [19,52]){g.save();g.translate((r+1)*T*k,ty*T*k);g.rotate(-Math.PI/2);txt((RXN[i]+RXS[i]).toUpperCase(),0,0,street,sf,'center');g.restore();}});
+  const pins=[],pin=(x,y,name,col,big)=>pins.push({x:x*k,y:y*k,name,col,big});
+  pin(STASH.x,STASH.y,'Your stash',GANG.crew.color,true);pin(HQ.x,HQ.y,'DPD HQ','#6f96e0',true);if(typeof BANK!=='undefined'&&BANK)pin(BANK.x,BANK.y,BANK.name||'Bank','#e3c565',true);
+  for(const b of buildings)if(b.name&&!/closed/i.test(b.name))pin((b.x+b.w/2)*T,(b.y+b.h/2)*T,b.name,'#f1efe9',true);
+  for(const d of DECOR)if(d.k==='label'&&d.name&&!/closed/i.test(d.name))pin(d.x,d.y,d.name.replace(/\b\w+/g,w=>w[0]+w.slice(1).toLowerCase()),'#f1efe9',true);
+  for(const st of STORES)pin(st.x,st.y,st.name,(SKIND[st.kind]||{}).col||'#d7dbe1');
+  for(const p of pins)used.push({l:p.x-6,r:p.x+6,t:p.y-6,b:p.y+6});
+  for(const p of pins){const {x,y,big,col}=p;g.fillStyle=col;g.beginPath();if(big){g.moveTo(x,y-5);g.lineTo(x+5,y);g.lineTo(x,y+5);g.lineTo(x-5,y);}else g.arc(x,y,3.5,0,7);g.fill();g.lineWidth=1.5;g.strokeStyle='rgba(8,9,11,.9)';g.stroke();}
+  for(const p of pins){const {x,y,big,col,name}=p,font=`${big?800:700} ${big?11:10}px ${FB}`;g.font=font;const w=g.measureText(name).width,h=big?12:11;
+    const spots=[[x+8,y,'left'],[x-8,y,'right'],[x,y+12,'center'],[x,y-12,'center'],[x+8,y+12,'left'],[x-8,y-12,'right']];let pick=null;
+    for(const sp of spots){const l=sp[2]==='left'?sp[0]:sp[2]==='right'?sp[0]-w:sp[0]-w/2,r={l,r:l+w,t:sp[1]-h/2,b:sp[1]+h/2};if(!used.some(u=>r.l<u.r&&u.l<r.r&&r.t<u.b&&u.t<r.b)){pick=sp;used.push(r);break;}}
+    if(!pick)pick=spots[2];p.box=used[used.length-1];txt(name,pick[0],pick[1],col,font,pick[2]);}
+  txt('DETROIT RIVER',30*T*k,84.5*T*k,'rgba(140,180,220,.8)',`800 14px ${FB}`,'left');txt('BELLE ISLE',118*T*k,88.5*T*k,'rgba(160,220,150,.9)',`800 12px ${FB}`,'center');
+  g.restore();return pins;}
 // ================= trap houses =================
 const TRAP={cap:120,rate:{weed:3,chrome:1,coke:1},cut:0.85,cashCap:6000};
 const TRAPS=(()=>{const out=[];
