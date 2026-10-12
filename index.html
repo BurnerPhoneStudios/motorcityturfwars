@@ -397,6 +397,12 @@ body.touch #log{bottom:calc(252px + env(safe-area-inset-bottom,0px))}
 .in-warn p{margin:0;font-size:clamp(15px,2.2vw,19px);line-height:1.45}.in-warn .hl{font-size:clamp(13px,1.8vw,16px);color:var(--dim)}.in-warn .hl span{color:#e9ecef;white-space:nowrap}
 .in-warn small{margin-top:10px;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
 .credits .disc{margin-top:6px;font-size:12px;color:var(--dim)}
+
+.in-warn .age{font-size:clamp(15px,2vw,18px);color:#e9ecef}.in-warn .age b{display:block;font-family:inherit;font-size:inherit;letter-spacing:0;text-transform:none;color:#fff;margin-top:6px}
+.in-warn .ageb{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+.in-warn .ageb button,.in-warn .ageb a{min-height:44px;padding:10px 18px;font-size:16px;font-weight:700;border:1px solid var(--line);text-decoration:none;display:inline-flex;align-items:center}
+.in-warn #ageYes{background:var(--sodium);color:#111;border-color:var(--sodium)}.in-warn #ageYes:disabled{opacity:.4}.in-warn #ageNo{color:var(--chrome);background:transparent}
+.in-warn #ageNo{text-transform:uppercase;letter-spacing:.06em}
 </style>
 
 <canvas id="game"></canvas>
@@ -741,7 +747,8 @@ body.touch #log{bottom:calc(252px + env(safe-area-inset-bottom,0px))}
     <b>For entertainment purposes only</b>
     <p>Motor City Turf Wars is a work of fiction. It shows drug dealing, gang violence and crime as part of the game. Burner Phone Studios does not support or encourage using, selling or making drugs, or violence of any kind, in real life.</p>
     <p class="hl">If you or someone you know is struggling with drugs or alcohol, the SAMHSA National Helpline is free, confidential and open 24/7: <span>1-800-662-4357</span></p>
-    <small id="inWarnGo">Press any key to continue</small>
+    <p class="age">This game contains drug use, violence, strong language and sexual themes. <b>Are you 17 or older?</b></p>
+    <div class="ageb"><button type="button" id="ageYes" disabled>Yes, I'm 17 or older</button><a id="ageNo" href="https://burnerphonestudios.github.io/">No, take me back</a></div>
   </div>
   <div class="in-skip" id="inSkip">Press any key to skip</div>
 </div>
@@ -7968,11 +7975,11 @@ function introPlay(){if(INTRO.started)return;INTRO.started=true;const on=(id,v)=
   introAt(9300,()=>on('inMi',false));
   introAt(9800,introWarn);}
 function introWarn(){if(INTRO.warnAt||INTRO.over)return;INTRO.timers.forEach(clearTimeout);INTRO.timers=[];for(const id of ['inGate','inPhone','inMark','inMi','inSkip'])$(id).classList.remove('on');
-  INTRO.warnAt=Date.now();$('inWarn').classList.add('on');introAt(12000,introEnd);}
+  INTRO.warnAt=Date.now();$('inWarn').classList.add('on');introAt(1500,()=>{const y=$('ageYes');y.disabled=false;y.focus();});}
 if(introSeen())introEnd();
-else{const go=ev=>{if(INTRO.over)return;if(ev&&ev.type==='keydown'){ev.preventDefault();ev.stopImmediatePropagation();}if(INTRO.warnAt){if(Date.now()-INTRO.warnAt>1500)introEnd();}else if(!INTRO.started)introPlay();else introWarn();};
+else{const go=ev=>{if(INTRO.over||INTRO.warnAt)return;if(ev&&ev.type==='keydown'){ev.preventDefault();ev.stopImmediatePropagation();}if(!INTRO.started)introPlay();else introWarn();};
   addEventListener('keydown',ev=>{if(!INTRO.over)go(ev);},true);INTRO.el.addEventListener('pointerdown',go);$('inGate').classList.add('on');}
-if(coarse)$('inWarnGo').textContent='Tap to continue';
+$('ageYes').onclick=introEnd;
 // ================= casinos: slots, roulette, blackjack, baccarat, video poker =================
 const CASINOS=buildings.filter(b=>b.kind==='casino'||b.kind==='casino2').map(b=>{const cx=(b.x+b.w/2)*T;const y=[(b.y+b.h)*T+12,b.y*T-12].find(y=>!solidPx(cx,y));return y==null?null:{x:cx,y,name:b.name,b};}).filter(Boolean);
 const nearCasino=()=>CASINOS.find(c=>dist(c,P)<70)||null;
@@ -8266,7 +8273,7 @@ function padTick(dt){const gp=[...(navigator.getGamepads?navigator.getGamepads()
   if(!pad.on)return;
   const layer=padLayer();
   if(layer){const quick=layer.id==='cf'||layer.id==='callouts';Object.assign(pad,{lx:0,ly:0,rx:0,ry:0,thr:0,brk:0,run:false,fire:false,hb:false,aim:false,lt:false});if(quick&&!P.car){pad.lx=lx;pad.ly=ly;}for(const k in padSt.sent)padKey(k,false);
-    if(layer.id==='intro'){if(hit('a')||hit('menu')){padKey('Enter',true);padKey('Enter',false);}return;}
+    if(layer.id==='intro'){if(INTRO.warnAt){if(hit('a')&&!$('ageYes').disabled)$('ageYes').click();else if(hit('b'))$('ageNo').click();return;}if(hit('a')||hit('menu')){padKey('Enter',true);padKey('Enter',false);}return;}
     let cur=padSt.cur;if(!cur||!layer.contains(cur)||!cur.isConnected||!padTargets(layer).includes(cur)){const T=padTargets(layer);cur=null;
       if(padSt.cur&&padSt.layer===layer){cur=T.find(t=>padSig(t)===padSt.sig)||null;if(!cur){let bd=1e9;for(const t of T){const q=t.getBoundingClientRect(),d=Math.hypot(q.left+q.width/2-padSt.px,q.top+q.height/2-padSt.py);if(d<bd){bd=d;cur=t;}}}}
       if(cur){padSt.cur=null;padFocus(cur);if(cur.tagName!=='CANVAS')cur.classList.add('padfocus');}else padFocus(T[0]||null);cur=padSt.cur;}
