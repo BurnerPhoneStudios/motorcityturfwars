@@ -484,6 +484,7 @@ body.touch #phoneBtn{top:calc(8px + env(safe-area-inset-top,0px));bottom:auto;ri
 @media (max-width:640px) and (orientation:portrait){body.touch .stats .lbl{letter-spacing:.03em}body.touch .stats .val{white-space:nowrap}}
 @media (max-width:640px) and (orientation:portrait){body.touch .stats .lbl{white-space:nowrap}body.touch .tl{width:132px}body.touch .stats .lbl,body.touch .stats .val{font-size:11px}}
 @media (max-width:640px) and (orientation:portrait){body.touch #zoomCtl{box-sizing:border-box}}
+.credits .rpcred{margin-top:6px;font-size:13px;color:var(--dim)}
 </style>
 
 <canvas id="game"></canvas>
@@ -815,6 +816,7 @@ body.touch #phoneBtn{top:calc(8px + env(safe-area-inset-top,0px));bottom:auto;ri
       <div>Game created by <b>Tim Winnie</b></div>
       <div>Hand-drawn procedural plants by <b>Tim Winnie</b></div>
       <div>Inspired by <b>Grand Theft Auto 1 &amp; 2</b>, <b>Schedule I</b> and <b>Drug Dealer Simulator 1 &amp; 2</b></div>
+      <div class="devonly rpcred">Original Instrumental Soundtrack · Music Created &amp; Produced by <b>Rican Playa</b> · AI-Assisted Music Production Using Suno</div>
       <div class="credit">Burner Phone Studios · Michigan made</div>
       <div class="disc">For entertainment purposes only. A work of fiction. We do not support drug use, drug dealing or violence in real life.</div>
     </div>
@@ -6264,12 +6266,12 @@ function drawPickups(){for(const p of PICKUPS){const x=p.x-camX,y=p.y-camY;if(x<
   ctx.save();ctx.translate(x,y);ctx.globalAlpha=0.35+0.3*pulse;ctx.fillStyle=GANG.crew.color;ctx.beginPath();ctx.arc(0,0,13,0,7);ctx.fill();ctx.globalAlpha=1;ctx.rotate(0.4);
   ctx.fillStyle='#1d1e21';const L=p.gun==='draco'?18:p.gun==='sawed'?16:11;ctx.fillRect(-L/2,-2,L,4);ctx.fillRect(-L/2+1,0,4,6);if(p.gun==='draco'){ctx.fillRect(0,1,3,6);}ctx.restore();}}
 // ================= car radio =================
-const RDUR={alone_on_the_moon:245.4,rings_of_saturn:243.1,space_jazz:113,killmonger:193,no_smoke:97,murder_she_wrote_mix_2:180.4,westcoasttypeshit:214.3,to_the_grave:123.7,projectasteroidz1:122.3,test_run_remastered:208.4,when_the_devil_screams:337.5,the_carnival:265.4,the_assault:158.9,the_art_of_war:291.9,the_clean_up:266.8,underwater:24.4,revenge:11.7};
-const SR=' - Saint Reject';
+const RDUR={motor_city_mayhem:128,turf_authority:104,concrete_kingdom:121.2,night_drive_drift:206.7,alone_on_the_moon:245.4,rings_of_saturn:243.1,space_jazz:113,killmonger:193,no_smoke:97,murder_she_wrote_mix_2:180.4,westcoasttypeshit:214.3,to_the_grave:123.7,projectasteroidz1:122.3,test_run_remastered:208.4,when_the_devil_screams:337.5,the_carnival:265.4,the_assault:158.9,the_art_of_war:291.9,the_clean_up:266.8,underwater:24.4,revenge:11.7};
+const SR=' - Saint Reject',RP=' - Rican Playa';
 const STATIONS=[{name:'Radio off'},
-  {name:'313.7 The Block',pubIdent:'underwater',tracks:[['alone_on_the_moon','Alone on the Moon'+SR,1],['killmonger','Killmonger'+SR],['rings_of_saturn','Rings of Saturn'+SR,1],['no_smoke','No Smoke'+SR],['murder_she_wrote_mix_2','Murder She Wrote (Mix 2)'+SR,1],['westcoasttypeshit','westcoasttypeshit'+SR,1],['to_the_grave','To The Grave'+SR,1]]},
-  {name:'101.9 The Moon',ident:'underwater',pubIdent:'underwater',tracks:[['test_run_remastered','Spacecraft Test Drive'+SR,1],['projectasteroidz1','ProjectAsteroidZ'+SR]]},
-  {name:"66.6 Devil's Night",ident:'revenge',tracks:[['when_the_devil_screams','When The Devil Screams'+SR,1],['the_carnival','The Carnival'+SR,1],['the_assault','The Assault'+SR,1],['the_art_of_war','The Art Of War'+SR,1],['the_clean_up','The Clean Up'+SR,1]]},
+  {name:'313.7 The Block',pubIdent:'underwater',tracks:[['alone_on_the_moon','Alone on the Moon'+SR,1],['killmonger','Killmonger'+SR],['motor_city_mayhem','Motor City Mayhem'+RP],['rings_of_saturn','Rings of Saturn'+SR,1],['no_smoke','No Smoke'+SR],['murder_she_wrote_mix_2','Murder She Wrote (Mix 2)'+SR,1],['westcoasttypeshit','westcoasttypeshit'+SR,1],['turf_authority','Turf Authority'+RP],['to_the_grave','To The Grave'+SR,1]]},
+  {name:'101.9 The Moon',ident:'underwater',pubIdent:'underwater',tracks:[['test_run_remastered','Spacecraft Test Drive'+SR,1],['night_drive_drift','Night Drive Drift'+RP],['projectasteroidz1','ProjectAsteroidZ'+SR]]},
+  {name:"66.6 Devil's Night",ident:'revenge',tracks:[['when_the_devil_screams','When The Devil Screams'+SR,1],['the_carnival','The Carnival'+SR,1],['the_assault','The Assault'+SR,1],['the_art_of_war','The Art Of War'+SR,1],['concrete_kingdom','Concrete Kingdom'+RP],['the_clean_up','The Clean Up'+SR,1]]},
   {name:'88.7 Paradise Valley Jazz',tracks:[['space_jazz','Space Jazz'+SR,1]]}];
 if(PUBLIC_BUILD){for(let k=STATIONS.length-1;k>0;k--){const st=STATIONS[k];st.tracks=st.tracks.filter(t=>t[2]);st.ident=st.pubIdent;if(!st.tracks.length)STATIONS.splice(k,1);}}
 for(const st of STATIONS){if(!st.tracks)continue;st.seq=[];st.tracks.forEach((t,i)=>{if(st.ident&&i%2===0)st.seq.push({id:st.ident,title:'',ident:true});st.seq.push({id:t[0],title:t[1]});});st.total=st.seq.reduce((a,x)=>a+RDUR[x.id],0);st.off=null;}
@@ -7985,6 +7987,7 @@ function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;
   phT+=dt;if(PH.open&&(phoneDirty||phT>1)){phT=0;if(PH.app!=='thread'||phoneDirty)renderPhone(false);}
   requestAnimationFrame(frame);}
 requestAnimationFrame(frame);
+if(PUBLIC_BUILD)for(const el of document.querySelectorAll('.devonly'))el.remove();
 // ================= big map, waypoint, getting-started checklist =================
 const elMap=document.getElementById('bigmap'),bigC=document.getElementById('bigC'),bigX=bigC.getContext('2d');
 const MV={z:3,cx:0,cy:0,drag:null,moved:false,pts:new Map(),pinch:0,lw:1140,lh:802,d:1};
