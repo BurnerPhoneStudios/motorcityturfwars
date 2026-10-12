@@ -727,7 +727,6 @@ body.touch #log{bottom:calc(252px + env(safe-area-inset-bottom,0px))}
   </div>
 </div>
 <div id="intro" aria-label="Burner Phone Studios intro">
-  <div class="in-gate" id="inGate">Press any key</div>
   <div class="in-phone" id="inPhone">
     <div class="in-lid"><i></i></div>
     <div class="in-scr"><span id="inScr"></span></div>
@@ -7955,8 +7954,8 @@ function voiceLbl(){$('paVoice').textContent=VOICE.on?'Voice commands: On':'Voic
 $('paVoice').onclick=voiceToggle;
 // ================= Burner Phone Studios intro =================
 const INTRO={el:$('intro'),timers:[],ac:null,started:false,over:false};
-function introSeen(){try{return sessionStorage.getItem('mctw-intro')==='1';}catch(e){return false;}}
-function introEnd(){if(INTRO.over)return;INTRO.over=true;INTRO.timers.forEach(clearTimeout);INTRO.el.classList.add('done');try{sessionStorage.setItem('mctw-intro','1');}catch(e){}
+function introSeen(){try{return sessionStorage.getItem('mctw-intro')==='harness';}catch(e){return false;}}
+function introEnd(){if(INTRO.over)return;INTRO.over=true;INTRO.timers.forEach(clearTimeout);INTRO.el.classList.add('done');
   setTimeout(()=>{INTRO.el.hidden=true;},650);try{if(INTRO.ac)INTRO.ac.close();}catch(e){}}
 function introTone(t0,dur,f,type,vol,am){const ac=INTRO.ac;if(!ac||AU.muted)return;const o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime+t0;o.type=type;o.frequency.value=f;
   g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+0.02);g.gain.setValueAtTime(vol,t+dur-0.04);g.gain.linearRampToValueAtTime(0,t+dur);o.connect(g);
@@ -7965,7 +7964,7 @@ function introTone(t0,dur,f,type,vol,am){const ac=INTRO.ac;if(!ac||AU.muted)retu
 function introAt(ms,fn){INTRO.timers.push(setTimeout(fn,ms));}
 function introPlay(){if(INTRO.started)return;INTRO.started=true;const on=(id,v)=>$(id).classList.toggle('on',v!==false),scr=$('inScr'),ph=$('inPhone');
   try{INTRO.ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}
-  on('inGate',false);$('inGate').style.animation='none';on('inSkip');
+  on('inSkip');
   introAt(300,()=>on('inPhone'));
   for(const t of [600,1250,1900])introAt(t,()=>{ph.classList.remove('buzz');void ph.offsetWidth;ph.classList.add('buzz');introTone(0,0.32,110,'sawtooth',0.07,32);});
   introAt(650,()=>{scr.textContent='1 new message';});
@@ -7976,13 +7975,13 @@ function introPlay(){if(INTRO.started)return;INTRO.started=true;const on=(id,v)=
   introAt(6100,()=>on('inMark',false));
   introAt(6700,()=>on('inMi'));
   introAt(9300,()=>on('inMi',false));
-  introAt(9800,introWarn);}
-function introWarn(){if(INTRO.warnAt||INTRO.over)return;INTRO.timers.forEach(clearTimeout);INTRO.timers=[];for(const id of ['inGate','inPhone','inMark','inMi','inSkip'])$(id).classList.remove('on');
-  INTRO.warnAt=Date.now();$('inWarn').classList.add('on');introAt(1500,()=>{const y=$('ageYes');y.disabled=false;y.focus();});}
+  introAt(9800,introEnd);}
+function introWarn(){INTRO.warnAt=Date.now();$('inWarn').classList.add('on');introAt(1500,()=>{const y=$('ageYes');y.disabled=false;y.focus();});}
+function ageOK(){if(INTRO.aged||INTRO.over)return;INTRO.aged=true;INTRO.timers.forEach(clearTimeout);INTRO.timers=[];$('inWarn').classList.remove('on');setTimeout(introPlay,500);}
 if(introSeen())introEnd();
-else{const go=ev=>{if(INTRO.over||INTRO.warnAt)return;if(ev&&ev.type==='keydown'){ev.preventDefault();ev.stopImmediatePropagation();}if(!INTRO.started)introPlay();else introWarn();};
-  addEventListener('keydown',ev=>{if(!INTRO.over)go(ev);},true);INTRO.el.addEventListener('pointerdown',go);$('inGate').classList.add('on');}
-$('ageYes').onclick=introEnd;
+else{const go=ev=>{if(INTRO.over||!INTRO.aged)return;if(ev&&ev.type==='keydown'){ev.preventDefault();ev.stopImmediatePropagation();}if(INTRO.started)introEnd();};
+  addEventListener('keydown',ev=>{if(!INTRO.over)go(ev);},true);INTRO.el.addEventListener('pointerdown',go);introWarn();}
+$('ageYes').onclick=ageOK;
 // ================= casinos: slots, roulette, blackjack, baccarat, video poker =================
 const CASINOS=buildings.filter(b=>b.kind==='casino'||b.kind==='casino2').map(b=>{const cx=(b.x+b.w/2)*T;const y=[(b.y+b.h)*T+12,b.y*T-12].find(y=>!solidPx(cx,y));return y==null?null:{x:cx,y,name:b.name,b};}).filter(Boolean);
 const nearCasino=()=>CASINOS.find(c=>dist(c,P)<70)||null;
@@ -8276,7 +8275,7 @@ function padTick(dt){const gp=[...(navigator.getGamepads?navigator.getGamepads()
   if(!pad.on)return;
   const layer=padLayer();
   if(layer){const quick=layer.id==='cf'||layer.id==='callouts';Object.assign(pad,{lx:0,ly:0,rx:0,ry:0,thr:0,brk:0,run:false,fire:false,hb:false,aim:false,lt:false});if(quick&&!P.car){pad.lx=lx;pad.ly=ly;}for(const k in padSt.sent)padKey(k,false);
-    if(layer.id==='intro'){if(INTRO.warnAt){if(hit('a')&&!$('ageYes').disabled)$('ageYes').click();else if(hit('b'))$('ageNo').click();return;}if(hit('a')||hit('menu')){padKey('Enter',true);padKey('Enter',false);}return;}
+    if(layer.id==='intro'){if(!INTRO.aged){if(hit('a')&&!$('ageYes').disabled)$('ageYes').click();else if(hit('b'))$('ageNo').click();return;}if(hit('a')||hit('menu')){padKey('Enter',true);padKey('Enter',false);}return;}
     let cur=padSt.cur;if(!cur||!layer.contains(cur)||!cur.isConnected||!padTargets(layer).includes(cur)){const T=padTargets(layer);cur=null;
       if(padSt.cur&&padSt.layer===layer){cur=T.find(t=>padSig(t)===padSt.sig)||null;if(!cur){let bd=1e9;for(const t of T){const q=t.getBoundingClientRect(),d=Math.hypot(q.left+q.width/2-padSt.px,q.top+q.height/2-padSt.py);if(d<bd){bd=d;cur=t;}}}}
       if(cur){padSt.cur=null;padFocus(cur);if(cur.tagName!=='CANVAS')cur.classList.add('padfocus');}else padFocus(T[0]||null);cur=padSt.cur;}
