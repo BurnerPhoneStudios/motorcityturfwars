@@ -541,6 +541,7 @@ body.touch #phoneBtn{top:calc(8px + env(safe-area-inset-top,0px));bottom:auto;ri
       <button type="button" class="ghost" id="paFile">Save to file</button>
       <button type="button" class="ghost" id="paAudio">Audio</button>
       <button type="button" class="ghost" id="paVoice">Voice commands: Off</button>
+      <button type="button" class="ghost" id="paFF">Friendly fire: Off</button>
       <button type="button" class="ghost" id="paZoom">Camera: Close</button>
       <button type="button" class="ghost" id="paDev">Dev menu &amp; cheats (`)</button>
       <button type="button" class="ghost v3only" id="paView">View: Overhead view</button>
@@ -5306,7 +5307,7 @@ const magOf=id=>id==='glock'&&S.extMag?33:WD[id].mag;
 function hurtPlayer(d){if(DEV.on.god)return;if(P.car&&!isBike(P.car))d*=0.5;if(S.armor>0){const a=Math.min(S.armor,d*0.6);S.armor-=a;d-=a;}P.hp-=d;P.hurtT=4;if(!P.car)bleed(P.x,P.y,R()-.5,R()-.5,2);shake=Math.max(shake,3.5);floatText(P.x,P.y-24,'-'+Math.round(d),'#e0574b');AU.hurt();}
 function bleed(x,y,nx,ny,n){for(let k=0;k<n;k++){const sp=60+R()*110;fx.push({k:'blood',x:x+(R()-.5)*6,y:y+(R()-.5)*6,vx:nx*sp+(R()-.5)*50,vy:ny*sp+(R()-.5)*50,t:0.18+R()*0.16});}}
 function damageNPC(e,d,src,nx,ny){
-  if(e.dead||e.god)return;if(e.job&&src!=='npc')jobHit(e,d,src);else profHit(e,d,src);nx=nx??(R()-.5);ny=ny??(R()-.5);{const l=Math.hypot(nx,ny)||1;nx/=l;ny/=l;}e.hp-=d;if(e.hp<=0&&e.inj==null)e.inj=R()<injP(src,e.type);floatText(e.x,e.y-18,'-'+Math.round(d),'#e0574b');bleed(e.x,e.y,nx,ny,src==='gun'?4:src==='car'?5:3);
+  if(e.dead||e.god||(src!=='npc'&&src!=='homie'&&noFF(e)))return;if(e.job&&src!=='npc')jobHit(e,d,src);else profHit(e,d,src);nx=nx??(R()-.5);ny=ny??(R()-.5);{const l=Math.hypot(nx,ny)||1;nx/=l;ny/=l;}e.hp-=d;if(e.hp<=0&&e.inj==null)e.inj=R()<injP(src,e.type);floatText(e.x,e.y-18,'-'+Math.round(d),'#e0574b');bleed(e.x,e.y,nx,ny,src==='gun'?4:src==='car'?5:3);
   if(e.hp>0&&(src==='car'||(src==='melee'&&d>=40))){e.stun=Math.max(e.stun,1.3);e.down=1.3;e.da=Math.atan2(ny,nx)+(R()-.5);}
   const hi=hoodOf(e.x,e.y);
   if(src==='npc'){if(e.hp<=0){e.dead=true;if(e.type==='rival'){addInf(hi,e.gang,-4);if(DMG_BY&&GANG[DMG_BY])addInf(hi,DMG_BY,2);refreshOwners();}else if(e.type==='homie'&&e.follow){S.followers=Math.max(0,(S.followers||1)-1);log(`${nickOf(e)} got hit.`,GANG.crew.color);}else if(e.type==='cust'){const c=CL(e.cid);if(e.inj)c.hurt=true;else loseClient(c);}}
@@ -5340,7 +5341,7 @@ function attack(){
   if(S.clip[id]===0)startReload();
 }
 function melee(w){
-  for(const e of npcs){if(e.dead)continue;const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy);if(d>w.range)continue;const dot=(dx*P.ax+dy*P.ay)/(d||1);if(d>26&&dot<0.35)continue;
+  for(const e of npcs){if(e.dead||noFF(e))continue;const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy);if(d>w.range)continue;const dot=(dx*P.ax+dy*P.ay)/(d||1);if(d>26&&dot<0.35)continue;
     const k=(w.knock||14)/(d||1);const sm=sneakMul(e,dx,dy,w);moveEnt(e,dx*k,dy*k);damageNPC(e,w.dmg*fitMul()*sm,'melee',dx,dy);fx.push({k:'hit',x:e.x-dx*0.3,y:e.y-dy*0.3,t:.2,big:w===WD.bat});AU.hit(w===WD.bat?'bat':w===WD.knife?'knife':'fists',e.x,e.y);shake=Math.max(shake,w===WD.bat?5:2.5);return true;}
   return stompBody(w);}
 // somebody already on the ground: keep swinging and they don't get back up
@@ -5367,7 +5368,7 @@ function npcShoot(e,dmg){if(e.type==='rival'){e.atP=6;gangFired(e.x,e.y,e);}cons
 function updBullets(dt){
   for(const b of bullets){for(let s=0;s<3&&!b.dead;s++){b.x+=b.vx*dt/3;b.y+=b.vy*dt/3;
       if(solidPx(b.x,b.y)){b.dead=true;fx.push({k:'spark',x:b.x,y:b.y,t:.15});break;}
-      if(b.own==='p'||b.own==='h'){const hc=carAt(b.x,b.y,P.car);if(hc){shootCar(hc.c,b.dmg,b.own==='h'?'n':'p',hc.lx,hc.ly,b.x,b.y);b.dead=true;break;}for(const e of npcs){if(e.dead||e.inCar||e.follow||(b.own==='h'&&!(e.type==='rival'||(e.type==='cop'&&e.chase&&!S.no12)||e===b.mk)))continue;if(Math.hypot(e.x-b.x,e.y-b.y)<e.r+3){damageNPC(e,b.dmg,'gun',b.vx,b.vy);b.dead=true;break;}}}
+      if(b.own==='p'||b.own==='h'){const hc=carAt(b.x,b.y,P.car);if(hc){shootCar(hc.c,b.dmg,b.own==='h'?'n':'p',hc.lx,hc.ly,b.x,b.y);b.dead=true;break;}for(const e of npcs){if(e.dead||e.inCar||e.follow||(b.own==='p'&&noFF(e))||(b.own==='h'&&!(e.type==='rival'||(e.type==='cop'&&e.chase&&!S.no12)||e===b.mk)))continue;if(Math.hypot(e.x-b.x,e.y-b.y)<e.r+3){damageNPC(e,b.dmg,'gun',b.vx,b.vy);b.dead=true;break;}}}
       else if(b.own==='g'){let hitE=null;for(const e of npcs){if(e.dead||e.inCar||e===b.src||(e.type==='rival'&&e.gang===b.gang)||(b.gang==='dpd'&&(e.type==='cop'||e.type==='homie'&&e.follow&&b.src?.perp!==e)))continue;if(Math.hypot(e.x-b.x,e.y-b.y)<e.r+3){hitE=e;break;}}
         if(hitE){DMG_BY=b.gang;damageNPC(hitE,b.dmg,'npc',b.vx,b.vy);DMG_BY=null;b.dead=true;break;}
         if(b.gang!=='dpd'&&!P.car&&Math.hypot(P.x-b.x,P.y-b.y)<P.r+3){hurtPlayer(b.dmg*0.7);b.dead=true;break;}const hc=carAt(b.x,b.y,null);if(hc){shootCar(hc.c,b.dmg,'n',hc.lx,hc.ly,b.x,b.y);b.dead=true;break;}}
@@ -8926,6 +8927,12 @@ function payoffTick(){payEnsure();if(S.payoff&&!paidOff()){S.payoff=0;log('Your 
   if(P.heat>0.05&&turfCovered(P.x,P.y)){P.heat=0;P.searchT=0;P.seen=false;descClear();for(const e of npcs)if(e.type==='cop'){e.chase=false;e.grab=0;}for(const c of cars)if(c.mode==='cop')c.leave=true;log('Back on your turf. The DPD pulls off.',GANG.crew.color);}
   for(const e of npcs){if(e.dead||e.type!=='cop'||!turfCovered(e.x,e.y))continue;if(!onScreen(e,60))e.dead=true;else{e.chase=false;e.grab=0;e.ignoreT=90;}}
   for(const c of cars){if(c.dead||c.type!=='cop'||c===P.car||c.payCar||c.mode==='wreck'||c.mode==='parked'||!turfCovered(c.x,c.y))continue;if(!onScreen(c,120))c.dead=true;else if(c.mode==='resp'||c.mode==='cop'){c.mode='cop';c.leave=true;}}}
+// ================= friendly fire toggle: off means you can't hurt your own crew =================
+let FF=false;try{FF=localStorage.getItem('mctw-ff')==='1';}catch(e){}
+const noFF=e=>!FF&&e.type==='homie';
+function ffLbl(){$('paFF').textContent=FF?'Friendly fire: On':'Friendly fire: Off';}
+function ffToggle(){FF=!FF;try{localStorage.setItem('mctw-ff',FF?'1':'0');}catch(e){}ffLbl();}
+$('paFF').onclick=ffToggle;ffLbl();
 })();
 </script>
 </html>
