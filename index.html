@@ -5194,7 +5194,8 @@ function garPx(x,y,r){let n=0;for(const [ox,oy] of [[-r,-r],[r,-r],[-r,r],[r,r]]
 function keepOut(e,x,y){if(e===P||e.follow)return false;const r=e.r||8,nn=garPx(x,y,r);if(isGT(e.x,e.y))return false;return nn>garPx(e.x,e.y,r)||isGT(x,y);}
 function moveEnt(e,dx,dy){if(!hit(e.x+dx,e.y,e.r)&&!keepOut(e,e.x+dx,e.y))e.x+=dx;if(!hit(e.x,e.y+dy,e.r)&&!keepOut(e,e.x,e.y+dy))e.y+=dy;}
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
-function los(ax,ay,bx,by){const d=Math.hypot(bx-ax,by-ay),n=Math.ceil(d/12);for(let i=1;i<n;i++){const t=i/n,k=tileAt(Math.floor((ax+(bx-ax)*t)/T),Math.floor((ay+(by-ay)*t)/T));if(k===BLDG||k===CONS)return false;}return true;}const nightK=()=>1-0.25*nightAmt();
+function los(ax,ay,bx,by){if(GD.on){const wy=GD.y0*T+3;if((ay-wy)*(by-wy)<0){const x=ax+(bx-ax)*(wy-ay)/(by-ay);if(x>=GD.x0*T&&x<(GD.x1+1)*T)return false;}}const d=Math.hypot(bx-ax,by-ay),n=Math.ceil(d/12);for(let i=1;i<n;i++){const t=i/n,k=tileAt(Math.floor((ax+(bx-ax)*t)/T),Math.floor((ay+(by-ay)*t)/T));if(k===BLDG||k===CONS||(k===GDOOR&&GD.o<0.85))return false;}return true;}
+const rivalSees=e=>!hidIn()&&los(e.x,e.y,P.x,P.y);const nightK=()=>1-0.25*nightAmt();
 const FOOT_FOV=1.6,CAR_FOV=2.1;
 const footRange=()=>(220+Math.min(5,P.heat)*12)*nightK();
 const carRange=()=>360*nightK();
@@ -5343,7 +5344,7 @@ function attack(){
   const id=S.cur;if(S.clip[id]<=0){startReload();return;}
   if(!DEV.on.ammo)S.clip[id]--;P.atkCD=w.cd;
   const base=Math.atan2(P.ay,P.ax);
-  for(let k=0;k<(w.pellets||1);k++){const a=base+(R()-.5)*w.spread*2;bullets.push({x:P.x+Math.cos(base)*18,y:P.y+Math.sin(base)*18,vx:Math.cos(a)*w.speed,vy:Math.sin(a)*w.speed,life:w.life*(0.85+R()*.3),dmg:w.dmg,own:'p'});}
+  for(let k=0;k<(w.pellets||1);k++){const a=base+(R()-.5)*w.spread*2;bullets.push({x:P.x,y:P.y,vx:Math.cos(a)*w.speed,vy:Math.sin(a)*w.speed,life:w.life*(0.85+R()*.3),dmg:w.dmg,own:'p'});}
   fx.push({k:'flash',x:P.x+Math.cos(base)*24,y:P.y+Math.sin(base)*24,a:base,t:.06});
   {const ea=base+Math.PI/2+(R()-.5)*0.6,sp2=90+R()*60;fx.push({k:'shell',x:P.x+Math.cos(base)*12,y:P.y+Math.sin(base)*12,vx:Math.cos(ea)*sp2,vy:Math.sin(ea)*sp2,r:R()*6,t:1.6,big:S.cur==='sawed'});}
   shake=Math.max(shake,S.cur==='sawed'?6:S.cur==='draco'?2.2:1.8);
@@ -5351,13 +5352,13 @@ function attack(){
   if(S.clip[id]===0)startReload();
 }
 function melee(w){
-  for(const e of npcs){if(e.dead||noFF(e))continue;const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy);if(d>w.range)continue;const dot=(dx*P.ax+dy*P.ay)/(d||1);if(d>26&&dot<0.35)continue;
+  for(const e of npcs){if(e.dead||noFF(e))continue;const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy);if(d>w.range||!los(P.x,P.y,e.x,e.y))continue;const dot=(dx*P.ax+dy*P.ay)/(d||1);if(d>26&&dot<0.35)continue;
     const k=(w.knock||14)/(d||1);const sm=sneakMul(e,dx,dy,w);if(w===WD.bat){damageNPC(e,batHit(e,w.dmg*fitMul()*sm,dx,dy),'melee',dx,dy);batAfter(e,dx,dy);}else{moveEnt(e,dx*k,dy*k);damageNPC(e,w.dmg*fitMul()*sm,'melee',dx,dy);}fx.push({k:'hit',x:e.x-dx*0.3,y:e.y-dy*0.3,t:.2,big:w===WD.bat});AU.hit(w===WD.bat?'bat':w===WD.knife?'knife':'fists',e.x,e.y);shake=Math.max(shake,w===WD.bat?5:2.5);return true;}
-  if(w===WD.bat||w===WD.knife)for(const c of cars){if(c.dead||!isBike(c)||!c.riderLook||(c.mode!=='pack'&&c.mode!=='traffic'))continue;const dx=c.x-P.x,dy=c.y-P.y,d=Math.hypot(dx,dy);if(d>w.range+10||(d>26&&(dx*P.ax+dy*P.ay)/(d||1)<0.35))continue;
+  if(w===WD.bat||w===WD.knife)for(const c of cars){if(c.dead||!isBike(c)||!c.riderLook||(c.mode!=='pack'&&c.mode!=='traffic'))continue;const dx=c.x-P.x,dy=c.y-P.y,d=Math.hypot(dx,dy);if(d>w.range+10||(d>26&&(dx*P.ax+dy*P.ay)/(d||1)<0.35)||!los(P.x,P.y,c.x,c.y))continue;
     const e=bikeDismount(c,'p');if(e){if(w===WD.bat){damageNPC(e,batHit(e,w.dmg*fitMul(),dx,dy),'melee',dx,dy);batAfter(e,dx,dy);}else damageNPC(e,w.dmg*fitMul(),'melee',dx,dy);}fx.push({k:'hit',x:c.x-dx*0.3,y:c.y-dy*0.3,t:.2,big:w===WD.bat});AU.hit(w===WD.bat?'bat':'knife',c.x,c.y);shake=Math.max(shake,w===WD.bat?5:2.5);return true;}
   return stompBody(w);}
 // somebody already on the ground: keep swinging and they don't get back up
-function stompBody(w){for(const b of BODIES){if(!b.alive||b.carried)continue;const dx=b.x-P.x,dy=b.y-P.y,d=Math.hypot(dx,dy);if(d>w.range+6)continue;const dot=(dx*P.ax+dy*P.ay)/(d||1);if(d>26&&dot<0.3)continue;
+function stompBody(w){for(const b of BODIES){if(!b.alive||b.carried)continue;const dx=b.x-P.x,dy=b.y-P.y,d=Math.hypot(dx,dy);if(d>w.range+6||!los(P.x,P.y,b.x,b.y))continue;const dot=(dx*P.ax+dy*P.ay)/(d||1);if(d>26&&dot<0.3)continue;
     b.beat=(b.beat||0)+(w===WD.bat?3:w===WD.knife?3:1);bleed(b.x,b.y,dx/(d||1),dy/(d||1),4);fx.push({k:'hit',x:b.x,y:b.y,t:.2,big:w===WD.bat});AU.hit(w===WD.bat?'bat':w===WD.knife?'knife':'fists',b.x,b.y);shake=Math.max(shake,w===WD.bat?4:2);b.vx+=dx/(d||1)*40;b.vy+=dy/(d||1)*40;
     if(b.beat>=3){bodyDied(b);b.pool=Math.max(b.pool||0,0.6);floatText(b.x,b.y-24,'FINISHED','#e0574b');const w2=witness(b.x,b.y);addHeat(0.3+Math.min(.6,w2.civ*.15)+w2.cop*1.2,b.x,b.y);}
     return true;}return false;}
@@ -5373,9 +5374,9 @@ function gunNoise(x,y,byPlayer){if(byPlayer)P.firedT=LAWT;
   if(cop)h+=0.5;if(S.cur==='glock')h*=GLOCK_HEAT[S.glockTag]||1;const selfDef=war||npcs.some(o=>o.type==='rival'&&!o.dead&&o.atP>0&&Math.hypot(o.x-x,o.y-y)<650);if(selfDef)h*=0.45;addHeat(h,x,y);
   if(tShot<=0){tShot=25;log(war?'DPD is holding a perimeter while the war plays out.':cop?'Cops heard the shots.':'ShotSpotter picked up gunfire. DPD is looking.','#e0574b');}
 }
-function homieShoot(e,t){e.firedT=LAWT;const a=Math.atan2(t.y-e.y,t.x-e.x)+(R()-.5)*0.25;bullets.push({x:e.x+Math.cos(a)*16,y:e.y+Math.sin(a)*16,vx:Math.cos(a)*900,vy:Math.sin(a)*900,life:.5,dmg:11,own:'h',mk:t});fx.push({k:'flash',x:e.x+Math.cos(a)*20,y:e.y+Math.sin(a)*20,a,t:.06});AU.gun('glock',e.x,e.y,false);gunNoise(e.x,e.y,false);}
+function homieShoot(e,t){e.firedT=LAWT;const a=Math.atan2(t.y-e.y,t.x-e.x)+(R()-.5)*0.25;bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*900,vy:Math.sin(a)*900,life:.5,dmg:11,own:'h',mk:t});fx.push({k:'flash',x:e.x+Math.cos(a)*20,y:e.y+Math.sin(a)*20,a,t:.06});AU.gun('glock',e.x,e.y,false);gunNoise(e.x,e.y,false);}
 function npcShoot(e,dmg){if(e.type==='rival'){e.atP=6;gangFired(e.x,e.y,e);}const a=Math.atan2(P.y-e.y,P.x-e.x)+(R()-.5)*0.28;e.fx=Math.cos(a);e.fy=Math.sin(a);
-  bullets.push({x:e.x+Math.cos(a)*16,y:e.y+Math.sin(a)*16,vx:Math.cos(a)*900,vy:Math.sin(a)*900,life:.55,dmg,own:'n'});
+  bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*900,vy:Math.sin(a)*900,life:.55,dmg,own:'n'});
   fx.push({k:'flash',x:e.x+Math.cos(a)*20,y:e.y+Math.sin(a)*20,a,t:.06});gunNoise(e.x,e.y,false);AU.gun('glock',e.x,e.y,false);}
 function updBullets(dt){
   for(const b of bullets){for(let s=0;s<3&&!b.dead;s++){b.x+=b.vx*dt/3;b.y+=b.vy*dt/3;
@@ -6227,7 +6228,7 @@ function sproutGang(){const used=Object.keys(GANG);const cand=NEW_GANGS.filter(n
   for(const h of S.hoods)h.inf[id]=h.inf[id]||0;const h=S.hoods[hood];h.inf[id]=70;h.inf.crew=Math.min(h.inf.crew||0,30);refreshOwners();
   for(let k=0;k<6;k++)spawnRival(id,[hood],300);card('New gang in town',`The ${name} just claimed ${HN[hood]}.`,GANG[id].color);}
 // ---------- gang vs gang ----------
-function gangShoot(e,t){const a=Math.atan2(t.y-e.y,t.x-e.x)+(R()-.5)*0.3;bullets.push({x:e.x+Math.cos(a)*16,y:e.y+Math.sin(a)*16,vx:Math.cos(a)*880,vy:Math.sin(a)*880,life:.5,dmg:10,own:'g',gang:e.gang,src:e});fx.push({k:'flash',x:e.x+Math.cos(a)*20,y:e.y+Math.sin(a)*20,a,t:.06});AU.gun('glock',e.x,e.y,false);gunNoise(e.x,e.y,false);gangFired(e.x,e.y,e);}
+function gangShoot(e,t){const a=Math.atan2(t.y-e.y,t.x-e.x)+(R()-.5)*0.3;bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*880,vy:Math.sin(a)*880,life:.5,dmg:10,own:'g',gang:e.gang,src:e});fx.push({k:'flash',x:e.x+Math.cos(a)*20,y:e.y+Math.sin(a)*20,a,t:.06});AU.gun('glock',e.x,e.y,false);gunNoise(e.x,e.y,false);gangFired(e.x,e.y,e);}
 const isEnemyOf=(e,o)=>o!==e&&!o.dead&&!(o.down>0)&&((o.type==='rival'&&o.gang!==e.gang)||(o.type==='homie'&&!o.inCar));
 let tRaidSquad=40,tClash=0;
 function clashTick(dt){tClash-=dt;if(tClash>0)return;tClash=1;
@@ -6253,7 +6254,7 @@ function crewArm(e){e.armed=!!(e.gun&&e.ammo>0);}
 function crewShoot(e,t){const g=CGUN[e.gun];if(!g)return false;
   if(!(e.ammo>0)){e.armed=false;if(!e.outSaid){e.outSaid=1;say(e,pick(["I'm out!",'Need ammo!',"I'm dry, boss!"]),2);log(`${nickOf(e)} is out of ammo. Give them a mag from the crew card.`,GANG.crew.color);crewCardDirty=true;}return false;}
   e.ammo--;e.firedT=LAWT;const a0=Math.atan2(t.y-e.y,t.x-e.x);
-  for(let k=0;k<g.pel;k++){const a=a0+(R()-.5)*g.spr;bullets.push({x:e.x+Math.cos(a)*16,y:e.y+Math.sin(a)*16,vx:Math.cos(a)*900,vy:Math.sin(a)*900,life:g.life,dmg:g.dmg,own:'h',mk:t});}
+  for(let k=0;k<g.pel;k++){const a=a0+(R()-.5)*g.spr;bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*900,vy:Math.sin(a)*900,life:g.life,dmg:g.dmg,own:'h',mk:t});}
   fx.push({k:'flash',x:e.x+Math.cos(a0)*20,y:e.y+Math.sin(a0)*20,a:a0,t:.06});AU.gun(e.gun,e.x,e.y,false);gunNoise(e.x,e.y,false);gangFired(e.x,e.y,e);
   e.cd=g.cd+R()*g.cd*0.6;crewCardDirty=true;return true;}
 // owned guns the player can hand over (not the one in their hand unless they have nothing else)
@@ -6552,7 +6553,7 @@ function updResp(c,dt){c.lt+=dt;
     return;}
   if(c.st==='scene'){c.v=0;c.sceneT+=dt;if(c.sceneT>40&&!onScreen(c,80)){c.dead=true;for(const o of npcs)if(o.unit===c&&!o.chase&&!onScreen(o,60))o.dead=true;}return;}}
 function copShoot(e,t){const a=Math.atan2(t.y-e.y,t.x-e.x)+(R()-.5)*0.22;e.fx=Math.cos(a);e.fy=Math.sin(a);
-  bullets.push({x:e.x+Math.cos(a)*16,y:e.y+Math.sin(a)*16,vx:Math.cos(a)*900,vy:Math.sin(a)*900,life:.5,dmg:12,own:'g',gang:'dpd',src:e});
+  bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*900,vy:Math.sin(a)*900,life:.5,dmg:12,own:'g',gang:'dpd',src:e});
   fx.push({k:'flash',x:e.x+Math.cos(a)*20,y:e.y+Math.sin(a)*20,a,t:.06});AU.gun('glock',e.x,e.y,false);gunNoise(e.x,e.y,false);}
 function arrestNPC(c,t){t.dead=true;c.perp=null;floatText(t.x,t.y-24,'ARRESTED','#6f96e0');
   if(t.follow){S.followers=Math.max(0,(S.followers||1)-1);t.follow=false;crewCardDirty=true;say(c,pick(['You have the right to remain silent.','Hands behind your back.']),2.2);log(`DPD arrested ${nickOf(t)}${t.gun?` and took the ${WD[t.gun].name}`:''}.`,'#6f96e0');return;}const hi=hoodOf(t.x,t.y);if(GANG[t.gang]){addInf(hi,t.gang,-2);refreshOwners();}
@@ -7061,8 +7062,9 @@ function update(dt){
       if(e.war)e.aggro=Math.max(e.aggro,5);
       if(e.aggro<=0&&rivalTgtTick(e,dt))continue;
       if(e.party&&e.aggro<=0){partyNpc(e,dt);continue;}
-      if(e.aggro<=0&&dP<170&&S.hoods[hi].owner===e.gang&&beefOf(e.gang)>=3)e.aggro=6;
-      if(e.aggro>0){e.aggro-=dt;if(!e.war&&dP>460)e.aggro=0;
+      const rs=rivalSees(e);if(e.aggro<=0&&dP<170&&rs&&S.hoods[hi].owner===e.gang&&beefOf(e.gang)>=3)e.aggro=6;
+      if(e.aggro>0){e.aggro-=dt*(rs?1:hidIn()?4:1.5);if(!e.war&&dP>460)e.aggro=0;
+        if(!rs){e.drawT=null;if(!hidIn()&&dP>28)seek(e,P.x,P.y,90,dt);else walk(e,dt,40);continue;}
         if(!nerveOK(e)){holdUp(e,dt,dP);continue;}e.hold=false;
         if(e.armed&&e.drawT==null)e.drawT=e.war?0.2:0.6+R()*0.6;
         if(e.drawT>0){e.drawT-=dt;const a=Math.atan2(P.y-e.y,P.x-e.x);e.fx=Math.cos(a);e.fy=Math.sin(a);if(dP<150&&!e.drawSaid){e.drawSaid=true;say(e,pick(['Run it!','What you on?!',"Oh you think it's a game?",'Wrong block, dawg.']),1.6);}continue;}
