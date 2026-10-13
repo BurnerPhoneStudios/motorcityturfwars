@@ -9051,22 +9051,32 @@ function tiltFace(p0,p1,q0,q1,col,nF,lit,night){ctx.fillStyle=col;ctx.beginPath(
   ctx.lineWidth=Math.max(1,fh*0.38);ctx.setLineDash([Math.max(4,fh*1.3),Math.max(3,fh*0.7)]);ctx.strokeStyle=night>0.3&&lit?'#e8c56a':'rgba(28,36,48,.5)';
   for(let k=0;k<nF;k++){const t=(k+0.55)/nF;ctx.beginPath();ctx.moveTo(p0[0]+(q0[0]-p0[0])*t,p0[1]+(q0[1]-p0[1])*t);ctx.lineTo(p1[0]+(q1[0]-p1[0])*t,p1[1]+(q1[1]-p1[1])*t);ctx.stroke();}
   ctx.setLineDash([]);ctx.lineWidth=1;ctx.strokeStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.moveTo(q0[0],q0[1]);ctx.lineTo(q1[0],q1[1]);ctx.stroke();}
-function drawTilt(){const cx=vw/2,cy=vh/2,night=nightAmt(),list=[];
+const tiltWatch=e=>!e.dead&&!e.inCar&&(e.type==='rival'||e.type==='cop'||e.type==='homie'||e.aggro>0||e.war);
+function drawTilt(){const cx=vw/2,cy=vh/2,night=nightAmt(),list=[],pts=[];
+  for(const e of npcs)if(tiltWatch(e))pts.push(e.x-camX,e.y-camY);
+  for(const c of cars)if(!c.dead&&c!==P.car&&(Math.abs(c.v)>5||c.mode==='cop'||c.mode==='resp'))pts.push(c.x-camX,c.y-camY);
   for(const b of buildings){if(!TILT_KIND.has(b.kind))continue;const r=tiltRect(b);const x0=r.x-camX,y0=r.y-camY;if(x0>vw+20||y0>vh+20||x0+r.w<-20||y0+r.h<-20)continue;
     list.push([tiltZ(b),Math.hypot(x0+r.w/2-cx,y0+r.h/2-cy),b,r]);}
   list.sort((a,c)=>a[0]-c[0]||c[1]-a[1]);
   for(const [z,,b,r] of list){const x0=r.x-camX,y0=r.y-camY,x1=x0+r.w,y1=y0+r.h,s=TILT.H/(TILT.H-z);const up=(x,y)=>[cx+(x-cx)*s,cy+(y-cy)*s];
     const inside=P.x>r.x-4&&P.x<r.x+r.w+4&&P.y>r.y-4&&P.y<r.y+r.h+4;
-    if(inside){ctx.globalAlpha=0.18;}
-    else{const col=tiltWallCol(b),nF=Math.max(1,Math.min(12,Math.round(z/45))),lit=(b.id*7)%3!==0;
-      const A=[x0,y0],B=[x1,y0],C=[x1,y1],D=[x0,y1],A2=up(...A),B2=up(...B),C2=up(...C),D2=up(...D);
-      if(cy<y0)tiltFace(A,B,A2,B2,shade(col,0.08),nF,lit,night);
-      if(cy>y1)tiltFace(D,C,D2,C2,shade(col,-0.28),nF,lit,night);
-      if(cx<x0)tiltFace(A,D,A2,D2,shade(col,-0.08),nF,lit,night);
-      if(cx>x1)tiltFace(B,C,B2,C2,shade(col,-0.18),nF,lit,night);}
-    const fx=r.x-b.x*T,fy=r.y-b.y*T,k=chunkScale;
-    ctx.save();ctx.translate(cx,cy);ctx.scale(s,s);ctx.translate(-cx,-cy);ctx.drawImage(tiltRoof(b),fx*k,fy*k,r.w*k,r.h*k,x0,y0,r.w,r.h);
-    if(b.kind==='store')drawStoreSign(b);else drawTag(b);ctx.restore();ctx.globalAlpha=1;}}
+    const rx0=cx+(x0-cx)*s,ry0=cy+(y0-cy)*s,rx1=cx+(x1-cx)*s,ry1=cy+(y1-cy)*s;let under=false;
+    for(let i=0;i<pts.length&&!under;i+=2)under=pts[i]>rx0&&pts[i]<rx1&&pts[i+1]>ry0&&pts[i+1]<ry1;
+    b._ta=(b._ta??1)+((under?0.35:1)-(b._ta??1))*0.2;
+    const paint=al=>{ctx.globalAlpha=al;if(!inside){const col=tiltWallCol(b),nF=Math.max(1,Math.min(12,Math.round(z/45))),lit=(b.id*7)%3!==0;
+        const A=[x0,y0],B=[x1,y0],C=[x1,y1],D=[x0,y1],A2=up(...A),B2=up(...B),C2=up(...C),D2=up(...D);
+        if(cy<y0)tiltFace(A,B,A2,B2,shade(col,0.08),nF,lit,night);
+        if(cy>y1)tiltFace(D,C,D2,C2,shade(col,-0.28),nF,lit,night);
+        if(cx<x0)tiltFace(A,D,A2,D2,shade(col,-0.08),nF,lit,night);
+        if(cx>x1)tiltFace(B,C,B2,C2,shade(col,-0.18),nF,lit,night);}
+      const fx=r.x-b.x*T,fy=r.y-b.y*T,k=chunkScale;
+      ctx.save();ctx.translate(cx,cy);ctx.scale(s,s);ctx.translate(-cx,-cy);ctx.drawImage(tiltRoof(b),fx*k,fy*k,r.w*k,r.h*k,x0,y0,r.w,r.h);
+      if(b.kind==='store')drawStoreSign(b);else drawTag(b);ctx.restore();};
+    if(inside)paint(0.18);
+    else if(b._ta>0.98)paint(1);
+    else{ctx.save();ctx.beginPath();ctx.rect(x0,y0,r.w,r.h);ctx.clip();paint(1);ctx.restore();
+      ctx.save();ctx.beginPath();ctx.rect(-vw,-vh,vw*3,vh*3);ctx.rect(x0,y0,r.w,r.h);ctx.clip('evenodd');paint(b._ta);ctx.restore();}
+    ctx.globalAlpha=1;}}
 function tiltSet(on){TILT.on=on;$('paTilt').textContent='Buildings: '+(on?'3D':'Flat');try{localStorage.setItem('mctw-tilt',on?'1':'0');}catch(e){}}
 $('paTilt').onclick=()=>tiltSet(!TILT.on);tiltSet(TILT.on);
 })();
