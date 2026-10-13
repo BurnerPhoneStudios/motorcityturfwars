@@ -9045,13 +9045,14 @@ function drawATMs(){for(const a of ATMS){const x=a.x-camX,y=a.y-camY;if(x<-30||y
   ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(x-7,y-9,16,22);ctx.fillStyle='#2a2c30';ctx.fillRect(x-9,y-11,18,22);ctx.fillStyle='#4fd1ff';ctx.fillRect(x-6,y-8,12,7);ctx.fillStyle='#6cc28a';ctx.fillRect(x-6,y+2,12,2);
   ctx.fillStyle='#d7dbe1';ctx.font=`900 ${fpx(9)}px ${FD}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('ATM',x,y+17);}}
 // ================= 2.5D buildings: GTA 2 style walls and lifted roofs on the 2D map =================
-const TILT={on:false,H:800,zMax:340,roofs:new Map()};
+const TILT={on:false,K:1/550,sMax:2.5,roofs:new Map()};
+const tiltS=z=>1+Math.min(TILT.sMax-1,z*TILT.K);
 try{TILT.on=localStorage.getItem('mctw-tilt')==='1';}catch(e){}
 const TILT_KIND=new Set(['b','store','stash','hq','walkup','house','casino','casino2','station','conv','rencen','fisher','factory','shed','arena']);
 function tiltRect(b){const x=b.x*T,y=b.y*T,w=b.w*T,h=b.h*T;
   if(b.kind==='house'){const n=b.face==='n',hy=n?y+14:y+4;return {x:x+6,y:hy,w:w-12,h:h-18};}
   return {x,y,w,h};}
-function tiltZ(b){return Math.min(TILT.zMax,(v3BH[b.kind]??(4+(b.hgt||1)*4.5))*10);}
+function tiltZ(b){if(BANK&&b===BANK.b)return 840;if(b.kind==='b'&&b.hood===H_DT)return 220+Math.round((b.s||0)*600);return (v3BH[b.kind]??(4+(b.hgt||1)*4.5))*10;}
 function tiltRoof(b){let c=TILT.roofs.get(b.id);if(c){TILT.roofs.delete(b.id);TILT.roofs.set(b.id,c);return c;}
   const k=chunkScale;c=document.createElement('canvas');c.width=Math.max(1,Math.ceil(b.w*T*k));c.height=Math.max(1,Math.ceil(b.h*T*k));const g=c.getContext('2d');g.scale(k,k);drawBuildingStatic(g,b,b.x*T,b.y*T);
   TILT.roofs.set(b.id,c);if(TILT.roofs.size>90)TILT.roofs.delete(TILT.roofs.keys().next().value);return c;}
@@ -9068,12 +9069,12 @@ function drawTilt(){const cx=vw/2,cy=vh/2,night=nightAmt(),list=[],pts=[];
   for(const b of buildings){if(!TILT_KIND.has(b.kind))continue;const r=tiltRect(b);const x0=r.x-camX,y0=r.y-camY;if(x0>vw+20||y0>vh+20||x0+r.w<-20||y0+r.h<-20)continue;
     list.push([tiltZ(b),Math.hypot(x0+r.w/2-cx,y0+r.h/2-cy),b,r]);}
   list.sort((a,c)=>a[0]-c[0]||c[1]-a[1]);
-  for(const [z,,b,r] of list){const x0=r.x-camX,y0=r.y-camY,x1=x0+r.w,y1=y0+r.h,s=TILT.H/(TILT.H-z);const up=(x,y)=>[cx+(x-cx)*s,cy+(y-cy)*s];
+  for(const [z,,b,r] of list){const x0=r.x-camX,y0=r.y-camY,x1=x0+r.w,y1=y0+r.h,s=tiltS(z);const up=(x,y)=>[cx+(x-cx)*s,cy+(y-cy)*s];
     const inside=P.x>r.x-4&&P.x<r.x+r.w+4&&P.y>r.y-4&&P.y<r.y+r.h+4;
     const rx0=cx+(x0-cx)*s,ry0=cy+(y0-cy)*s,rx1=cx+(x1-cx)*s,ry1=cy+(y1-cy)*s;let under=false;
     for(let i=0;i<pts.length&&!under;i+=2)under=pts[i]>rx0&&pts[i]<rx1&&pts[i+1]>ry0&&pts[i+1]<ry1;
     b._ta=(b._ta??1)+((under?0.35:1)-(b._ta??1))*0.2;
-    const paint=al=>{ctx.globalAlpha=al;if(!inside){const col=tiltWallCol(b),nF=Math.max(1,Math.min(12,Math.round(z/45))),lit=(b.id*7)%3!==0;
+    const paint=al=>{ctx.globalAlpha=al;if(!inside){const col=tiltWallCol(b),nF=Math.max(1,Math.min(26,Math.round(z/40))),lit=(b.id*7)%3!==0;
         const A=[x0,y0],B=[x1,y0],C=[x1,y1],D=[x0,y1],A2=up(...A),B2=up(...B),C2=up(...C),D2=up(...D);
         if(cy<y0)tiltFace(A,B,A2,B2,shade(col,0.08),nF,lit,night);
         if(cy>y1)tiltFace(D,C,D2,C2,shade(col,-0.28),nF,lit,night);
@@ -9090,7 +9091,7 @@ function drawTilt(){const cx=vw/2,cy=vh/2,night=nightAmt(),list=[],pts=[];
 function tiltSet(on){TILT.on=on;$('paTilt').textContent='Buildings: '+(on?'3D':'Flat');try{localStorage.setItem('mctw-tilt',on?'1':'0');}catch(e){}}
 $('paTilt').onclick=()=>tiltSet(!TILT.on);tiltSet(TILT.on);
 function vehLift(c,g,x,y,pv){if(!TILT.on||g!==ctx||pv)return ()=>[0,0];const ca=Math.cos(c.a),sa=Math.sin(c.a),dx=x-vw/2,dy=y-vh/2;
-  return z=>{const k=z/(TILT.H-z),wx=dx*k,wy=dy*k;return [wx*ca+wy*sa,-wx*sa+wy*ca];};}
+  return z=>{const k=tiltS(z)-1,wx=dx*k,wy=dy*k;return [wx*ca+wy*sa,-wx*sa+wy*ca];};}
 })();
 </script>
 </html>
