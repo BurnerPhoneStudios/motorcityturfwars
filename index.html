@@ -5277,6 +5277,8 @@ function mkCop(x,y,chase){return mkNPC('cop',x,y,{chase:!!chase,hp:70,dirty:R()<
 const MODELS=[['Chevalier Imperial',420,'sedan'],['Horde F-160',560,'truck'],['Dodgy Charjer',780,'muscle'],['Cadavac Escapade',1100,'suv'],['Jeap Grand Chieftain',640,'suv'],['Chryslur 3000',520,'sedan'],['Buik LeSaber',260,'sedan'],['Horde Crown Victory',300,'sedan'],['Dodgy Challenjer',950,'muscle'],['Chevalier Maliboo',340,'sedan'],['Lincon Towne Car',480,'sedan'],['Ramm 1600',600,'truck']];
 const CARC=['#8c2f2a','#2b4f7a','#c9c2b0','#1f1f22','#5d6b4a','#a8a9ad','#6b3d74','#b8862f','#2f6b6b','#7a1f2b','#e8e6e1','#3a3f47'];
 const isBike=c=>!!c&&(c.type==='rocket'||c.type==='chopper');
+const VTOUGH={rocket:0.85,chopper:0.95,sedan:1.6,muscle:1.7,sport:1.5,suv:2.1,cop:2,truck:2.6,ems:2.4};
+const vDmg=(c,d,bullet)=>d/(VTOUGH[c.type]||1.6)*(c.armor?(bullet?0.35:0.55):1);
 const CDIM={rocket:[34,10],chopper:[40,11],sedan:[46,22],suv:[48,25],truck:[54,25],muscle:[48,23],sport:[52,24],cop:[48,23],ems:[58,26]};
 // [top speed px/s, base accel, steering, gears]  ~4.4 px/s per mph
 const PERF={rocket:[480,340,3.3,6],chopper:[370,240,2.75,5],sedan:[335,215,2.6,5],suv:[318,190,2.4,5],truck:[305,185,2.3,5],muscle:[370,250,2.65,6],sport:[430,285,2.95,6],cop:[360,235,2.7,5],ems:[300,200,2.4,5]};
@@ -5462,7 +5464,7 @@ const ITEMS={
   bp:{name:'Backpack',desc:'Carry 60 units of product instead of 14. Weed is 1 per gram, meth is 4 per bag.',cost:150,has:()=>(S.closet||[]).includes('back'),act:()=>{(S.closet||(S.closet=[])).push('back');if(!S.bag||S.bag==='')S.bag='back';P.look=playerLook();return 'Backpack on. You can carry 60 now.';}},
   gb:{name:'Gym bag',desc:'Carry 150 units. Big enough for real weight.',cost:400,has:()=>(S.closet||[]).includes('gym'),act:()=>{(S.closet||(S.closet=[])).push('gym');S.bag='gym';P.look=playerLook();return 'Gym bag on your shoulder. You can carry 150 now.';}},
   rkit:{name:'Repair kit',desc:'Fix any car on the spot. Press X in or next to a car. Carry up to 5.',cost:25,can:()=>(S.kitsR||0)<5,act:()=>{S.kitsR=(S.kitsR||0)+1;return `Repair kit bagged. You have ${S.kitsR}/5. Press X to use one.`;}},
-  fix:{name:'Duct tape & Fix-a-Flat',desc:'Fully repairs the car you last drove, if it is parked close by.',cost:80,can:()=>P.lastCar&&P.lastCar.mode==='parked'&&dist(P.lastCar,P)<220&&P.lastCar.hp<100,act:()=>{P.lastCar.hp=100;return `The ${P.lastCar.model} is running right again.`;}},
+  fix:{name:'Duct tape & Fix-a-Flat',desc:'Fully repairs the car you last drove, if it is parked close by.',cost:80,can:()=>P.lastCar&&P.lastCar.mode==='parked'&&dist(P.lastCar,P)<220&&carHurt(P.lastCar),act:()=>{fixCar(P.lastCar);return `The ${P.lastCar.model} is running right again.`;}},
   deliver:{name:'Delivery run',desc:'Legit work. Get a coney order across town before it gets cold.',cost:0,label:'Take job',can:()=>!S.job,act:startJob},
   kit:{name:'Grow kit',desc:'5-gallon pot, LED grow light and potting soil. Take it to the stash and set it up for one more plant.',cost:200,can:()=>S.slots+(S.kits||0)<S.space,act:()=>{S.kits=(S.kits||0)+1;return `Grow kit loaded up. You have ${S.kits}. Set it up at the stash.`;}},
   labkit:{name:'Lab setup',desc:'Burner, glassware and a vent fan. Set it up at the stash for one more meth station (max 4).',cost:1000,lvl:2,can:()=>(S.labs||0)+(S.labKits||0)<COOK.max,act:()=>{S.labKits=(S.labKits||0)+1;return `Lab setup in the trunk. You have ${S.labKits}. Set it up at the stash.`;}},
@@ -5845,8 +5847,8 @@ function shootCar(c,dmg,own,lx,ly,x,y){
   fx.push({k:'spark',x,y,t:.15});AU.ping(x,y);
   (c.holes||(c.holes=[])).push([lx,ly]);if(c.holes.length>16)c.holes.shift();
   if(c.mode==='wreck'||c.god)return;
-  if(c.mode==='player'){carDamage(c,dmg*0.45);return;}
-  c.hp-=dmg*0.45;
+  if(c.mode==='player'){carDamage(c,dmg*0.45,true);return;}
+  c.hp-=vDmg(c,dmg*0.45,true);
   if(isBike(c)&&c.riderLook&&(c.mode==='pack'||c.mode==='traffic')){const e=bikeDismount(c,own);if(e&&own==='p')damageNPC(e,dmg,'gun',Math.cos(c.a),Math.sin(c.a));}
   if(own==='p'){
     if(c.mode==='cop'||c.police){if(P.heat<2){P.heat=2;}addHeat(0.5);P.lkx=P.x;P.lky=P.y;
@@ -5860,7 +5862,7 @@ function wreckCar(c,own){if(c.god){c.hp=100;return;}const cop=c.mode==='cop'||c.
   fx.push({k:'boom',x:c.x,y:c.y,t:.7});shake=Math.max(shake,Math.max(0,10-dist(c,P)/50));AU.explode(c.x,c.y);
   for(const e of npcs){if(e.dead)continue;const d=dist(e,c);if(d<75){if(own==='p')damageNPC(e,70*(1-d/95),'car',e.x-c.x,e.y-c.y);else{e.stun=Math.max(e.stun,1.5);e.flee=6;}}}
   if(!P.car&&dist(c,P)<85)hurtPlayer(32*(1-dist(c,P)/105));
-  for(const o of cars){if(o===c||o.dead||o.mode==='wreck')continue;const d=Math.hypot(o.x-c.x,o.y-c.y);if(d<70){if(o.mode==='player')carDamage(o,25);else{o.hp-=25;if(o.hp<=0)setTimeout(()=>{if(o.mode!=='wreck'&&!o.dead)wreckCar(o,own);},350);}}}
+  for(const o of cars){if(o===c||o.dead||o.mode==='wreck')continue;const d=Math.hypot(o.x-c.x,o.y-c.y);if(d<70){if(o.mode==='player')carDamage(o,25);else{o.hp-=vDmg(o,25);if(o.hp<=0)setTimeout(()=>{if(o.mode!=='wreck'&&!o.dead)wreckCar(o,own);},350);}}}
   if(cop){for(let k=0;k<2;k++){const s=spotNear(c.x,c.y,20,80,false);if(s){const cp=mkCop(s.x,s.y,true);cp.hp=45;cp.lkx=P.x;cp.lky=P.y;}}if(own==='p'){P.heat=Math.max(P.heat,3);addHeat(1);log('DPD cruiser destroyed. More units are rolling.','#e0574b');}}
   else if(was==='traffic'){const s=spotNear(c.x,c.y,20,70,false);if(s)mkNPC('civ',s.x,s.y,{flee:8});}
   else if(was==='gangcar'&&GANG[c.gang]){for(let k=0;k<2;k++){const s=spotNear(c.x,c.y,20,70,false);if(s)mkNPC('rival',s.x,s.y,{gang:c.gang,home:hoodOf(s.x,s.y),aggro:10,hp:40,armed:true});}}
@@ -6082,8 +6084,8 @@ function renderKustom(){const c=P.car;if(!c)return;let b='';const lv=repLvl();
   b+=`<div class="sec">Body</div><div class="wrow">${kb('stripes',1,c.stripes?'Racing stripes: on':'Racing stripes',!!c.stripes,KPRICE.stripes)}${kb('tint',1,c.tint?'Limo tint: on':'Limo tint',!!c.tint,KPRICE.tint)}</div>`;
   b+=`<div class="sec">Rims · $${KPRICE.rims}</div><div class="wrow">${RIMS.map(([id,n])=>kb('rims',id,n,(c.rims||'stock')===id,0)).join('')}</div>`;
   b+=`<div class="sec">Underglow · $${KPRICE.glow}</div><div class="wrow">${GLOWS.map(([id,n])=>kb('glow',id,n,(c.glow||'none')===id,0)).join('')}</div>`;
-  b+=`<div class="sec">Performance</div><div class="wrow">${kb('eng',1,'Engine stage 1 · +8% speed',(c.eng||0)>=1,KPRICE.eng1,(c.eng||0)>=1)}${kb('eng',2,lv<2?'Engine stage 2 · needs rep Known':'Engine stage 2 · +16%',(c.eng||0)>=2,KPRICE.eng2,(c.eng||0)>=2||(c.eng||0)<1||lv<2)}${kb('armor',1,'Armor plating · takes 45% less damage',!!c.armor,KPRICE.armor,!!c.armor)}</div>`;
-  const rep=Math.round((100-c.hp)*3);b+=`<div class="sec">Service</div><div class="wrow">${kb('repair',1,c.hp>=99?'Body is clean':`Repair · $${rep}`,false,0,c.hp>=99)}`;
+  b+=`<div class="sec">Performance</div><div class="wrow">${kb('eng',1,'Engine stage 1 · +8% speed',(c.eng||0)>=1,KPRICE.eng1,(c.eng||0)>=1)}${kb('eng',2,lv<2?'Engine stage 2 · needs rep Known':'Engine stage 2 · +16%',(c.eng||0)>=2,KPRICE.eng2,(c.eng||0)>=2||(c.eng||0)<1||lv<2)}${kb('armor',1,'Bulletproof armor · 65% less from bullets, 45% less from crashes',!!c.armor,KPRICE.armor,!!c.armor)}</div>`;
+  const rep=Math.max(c.holes&&c.holes.length?25:0,Math.round((100-c.hp)*3));b+=`<div class="sec">Service</div><div class="wrow">${kb('repair',1,!carHurt(c)?'Body is clean':`Repair · $${rep}`,false,0,!carHurt(c))}`;
   if(!c.owned){const full=(S.garage||[]).length>=GARAGE_MAX;b+=kb('keep',1,full?`Garage full (${GARAGE_MAX})`:`New VIN, keep it in your garage · $${KPRICE.keep}`,false,0,full);}
   else b+=`<span class="note">In your garage. It respawns outside the stash if it gets wrecked.</span>`;
   b+='</div>';
@@ -6097,7 +6099,7 @@ document.getElementById('kust').addEventListener('click',ev=>{const t=ev.target.
   else if(a==='glow'){if((c.glow||'none')===v)return;if(v!=='none'&&!pay(KPRICE.glow))return;c.glow=v;}
   else if(a==='eng'){const n=+v;if(!pay(n===1?KPRICE.eng1:KPRICE.eng2))return;c.eng=n;}
   else if(a==='armor'){if(!pay(KPRICE.armor))return;c.armor=1;}
-  else if(a==='repair'){if(!pay(Math.round((100-c.hp)*3)))return;c.hp=100;}
+  else if(a==='repair'){if(!pay(Math.max(c.holes&&c.holes.length?25:0,Math.round((100-c.hp)*3))))return;fixCar(c);}
   else if(a==='keep'){if((S.garage||[]).length>=GARAGE_MAX||!pay(KPRICE.keep))return;const gid=1+Math.max(0,...(S.garage||[]).map(e=>e.gid));c.owned=true;c.gid=gid;S.garage.push({gid});syncGarage(c);log(`The ${c.model} is yours now. It parks outside the stash.`,GANG.crew.color);}
   syncGarage(c);renderKustom();});
 document.getElementById('kClose').onclick=closeKustom;
@@ -6733,8 +6735,8 @@ function stashGarageTick(dt){if(!GD.on)return;const dcx=(GD.x0+GD.x1+1)/2*T,dcy=
   const want=near?1:0;if(want!==GD.want){GD.want=want;AU.door();}GD.o+=(want-GD.o)*Math.min(1,dt*2.6);if(Math.abs(want-GD.o)<0.01)GD.o=want;
   if(!near&&GD.o<0.85){for(const e of npcs)if(!e.dead&&!e.follow&&tileAt(Math.floor(e.x/T),Math.floor(e.y/T))===GDOOR)e.y+=T;}
   const inside=inGarage(P.x,P.y);
-  if(inside){if(P.car&&P.car.hp<100){P.car.hp=Math.min(100,P.car.hp+6*dt);}if(P.heat>0.05&&garMsgT<=0){garMsgT=60;log('Laying low in the garage. The cops cannot see you in here.',GANG.crew.color);}}
-  garMsgT-=dt;for(const c of cars)if(c.owned&&c.mode==='parked'&&inGarage(c.x,c.y)&&c.hp<100)c.hp=Math.min(100,c.hp+3*dt);}
+  if(inside){if(P.car&&P.car.hp<100){P.car.hp=Math.min(100,P.car.hp+6*dt);}if(P.car&&P.car.hp>=100&&carHurt(P.car))fixCar(P.car);if(P.heat>0.05&&garMsgT<=0){garMsgT=60;log('Laying low in the garage. The cops cannot see you in here.',GANG.crew.color);}}
+  garMsgT-=dt;for(const c of cars)if(c.owned&&c.mode==='parked'&&inGarage(c.x,c.y)){if(c.hp<100)c.hp=Math.min(100,c.hp+3*dt);else if(carHurt(c))fixCar(c);}}
 function drawGarage(){if(!GD.on)return;const x=GD.x0*T-camX,y=GD.y0*T-camY,w=(GD.x1-GD.x0+1)*T,h=(GD.y1-GD.y0+1)*T;if(x>vw+40||y>vh+60||x+w<-40||y+h<-60)return;
   const inside=inGarage(P.x,P.y)||(P.car&&inGarage(P.car.x,P.car.y));GD.view=(GD.view||0)+((inside||GD.o>0.5?1:0)-(GD.view||0))*0.08;
   ctx.fillStyle='#34363a';ctx.fillRect(x,y,w,h);ctx.strokeStyle='rgba(242,210,79,.55)';ctx.lineWidth=2;
@@ -6749,9 +6751,11 @@ function drawGarageTop(){if(!GD.on)return;const x=GD.x0*T-camX,y=GD.y0*T-camY,w=
   const ph=T*(1-open);if(ph>1){ctx.fillStyle='#8c9198';ctx.fillRect(x,dy,w,ph);ctx.strokeStyle='rgba(0,0,0,.28)';ctx.lineWidth=1;for(let yy=dy+5;yy<dy+ph;yy+=5){ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x+w,yy);ctx.stroke();}ctx.fillStyle='#e8762b';ctx.fillRect(x,dy+ph-4,w,4);}
   ctx.fillStyle='#f2a33a';ctx.fillRect(x-8,dy+2,4,10);ctx.fillRect(x+w+4,dy+2,4,10);}
 // ================= repair kits =================
+const carHurt=c=>c.hp<99||!!(c.holes&&c.holes.length)||c.burn>0;
+function fixCar(c){c.hp=100;c.holes=null;c.burn=0;}
 function useKit(){if(!(S.kitsR>0)){log('No repair kits. Gas stations and House Depo sell them for $25.','#8a8f98');return;}
-  const c=P.car||nearestCarAny(70);if(!c){log('No car close enough to fix.','#8a8f98');return;}if(c.mode==='wreck'){log("That one's totaled. Not even duct tape can save it.",'#8a8f98');return;}if(c.hp>=99){log(`The ${c.model} is already running right.`,'#8a8f98');return;}
-  S.kitsR--;c.hp=100;AU.ping(c.x,c.y);AU.door();floatText(c.x,c.y-24,'REPAIRED','#6cc28a');log(`Patched up the ${c.model}. ${S.kitsR} kit${S.kitsR===1?'':'s'} left.`,'#6cc28a');}
+  const c=P.car||nearestCarAny(70);if(!c){log('No car close enough to fix.','#8a8f98');return;}if(c.mode==='wreck'){log("That one's totaled. Not even duct tape can save it.",'#8a8f98');return;}if(!carHurt(c)){log(`The ${c.model} is already running right.`,'#8a8f98');return;}
+  S.kitsR--;fixCar(c);AU.ping(c.x,c.y);AU.door();floatText(c.x,c.y-24,'REPAIRED','#6cc28a');log(`Patched up the ${c.model}. ${S.kitsR} kit${S.kitsR===1?'':'s'} left.`,'#6cc28a');}
 function nearestCarAny(r){let b=null,bd=r;for(const c of cars){if(c.dead||c.mode==='cop'||c.mode==='resp'||c.mode==='ems'||c.mode==='gangcar'||c.mode==='pack')continue;const d=Math.hypot(c.x-P.x,c.y-P.y);if(d<bd){bd=d;b=c;}}return b;}
 
 // ================= Detroit weather + radio DJ breaks =================
@@ -6975,7 +6979,7 @@ function carMove(c,dt,isPlayer){
     const md=carR(c)+carR(o);if(d<md&&d>0.1){const push=(md-d);const nx=ddx/d,ny=ddy/d;if(!hit(c.x+nx*push,c.y+ny*push,15)){c.x+=nx*push;c.y+=ny*push;}
       if(c.bcd<=0&&Math.abs(c.v)>60){const hv=Math.cos(c.ma!=null&&isPlayer?c.ma:c.a)*c.v,vv=Math.sin(c.ma!=null&&isPlayer?c.ma:c.a)*c.v;const imp=Math.abs(hv*-nx+vv*-ny);
         if(imp>40){knock(o,-nx*imp*0.75,-ny*imp*0.75,isPlayer?'p':'n');crashFx((c.x+o.x)/2,(c.y+o.y)/2,imp);if(!isPlayer&&Math.hypot(c.x-P.x,c.y-P.y)<700)AU.crash(Math.min(0.6,imp/500));
-          if(o.mode!=='player'&&o.mode!=='wreck'){o.hp-=imp*0.05;if(o.hp<=0&&!(o.mode==='cop'&&!isPlayer))wreckCar(o,isPlayer?'p':'n');}
+          if(o.mode!=='player'&&o.mode!=='wreck'){o.hp-=vDmg(o,imp*0.05);if(o.hp<=0&&!(o.mode==='cop'&&!isPlayer))wreckCar(o,isPlayer?'p':'n');}
           if(isPlayer){shake=Math.max(shake,imp/70);if(!isBike(c))c.a+=(R()-.5)*Math.min(0.5,imp/600);}}}
       if(isPlayer&&o.mode==='pack'&&Math.abs(c.v)>90&&o.riderLook)bikeDismount(o,'p');
       if(c.bcd<=0&&isPlayer&&isBike(c)&&Math.abs(c.v)>230){bikeBail(c);return;}
@@ -6984,7 +6988,7 @@ function carMove(c,dt,isPlayer){
       const n=Math.hypot(e.x-c.x,e.y-c.y)||1;if(isPlayer||Math.hypot(e.x-P.x,e.y-P.y)<700)AU.thud(e.x,e.y);moveEnt(e,(e.x-c.x)/n*28,(e.y-c.y)/n*28);
       if(isPlayer)damageNPC(e,Math.abs(c.v)*0.14,'car',e.x-c.x,e.y-c.y);else if(e.type!=='cop')e.flee=3;}}
 }
-function carDamage(c,d){if(c.god)return;if(c.armor)d*=0.55;c.hp-=d;if(c.hp<=0&&c.mode==='player'){c.hp=0;const car=c;exitCar();if(P.car){P.car=null;}car.mode='wreck';car.t=60;hurtPlayer(12);log(`The ${car.model} is totaled.`,'#e0574b');}}
+function carDamage(c,d,bullet){if(c.god)return;c.hp-=vDmg(c,d,bullet);if(c.hp<=0&&c.mode==='player'){c.hp=0;const car=c;exitCar();if(P.car){P.car=null;}car.mode='wreck';car.t=60;hurtPlayer(12);log(`The ${car.model} is totaled.`,'#e0574b');}}
 function updTraffic(c,dt){
   const chk=(ex,ey)=>{const al=c.hz?(ex-c.x)*c.dir:(ey-c.y)*c.dir,pp=c.hz?Math.abs(ey-c.y):Math.abs(ex-c.x);return al>0&&al<68&&pp<24;};
   let block=!P.car&&running&&chk(P.x,P.y);
