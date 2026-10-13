@@ -551,6 +551,7 @@ body.touch #phoneBtn{top:calc(8px + env(safe-area-inset-top,0px));bottom:auto;ri
       <button type="button" class="ghost" id="paFF">Friendly fire: Off</button>
       <button type="button" class="ghost" id="paZoom">Camera: Close</button>
       <button type="button" class="ghost" id="paPhone">Phone size: Large</button>
+      <button type="button" class="ghost" id="paTilt">Buildings: Flat</button>
       <button type="button" class="ghost" id="paDev">Dev menu &amp; cheats (`)</button>
       <button type="button" class="ghost v3only" id="paView">View: Overhead view</button>
       <button type="button" class="ghost" id="paQuit">Save and quit to menu</button>
@@ -7727,7 +7728,7 @@ function renderWorld(){
   {const x=74*T-camX,y=(WSR+5.2)*T-camY;if(y<vh+40&&x>-200&&x<vw+200){ctx.save();ctx.shadowColor='#ffd34f';ctx.shadowBlur=nightAmt()>0.3?14:0;ctx.fillStyle='#ffd34f';ctx.font=`900 ${fpx(20)}px ${FD}`;ctx.fillText('ROYALE WINDSOR',x,y);ctx.restore();}}
   for(const d of DECOR)if(d.k==='label'){const x=d.x-camX,y=d.y-camY;if(x>-200&&y>-40&&x<vw+200&&y<vh+40){ctx.fillStyle='rgba(235,232,224,.55)';ctx.font=`900 26px ${FD}`;ctx.fillText(d.name,x,y);}}
   {const x=116*T-camX,y=88.5*T-camY;if(y<vh+40&&y>-40&&x>-200&&x<vw+200){ctx.fillStyle='rgba(235,232,224,.75)';ctx.font=`900 ${fpx(22)}px ${FD}`;ctx.fillText('BELLE ISLE',x,y);ctx.font=`700 ${fpx(12)}px ${FB}`;ctx.fillText('MACARTHUR BRIDGE CLOSED',x,y+20);}}
-  for(const b of buildings){const x=b.x*T-camX,y=b.y*T-camY;if(x>vw+20||y>vh+20||x+b.w*T<-20||y+b.h*T<-20)continue;if(b.kind==='store')drawStoreSign(b);else drawTag(b);}
+  for(const b of buildings){if(TILT.on&&TILT_KIND.has(b.kind))continue;const x=b.x*T-camX,y=b.y*T-camY;if(x>vw+20||y>vh+20||x+b.w*T<-20||y+b.h*T<-20)continue;if(b.kind==='store')drawStoreSign(b);else drawTag(b);}
   const n=nowM();for(const d of S.deals||[]){const x=d.spot.x-camX,y=d.spot.y-camY;if(x<-40||y<-40||x>vw+40||y>vh+40)continue;const act=n>=d.start;ctx.strokeStyle=act?hexA(GANG.crew.color,.85):'rgba(138,143,152,.6)';ctx.lineWidth=2;ctx.setLineDash([6,5]);ctx.beginPath();ctx.arc(x,y,26+Math.sin(clockT*3)*2,0,7);ctx.stroke();ctx.setLineDash([]);}
   if(SKIDS.length){ctx.lineCap='round';ctx.lineWidth=3;for(const k of SKIDS){const x=k.x1-camX,y=k.y1-camY;if(x<-50||y<-50||x>vw+50||y>vh+50)continue;ctx.strokeStyle=`rgba(12,12,12,${Math.min(0.5,k.t/12*0.5)})`;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(k.x2-camX,k.y2-camY);ctx.stroke();}ctx.lineCap='butt';}
   for(const bl of BLOOD){const x=bl.x-camX,y=bl.y-camY;if(x<-20||y<-20||x>vw+20||y>vh+20)continue;ctx.fillStyle=`rgba(110,12,16,${Math.min(0.75,bl.t/12)})`;ctx.beginPath();ctx.arc(x,y,bl.r,0,7);ctx.fill();}
@@ -7744,6 +7745,7 @@ function renderWorld(){
   ctx.lineCap='round';for(const b of bullets){ctx.strokeStyle=b.own==='p'?'#ffe6a3':'#ffb19c';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(b.x-camX,b.y-camY);ctx.lineTo(b.x-camX-b.vx*0.018,b.y-camY-b.vy*0.018);ctx.stroke();}ctx.lineCap='butt';
   for(const f of fx){if(f.k==='boom'){const p=1-f.t/.7,bx=f.x-camX,by=f.y-camY;ctx.fillStyle=`rgba(255,${(190-p*130)|0},60,${0.85*(1-p)})`;ctx.beginPath();ctx.arc(bx,by,20+p*70,0,7);ctx.fill();ctx.strokeStyle=`rgba(255,240,200,${0.6*(1-p)})`;ctx.lineWidth=3;ctx.beginPath();ctx.arc(bx,by,30+p*110,0,7);ctx.stroke();}else if(f.k==='flash'){ctx.fillStyle=`rgba(255,220,140,${f.t/.06})`;ctx.beginPath();ctx.arc(f.x-camX,f.y-camY,9,0,7);ctx.fill();}else if(f.k==='spark'){ctx.fillStyle=`rgba(255,200,120,${f.t/.15})`;ctx.fillRect(f.x-camX-2,f.y-camY-2,4,4);}else if(f.k==='hit'){const p=1-f.t/.2,x=f.x-camX,y=f.y-camY,r=(f.big?10:6)+p*(f.big?16:10);ctx.strokeStyle=`rgba(255,240,200,${1-p})`;ctx.lineWidth=f.big?3:2;ctx.beginPath();for(let k=0;k<8;k++){const a=k*0.785+0.2;ctx.moveTo(x+Math.cos(a)*r*0.4,y+Math.sin(a)*r*0.4);ctx.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);}ctx.stroke();}else if(f.k==='steam'){const a=Math.min(1,f.t/2)*0.22;ctx.fillStyle=`rgba(220,224,230,${a})`;ctx.beginPath();ctx.arc(f.x-camX,f.y-camY,10+(3-f.t)*6,0,7);ctx.fill();}}
   for(const s of STEAM){const x=s.x-camX,y=s.y-camY;if(x>-60&&y>-60&&x<vw+60&&y<vh+60&&R()<0.06)fx.push({k:'steam',x:s.x+(R()-.5)*8,y:s.y,t:3});}
+  if(TILT.on)drawTilt();
   for(const st of STORES)if(st.kind==='gas')drawCanopy(st);
   drawHideout();drawHospital();drawPeopleMover();
   for(const c of CRANES)drawCrane(c);
@@ -9032,6 +9034,41 @@ function atmUse(){const a=atmWeek(),l=atmLeft(),d=Math.round(dirtyNow());
 function drawATMs(){for(const a of ATMS){const x=a.x-camX,y=a.y-camY;if(x<-30||y<-30||x>vw+30||y>vh+30)continue;
   ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(x-7,y-9,16,22);ctx.fillStyle='#2a2c30';ctx.fillRect(x-9,y-11,18,22);ctx.fillStyle='#4fd1ff';ctx.fillRect(x-6,y-8,12,7);ctx.fillStyle='#6cc28a';ctx.fillRect(x-6,y+2,12,2);
   ctx.fillStyle='#d7dbe1';ctx.font=`900 ${fpx(9)}px ${FD}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('ATM',x,y+17);}}
+// ================= 2.5D buildings: GTA 2 style walls and lifted roofs on the 2D map =================
+const TILT={on:false,H:800,zMax:340,roofs:new Map()};
+try{TILT.on=localStorage.getItem('mctw-tilt')==='1';}catch(e){}
+const TILT_KIND=new Set(['b','store','stash','hq','walkup','house','casino','casino2','station','conv','rencen','fisher','factory','shed','arena']);
+function tiltRect(b){const x=b.x*T,y=b.y*T,w=b.w*T,h=b.h*T;
+  if(b.kind==='house'){const n=b.face==='n',hy=n?y+14:y+4;return {x:x+6,y:hy,w:w-12,h:h-18};}
+  return {x,y,w,h};}
+function tiltZ(b){return Math.min(TILT.zMax,(v3BH[b.kind]??(4+(b.hgt||1)*4.5))*10);}
+function tiltRoof(b){let c=TILT.roofs.get(b.id);if(c){TILT.roofs.delete(b.id);TILT.roofs.set(b.id,c);return c;}
+  const k=chunkScale;c=document.createElement('canvas');c.width=Math.max(1,Math.ceil(b.w*T*k));c.height=Math.max(1,Math.ceil(b.h*T*k));const g=c.getContext('2d');g.scale(k,k);drawBuildingStatic(g,b,b.x*T,b.y*T);
+  TILT.roofs.set(b.id,c);if(TILT.roofs.size>90)TILT.roofs.delete(TILT.roofs.keys().next().value);return c;}
+function tiltWallCol(b){if(b.kind==='walkup')return b.brick||'#6e3426';if(b.kind==='house')return b.style==='brick'?'#6e3a2c':shade(b.roofC||'#7a6a58',0.25);return v3WALL[b.id%v3WALL.length];}
+function tiltFace(p0,p1,q0,q1,col,nF,lit,night){ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(p0[0],p0[1]);ctx.lineTo(p1[0],p1[1]);ctx.lineTo(q1[0],q1[1]);ctx.lineTo(q0[0],q0[1]);ctx.closePath();ctx.fill();
+  const fh=Math.hypot(q0[0]-p0[0],q0[1]-p0[1])/nF;if(fh<3)return;
+  ctx.lineWidth=Math.max(1,fh*0.38);ctx.setLineDash([Math.max(4,fh*1.3),Math.max(3,fh*0.7)]);ctx.strokeStyle=night>0.3&&lit?'#e8c56a':'rgba(28,36,48,.5)';
+  for(let k=0;k<nF;k++){const t=(k+0.55)/nF;ctx.beginPath();ctx.moveTo(p0[0]+(q0[0]-p0[0])*t,p0[1]+(q0[1]-p0[1])*t);ctx.lineTo(p1[0]+(q1[0]-p1[0])*t,p1[1]+(q1[1]-p1[1])*t);ctx.stroke();}
+  ctx.setLineDash([]);ctx.lineWidth=1;ctx.strokeStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.moveTo(q0[0],q0[1]);ctx.lineTo(q1[0],q1[1]);ctx.stroke();}
+function drawTilt(){const cx=vw/2,cy=vh/2,night=nightAmt(),list=[];
+  for(const b of buildings){if(!TILT_KIND.has(b.kind))continue;const r=tiltRect(b);const x0=r.x-camX,y0=r.y-camY;if(x0>vw+20||y0>vh+20||x0+r.w<-20||y0+r.h<-20)continue;
+    list.push([tiltZ(b),Math.hypot(x0+r.w/2-cx,y0+r.h/2-cy),b,r]);}
+  list.sort((a,c)=>a[0]-c[0]||c[1]-a[1]);
+  for(const [z,,b,r] of list){const x0=r.x-camX,y0=r.y-camY,x1=x0+r.w,y1=y0+r.h,s=TILT.H/(TILT.H-z);const up=(x,y)=>[cx+(x-cx)*s,cy+(y-cy)*s];
+    const inside=P.x>r.x-4&&P.x<r.x+r.w+4&&P.y>r.y-4&&P.y<r.y+r.h+4;
+    if(inside){ctx.globalAlpha=0.18;}
+    else{const col=tiltWallCol(b),nF=Math.max(1,Math.min(12,Math.round(z/45))),lit=(b.id*7)%3!==0;
+      const A=[x0,y0],B=[x1,y0],C=[x1,y1],D=[x0,y1],A2=up(...A),B2=up(...B),C2=up(...C),D2=up(...D);
+      if(cy<y0)tiltFace(A,B,A2,B2,shade(col,0.08),nF,lit,night);
+      if(cy>y1)tiltFace(D,C,D2,C2,shade(col,-0.28),nF,lit,night);
+      if(cx<x0)tiltFace(A,D,A2,D2,shade(col,-0.08),nF,lit,night);
+      if(cx>x1)tiltFace(B,C,B2,C2,shade(col,-0.18),nF,lit,night);}
+    const fx=r.x-b.x*T,fy=r.y-b.y*T,k=chunkScale;
+    ctx.save();ctx.translate(cx,cy);ctx.scale(s,s);ctx.translate(-cx,-cy);ctx.drawImage(tiltRoof(b),fx*k,fy*k,r.w*k,r.h*k,x0,y0,r.w,r.h);
+    if(b.kind==='store')drawStoreSign(b);else drawTag(b);ctx.restore();ctx.globalAlpha=1;}}
+function tiltSet(on){TILT.on=on;$('paTilt').textContent='Buildings: '+(on?'3D':'Flat');try{localStorage.setItem('mctw-tilt',on?'1':'0');}catch(e){}}
+$('paTilt').onclick=()=>tiltSet(!TILT.on);tiltSet(TILT.on);
 })();
 </script>
 </html>
