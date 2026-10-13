@@ -403,6 +403,7 @@ body.touch #log{bottom:calc(252px + env(safe-area-inset-bottom,0px))}
 .in-warn .ageb button,.in-warn .ageb a{min-height:44px;padding:10px 18px;font-size:16px;font-weight:700;border:1px solid var(--line);text-decoration:none;display:inline-flex;align-items:center}
 .in-warn #ageYes{background:var(--sodium);color:#111;border-color:var(--sodium)}.in-warn #ageYes:disabled{opacity:.4}.in-warn #ageNo{color:var(--chrome);background:transparent}
 .in-warn #ageNo{text-transform:uppercase;letter-spacing:.06em}
+.in-warn .gcnote{font-size:13px;color:var(--dim)}
 
 body:not(.touch) #goals{left:auto;right:16px;transform:none;top:calc(var(--hudrb,170px) + 10px);width:min(380px,calc(100% - 32px));padding:12px 16px;gap:4px}
 body:not(.touch) #goals .glh{font-size:14px}body:not(.touch) #goals b{font-size:21px;line-height:1.2}body:not(.touch) #goals span{font-size:17px;line-height:1.4}body:not(.touch) #goals i{font-size:16px}
@@ -846,6 +847,7 @@ body.touch #phoneBtn{top:calc(8px + env(safe-area-inset-top,0px));bottom:auto;ri
     <p class="hl">If you or someone you know is struggling with drugs or alcohol, the SAMHSA National Helpline is free, confidential and open 24/7: <span>1-800-662-4357</span></p>
     <p class="age">This game contains drug use, violence, strong language and sexual themes. <b>Are you 17 or older?</b></p>
     <div class="ageb"><button type="button" id="ageYes" disabled>Yes, I'm 17 or older</button><a id="ageNo" href="https://burnerphonestudios.github.io/">No, take me back</a></div>
+    <p class="pubonly gcnote">We count anonymous plays to see how many people play. No cookies, nothing personal.</p>
   </div>
   <div class="in-skip" id="inSkip">Press any key to skip</div>
 </div>
@@ -7951,7 +7953,7 @@ $('paQuit').onclick=()=>{save();running=false;location.reload();};
 $('menuBtn').onclick=()=>{$('menuBtn').blur();openPause();};
 function defaults(){return {crew:'Woodward Boys',cash:200,supplies:0,kitsR:1,radio:1,store:{weed:0,chrome:0,coke:0},bag:'',followers:0,newGangs:[],goneGangs:[],war:null,garage:[{gid:0,model:'Dodgy Venom',type:'sport',value:4200,color:'#c8102e',stripes:true}],crewStance:'defend',closet:['chain'],outfit:{head:'band',bandCol:'crew'},crewFit:{},crewColor:'#4caf50',colV2:1,crewTag:'',led:{in:0,out:0,sold:0},ledPrev:null,inv:{weed:7,chrome:0,coke:0},q:{weed:1,chrome:1,coke:2},prices:{weed:10,chrome:40,coke:80},seeds:1,kits:0,slots:1,space:4,plants:[{g:.62,w:.55,yl:20}],drip:false,chromeOn:false,labs:0,labKits:0,cooks:[],fastCook:false,lawyer:false,cookQ:0,cookP:0,clock:18*60,day:1,won:false,hoods:freshHoods(),rep:0,
   weapons:['fists'],cur:'fists',ammo:{'9mm':0,shells:0,'7.62':0},clip:{glock:0,sawed:0,draco:0},extMag:false,armor:0,job:null,price:20,listed:true,offers:{},deals:[],track:null,roster:null,vipHint:false};}
-function begin(fromSave){
+function begin(fromSave){gcHit(fromSave?'/continue':'/new-game',fromSave?'Continue':'New game',true);
   for(const k in S)delete S[k];
   Object.assign(S,defaults());
   if(fromSave){Object.assign(S,fromSave.S);if(!fromSave.S.inv){S.inv={weed:0,chrome:fromSave.S.product||0};S.q={weed:1,chrome:fromSave.S.quality||1};S.prices={weed:10,chrome:fromSave.S.price||40};S.chromeOn=true;S.seeds=2;S.slots=1;S.space=4;S.plants=[];S.supplies=fromSave.S.supplies||0;for(const c of S.roster)if(!c.fav){c.fav='chrome';c.likes=['weed','chrome'];}}
@@ -8000,7 +8002,7 @@ function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;
   phT+=dt;if(PH.open&&(phoneDirty||phT>1)){phT=0;if(PH.app!=='thread'||phoneDirty)renderPhone(false);}
   requestAnimationFrame(frame);}
 requestAnimationFrame(frame);
-if(PUBLIC_BUILD)for(const el of document.querySelectorAll('.devonly'))el.remove();
+for(const el of document.querySelectorAll(PUBLIC_BUILD?'.devonly':'.pubonly'))el.remove();
 // ================= big map, waypoint, getting-started checklist =================
 const elMap=document.getElementById('bigmap'),bigC=document.getElementById('bigC'),bigX=bigC.getContext('2d');
 const MV={z:3,cx:0,cy:0,drag:null,moved:false,pts:new Map(),pinch:0,lw:1140,lh:802,d:1};
@@ -8953,6 +8955,10 @@ function driveThru(e,d,dt){const c=P.car;if(!c||!c.owned||Math.hypot(c.x-d.spot.
   e.fx=-lx;e.fy=-ly;if(Math.abs(c.v)<20){e.carHand=false;completeDeal(d,e);}return true;}
 function driveThruTxt(kH){const cd=carDealNear();if(!cd)return '';const nm=esc(CL(cd.d.cid).name);
   return cd.e.carHand?`${nm} is walking up to your window`:P.car.owned?`<kbd>${kH}</kbd>Honk for ${nm}`:`${nm} only walks up to your own ride`;}
+// ================= player count: anonymous GoatCounter hits from the public site only =================
+const GC_URL='https://motorcityturfwars.goatcounter.com/count';
+function gcHit(p,title,ev){if(!PUBLIC_BUILD||location.protocol!=='https:')return;try{const q=new URLSearchParams({p,t:title,rnd:Math.random().toString(36).slice(2)});if(ev)q.set('e','true');else if(document.referrer)q.set('r',document.referrer);new Image().src=GC_URL+'?'+q;}catch(e){}}
+gcHit('/','Motor City Turf Wars',false);
 })();
 </script>
 </html>
