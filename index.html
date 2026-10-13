@@ -144,6 +144,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--crew);outline-o
 .robbox b{display:block;font-size:17px;color:var(--chrome)}
 #shopMsg,#trMsg{min-height:20px;font-size:16px;font-weight:600;color:var(--good);margin-bottom:8px}
 #phone{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(360px,calc(100% - 32px));height:min(640px,calc(100% - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)));background:#08090b;border:1px solid rgba(215,219,225,.22);border-radius:30px;padding:10px;display:flex;flex-direction:column;z-index:6;box-shadow:0 20px 50px rgba(0,0,0,.6)}
+#phone{transform:scale(var(--phs,1));transform-origin:100% 100%}
+#phSize{margin-left:8px;background:none;border:1px solid rgba(215,219,225,.25);border-radius:6px;color:var(--dim);font-size:13px;line-height:1;padding:2px 5px;cursor:pointer}#phSize:hover{color:#fff}
 .scr{flex:1;min-height:0;background:#131418;border-radius:22px;display:flex;flex-direction:column;overflow:hidden}
 .sbar{display:flex;justify-content:space-between;align-items:center;padding:9px 18px 2px;font-family:var(--mono);font-size:14px;color:var(--dim)}
 .sbar b{font-family:var(--display);font-size:14px;letter-spacing:.2em;color:var(--sodium)}
@@ -546,6 +548,7 @@ body.touch #phoneBtn{top:calc(8px + env(safe-area-inset-top,0px));bottom:auto;ri
       <button type="button" class="ghost" id="paVoice">Voice commands: Off</button>
       <button type="button" class="ghost" id="paFF">Friendly fire: Off</button>
       <button type="button" class="ghost" id="paZoom">Camera: Close</button>
+      <button type="button" class="ghost" id="paPhone">Phone size: Large</button>
       <button type="button" class="ghost" id="paDev">Dev menu &amp; cheats (`)</button>
       <button type="button" class="ghost v3only" id="paView">View: Overhead view</button>
       <button type="button" class="ghost" id="paQuit">Save and quit to menu</button>
@@ -571,7 +574,7 @@ body.touch #phoneBtn{top:calc(8px + env(safe-area-inset-top,0px));bottom:auto;ri
 
 <div id="phone" hidden>
   <div class="scr">
-    <div class="sbar"><span id="phTime">6:00 PM</span><b>BURNER</b><span>▮▮▮ 4G</span></div>
+    <div class="sbar"><span id="phTime">6:00 PM</span><b>BURNER</b><span>▮▮▮ 4G<button type="button" id="phSize" aria-label="Phone size" title="Phone size">⤡</button></span></div>
     <div class="apphd" id="phHead"></div>
     <div class="appbody" id="phBody"></div>
     <div class="tabs" id="phTabs">
@@ -8964,6 +8967,10 @@ gcHit('/','Motor City Turf Wars',false);
 // ================= favicon: police light bar flashes red and blue (Chrome and Edge only show a GIF's first frame); holds still during play =================
 {const F=['iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABhUlEQVR4nO1XsWrDMBB9Mp2Mty4JDdRkCsWQLR+TPT9Qrx69ukPXrKHfETqGZAh46GRcSElKtiZ4KqSTXFmRZLm17Ax5YLCkO7+nO/vOIuDgDUcnfq5OxOsFYceFgTccnXbbjUl+dLq9ggirSXIA2G03hSgTnty2HaMCsuwI4DcShN+5bTt4v7O1H3j7+aBt63wvcwFUxI3SI3qSr/mP2sQqqAXURKKCVW5iFsII3H9k2g9wsKxXAPuSNIHWU9C6gEIK9vMAh9UMAND3U6lTErn5PWu3nwelhIfVrOAj/QwpCS+EJQeA8eCIlzcHSeTm4stAfQCNFLCEPHkdUBeiPxIH0/hsLpx41QQE01jqpAMa4nzspxgPzj9xZQpEL6Jod1VE0YuiNAV9P0USuf8iVkGrDtBI8OobE0DJTaD1SngV0LoArUpYB2QNzIiAcOIhVKxXakamYcXrBel0ewCg3U5FUP0/iJAfTOgEPaCwDUNVfGR2ooYjwvPrFwEu4HBKeIOmj+c/u36b+exIqccAAAAASUVORK5CYII=','iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABfElEQVR4nO1XPYvCQBB9G64KyxVXKVgEK4uAnZX1/Qh7f0HalGnTXGsr9xuuFLlKtBBSWIUUgoJwxSmpBK/a3Gbd3Wy4fFzhg0B2MrvvZWazkyEQ4A5HN9FWJaLtivDj3MAdjm7Hw75OfnS6vZwIq0lyADge9rkoE5HctmmtAtL0AuA3EkR8c9umGKdfxgt+PL8a+9LrOhPARFga/0bwEPAkM37aL8YL0Ou6WgH8JmkCraegdQG5FJwWPs6bOQCg7yXKSXHoZPe832nhFxKeN/PcHOkm5ElEITw5AEwGF7zvKOLQycQXgc0BDFLAE4rkVUAZAZUIE/iz6M4WTN1yAvxZpJxkAhbibOwlmAzuP3FtCmQbUfZ2ZUSxi6EwBX0vQRw6fyLWwegcYJEQ1TcmgJHXgdZPwoeA1gUYnYRVQFXAahEQTF0EmuelilHdsKLtinS6PQAwLqcy6P4fZMgaE2ZgDQpfMHSHj8pPVnBkeFt+E+AfNKdEdGi6Pf8BfxWZ8pz4/2sAAAAASUVORK5CYII=','iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABiUlEQVR4nO1XLWvDQBh+rkyFqKkWKkJNKwJ1VfslVWNQMR0bGRszM1EzUUp/RhlThQ4KEVMhotBCYGItsZ267HK9r7B8TOyBQO7jvee59727946AgzueXPi6KhHtNoQtFwrueHI5HvZ18qPb6xdEdJokB4DjYV/wMuHJLcuuVUCWnQH8eILwM7csG3fZp/GA7w+pOflqmAugIm6MrTV4eZS33T/L2yoToCJRoaPvUi+EHnizbs1HWA2rFcAukibQeghaF1AIQbr2cdouAAADL5EaxaGT/7P90rWvJTxtFwUb6TakJLwQlhwApqMzlh824tDJxetAbQCDELCEPHkVMDqIyhL78+iqLpi55QT480hqZALq4rzsJZiOrre4MgSihSiaXRlR9KPQhmDgJYhD51fEKhidA9QTvPrGBFDyOtD6SfgvoHUBlV3JdJAlsFoEBDMXgaK9VDKqG51otyHdXh8AjNOpCKr7gwj5w4RW0AcKmzBUh4+snyjhiPD0+kWAP/A4JXyHpp/n32jxnOi6a3HbAAAAAElFTkSuQmCC'].map(s=>'data:image/png;base64,'+s),SEQ=[[0,220],[1,90],[2,220],[1,90]],el=document.getElementById('favi');let i=0;
   const tick=()=>{if(running&&!document.hidden){if(i){i=0;el.type='image/png';el.href=F[0];}setTimeout(tick,400);return;}const [f,ms]=SEQ[i];i=(i+1)%SEQ.length;el.type='image/png';el.href=F[f];setTimeout(tick,ms);};if(el)tick();}
+// ================= phone size: large, medium, small =================
+const PHS=[['Large',1],['Medium',0.85],['Small',0.72]];let phsI=0;try{phsI=Math.max(0,PHS.findIndex(p=>p[0]===localStorage.getItem('mctw-phs')));}catch(e){}
+function phoneSize(i){phsI=(i+PHS.length)%PHS.length;const [n,k]=PHS[phsI];$('phone').style.setProperty('--phs',k);$('paPhone').textContent='Phone size: '+n;$('phSize').title='Phone size: '+n;try{localStorage.setItem('mctw-phs',n);}catch(e){}}
+$('paPhone').onclick=()=>phoneSize(phsI+1);$('phSize').onclick=ev=>{ev.stopPropagation();phoneSize(phsI+1);};phoneSize(phsI);
 })();
 </script>
 </html>
