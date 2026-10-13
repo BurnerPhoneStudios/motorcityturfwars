@@ -4855,7 +4855,7 @@ function makeLook(kind,gang){
   const L={skin:pick(SKIN),hair:pick(['short','short','afro','braids','bald','cap','beanie','long','bun','waves']),hairCol:pick(HAIRC),top:pick(TOPS),style:pick(['tee','hoodie','jacket','tee']),shoes:pick(['#e9e6df','#1a1a1a','#8a2a2a','#d9b25c','#3b5a8c']),cap:pick(TOPS),capBack:R()<.4};
   if(kind==='cust'){L.top=pick(DRAB);L.hair=pick(['short','bald','beanie','hood','long','waves']);L.style=pick(['hoodie','jacket']);L.shoes=pick(['#5a554c','#3a3836','#6e6a62']);}
   if(kind==='civ'||kind==='cust'){const r=R();
-    if(r<0.4){L.fem=true;L.hair=pick(['long','ponytail','bun','braids','curly','afro','long','ponytail']);if(kind==='civ'&&R()<0.4){L.style='dress';L.top=pick(DRESS);}if(R()<0.45){L.bag='purse';L.purse=pick(['#7a2a3a','#2b2b2b','#c9a24a','#5a3a7a','#d9d4c7']);}}
+    if(r<0.4){L.fem=true;L.bust=pick([0.45,0.6,0.75,0.75,0.9,1,1.15]);L.hips=pick([0.5,0.65,0.8,0.8,0.95,1.1]);L.hair=pick(['long','ponytail','bun','braids','curly','afro','long','ponytail']);if(kind==='civ'&&R()<0.4){L.style='dress';L.top=pick(DRESS);}if(R()<0.45){L.bag='purse';L.purse=pick(['#7a2a3a','#2b2b2b','#c9a24a','#5a3a7a','#d9d4c7']);}}
     else if(kind==='civ'&&r<0.48)Object.assign(L,oldLook('man'));else if(kind==='civ'&&r<0.56)Object.assign(L,oldLook('woman'));}
   if(kind==='medic'){L.top='#e3e8ee';L.style='medic';L.shoes='#222';if(L.hair==='hood')L.hair='short';}
   if(kind==='cop'){L.top='#5b84c4';L.style='cop';L.hair='copcap';L.shoes='#111';}
@@ -7554,10 +7554,10 @@ function drawHuman(x,y,a,L,ph,mv,o){
   g.lineCap='butt';
   if(L.style==='dress'){g.fillStyle=shade(top,-0.14);g.beginPath();g.ellipse(-1.5,0,8.6,11.8,0,0,7);g.fill();g.strokeStyle=shade(top,-0.32);g.lineWidth=1;g.stroke();}
   const curvy=L.fem&&!L.old;
-  if(curvy&&L.style!=='dress'){g.fillStyle=L.pants||'#2b3346';g.beginPath();g.ellipse(-5,0,6.2,10.2,0,0,7);g.fill();g.strokeStyle='rgba(0,0,0,.28)';g.lineWidth=1;g.beginPath();g.moveTo(-11,0);g.lineTo(-6,0);g.stroke();g.fillStyle='rgba(255,255,255,.08)';g.beginPath();g.ellipse(-7,-4,2.4,3.4,0,0,7);g.ellipse(-7,4,2.4,3.4,0,0,7);g.fill();}
+  if(curvy&&L.style!=='dress'){g.fillStyle=L.pants||'#2b3346';g.beginPath();const hp=L.hips??0.8;g.ellipse(-2.5-2.5*hp,0,3.6+2.6*hp,8.6+1.6*hp,0,0,7);g.fill();if(hp>0.7){g.strokeStyle='rgba(0,0,0,.28)';g.lineWidth=1;g.beginPath();g.moveTo(-5-6*hp,0);g.lineTo(-6,0);g.stroke();}}
   g.fillStyle=top;g.beginPath();g.ellipse(0,0,L.fem?6:6.8,L.fem?(curvy?8.8:9.6):10.5,0,0,7);g.fill();g.strokeStyle=topD;g.lineWidth=1.5;g.stroke();
-  if(curvy){for(const s2 of [-1,1]){g.fillStyle=top;g.beginPath();g.arc(6.4,s2*3.2,3.4,0,7);g.fill();g.strokeStyle=topD;g.lineWidth=1;g.stroke();g.fillStyle='rgba(255,255,255,.16)';g.beginPath();g.arc(7.4,s2*3.6,1.3,0,7);g.fill();}
-    g.fillStyle=L.skin;g.beginPath();g.moveTo(9.6,-2.4);g.lineTo(5.4,0);g.lineTo(9.6,2.4);g.closePath();g.fill();g.strokeStyle=shade(L.skin,-0.35);g.lineWidth=0.8;g.beginPath();g.moveTo(9.4,0);g.lineTo(6,0);g.stroke();}
+  if(curvy){const bu=L.bust??0.75,br=1.6+1.9*bu,bx=3.4+3.2*bu;for(const s2 of [-1,1]){g.fillStyle=top;g.beginPath();g.arc(bx,s2*3,br,0,7);g.fill();g.strokeStyle=topD;g.lineWidth=1;g.stroke();if(bu>0.7){g.fillStyle='rgba(255,255,255,.16)';g.beginPath();g.arc(bx+1,s2*3.4,1.2,0,7);g.fill();}}
+    const nx=bx+br-0.4;g.fillStyle=L.skin;g.beginPath();g.moveTo(nx,-2.4);g.lineTo(nx-4,0);g.lineTo(nx,2.4);g.closePath();g.fill();if(bu>0.7){g.strokeStyle=shade(L.skin,-0.35);g.lineWidth=0.8;g.beginPath();g.moveTo(nx-0.2,0);g.lineTo(nx-3.4,0);g.stroke();}}
   if(L.style==='cardigan'){g.fillStyle=shade(top,0.35);for(const yy of [-3,0,3])g.fillRect(4,yy-0.6,1.2,1.2);g.strokeStyle=shade(top,-0.25);g.lineWidth=1;g.beginPath();g.moveTo(5,-7);g.lineTo(5,7);g.stroke();}
   if(L.bag==='purse'){g.strokeStyle=shade(L.purse,-0.3);g.lineWidth=1;g.beginPath();g.moveTo(-3,-8);g.lineTo(2,10);g.stroke();g.fillStyle=L.purse;rr(g,-2,9.5,8,5,2);g.fill();g.fillStyle=shade(L.purse,0.3);g.fillRect(1,10.5,2,1);}
   if(L.style==='hoodie'&&L.hair!=='hood'){g.fillStyle=topD;g.beginPath();g.ellipse(-5.5,0,3.2,6,0,0,7);g.fill();}
