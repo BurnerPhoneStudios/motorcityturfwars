@@ -7932,7 +7932,9 @@ function importFile(file){const rd=new FileReader();rd.onload=()=>{let d=null;tr
     if(!d.meta){const s=d.S;d.meta={crew:s.crew,day:s.day,cash:Math.round(s.cash),rep:REPX.reduce((l,x,i)=>(s.rep||0)>=x?i:l,0),turf:s.hoods.filter(h=>h.owner==='crew').length,color:s.crewColor||'#4caf50',clients:s.roster.filter(c=>c.known).length,t:Date.now()};}
     d.S.slot=n;const txt=JSON.stringify(d);localStorage.setItem(slotKey(n),txt);folderWrite(n,txt);$('fileMsg').textContent=`Loaded ${d.S.crew} into slot ${n}.`;renderSlots();};
   rd.readAsText(file);}
-$('btnImport').onclick=()=>$('fileIn').click();
+$('btnImport').onclick=async()=>{if(!window.showOpenFilePicker){$('fileIn').click();return;}
+  try{const [h]=await window.showOpenFilePicker({startIn:FS.ok&&FS.dir?FS.dir:'downloads',types:[{description:'Motor City Turf Wars save',accept:{'application/json':['.json']}}]});importFile(await h.getFile());}
+  catch(e){if(!e||e.name!=='AbortError')$('fileIn').click();}};
 $('fileIn').onchange=ev=>{const f=ev.target.files[0];if(f)importFile(f);ev.target.value='';};
 $('btnFolder').onclick=()=>folderConnect(!FS.dir||FS.ok?true:undefined);
 renderFolder();folderConnect(false);
