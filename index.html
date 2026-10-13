@@ -5220,7 +5220,8 @@ function log(text,color){logs.push({text,color:color||'#d7dbe1',t:7});if(logs.le
 function floatText(x,y,text,color){if(running&&typeof text==='string'&&text.startsWith('+$'))AU.cash();fx.push({k:'txt',x,y,text,color,t:1.3});}
 const nightAmt=()=>{const h=(S.clock/60)%24;if(h>=21||h<5)return 1;if(h>=18)return (h-18)/3;if(h<7)return 1-(h-5)/2;return 0;};
 const isNight=()=>nightAmt()>0.5;
-const heal=n=>{P.hp=Math.min(100,P.hp+n);};
+const maxHP=()=>100+Math.round(S.fit||0);
+const heal=n=>{P.hp=Math.min(maxHP(),P.hp+n);};
 
 // ================= reputation =================
 const REPN=['Nobody','Corner Kid','Known','Respected','Connected','Kingpin'];
@@ -5315,7 +5316,7 @@ const GLOCK_HEAT={dirty:1.4,clean:0.7};
 function giveGlok(tag){if(!S.weapons.includes('glock')){S.weapons.push('glock');S.clip.glock=magOf('glock');S.ammo['9mm']+=magOf('glock');}S.cur='glock';S.glockTag=tag;
   return tag==='dirty'?"Rell slides it over in a paper bag. Don't ask what it's been through.":'Clean Glok. No serial, no history. It is in your hand.';}
 const magOf=id=>id==='glock'&&S.extMag?33:WD[id].mag;
-function hurtPlayer(d){if(DEV.on.god)return;if(P.car&&!isBike(P.car))d*=0.5;if(S.armor>0){const a=Math.min(S.armor,d*0.6);S.armor-=a;d-=a;}P.hp-=d;P.hurtT=4;if(!P.car)bleed(P.x,P.y,R()-.5,R()-.5,2);shake=Math.max(shake,3.5);floatText(P.x,P.y-24,'-'+Math.round(d),'#e0574b');AU.hurt();}
+function hurtPlayer(d){if(DEV.on.god)return;if(P.car&&!isBike(P.car))d*=0.5;if(S.armor>0){const a=Math.min(S.armor*2,d*0.75);S.armor-=a/2;d-=a;}P.hp-=d;P.hurtT=4;if(!P.car)bleed(P.x,P.y,R()-.5,R()-.5,2);shake=Math.max(shake,3.5);floatText(P.x,P.y-24,'-'+Math.round(d),'#e0574b');AU.hurt();}
 function bleed(x,y,nx,ny,n){for(let k=0;k<n;k++){const sp=60+R()*110;fx.push({k:'blood',x:x+(R()-.5)*6,y:y+(R()-.5)*6,vx:nx*sp+(R()-.5)*50,vy:ny*sp+(R()-.5)*50,t:0.18+R()*0.16});}}
 function damageNPC(e,d,src,nx,ny){
   if(e.dead||e.god||(src!=='npc'&&src!=='homie'&&noFF(e)))return;if(e.job&&src!=='npc')jobHit(e,d,src);else profHit(e,d,src);nx=nx??(R()-.5);ny=ny??(R()-.5);{const l=Math.hypot(nx,ny)||1;nx/=l;ny/=l;}e.hp-=d;if(e.hp<=0&&e.inj==null)e.inj=R()<injP(src,e.type);floatText(e.x,e.y-18,'-'+Math.round(d),'#e0574b');bleed(e.x,e.y,nx,ny,src==='gun'?4:src==='car'?5:3);
@@ -5462,8 +5463,8 @@ const ITEMS={
   slim:{name:'Slim jim',desc:'Pops the lock on older locked cars. Newer cars need a key cloner.',cost:40,has:()=>(S.closet||[]).includes('slim'),act:()=>{(S.closet||(S.closet=[])).push('slim');return 'Slim jim in your back pocket.';}},
   cloner:{name:'Key cloner',desc:'Opens secure cars: sports cars, Escapades, anything over $900. Watch for trackers.',cost:1500,lvl:2,has:()=>(S.closet||[]).includes('cloner'),act:()=>{(S.closet||(S.closet=[])).push('cloner');return 'Key cloner. Every nice car in Detroit is yours now.';}},
   charge:{name:'Safe charge',desc:'Blows a store safe open in a second. Loud, and about half the cash burns.',cost:200,lvl:1,act:()=>{(S.closet||(S.closet=[])).push('charge');return `Charge packed. You have ${S.closet.filter(x=>x==='charge').length}.`;}},
-  heal:{name:'Get patched up',desc:'Full health. Stitches, painkillers and a lollipop.',cost:120,can:()=>P.hp<100,act:()=>{P.hp=100;P.hurtT=0;return 'Patched up. Full health.';}},
-  heal50:{name:'Quick bandage',desc:'Restores 40 health.',cost:45,can:()=>P.hp<100,act:()=>{P.hp=Math.min(100,P.hp+40);return '+40 health.';}},
+  heal:{name:'Get patched up',desc:'Full health. Stitches, painkillers and a lollipop.',cost:120,can:()=>P.hp<maxHP(),act:()=>{P.hp=maxHP();P.hurtT=0;return 'Patched up. Full health.';}},
+  heal50:{name:'Quick bandage',desc:'Restores 40 health.',cost:45,can:()=>P.hp<maxHP(),act:()=>{heal(40);return '+40 health.';}},
   knife:{weapon:'knife',name:'Switchblade',desc:'Fast and quiet. 28 damage.',cost:80,lvl:0},
   bat:{weapon:'bat',name:'Louisville Slammer',desc:'Slow swing, heavy hit, big knockback.',cost:60,lvl:0},
   glock:{weapon:'glock',name:'Glok 17',desc:'17-round 9mm pistol. Comes with a spare mag. Registered to you, normal heat.',cost:650,lvl:1},
@@ -5473,7 +5474,7 @@ const ITEMS={
   ammo9:{name:'9mm · box of 34',desc:'For the Glok.',cost:45,can:()=>S.weapons.includes('glock'),act:()=>{S.ammo['9mm']+=34;return '+34 rounds of 9mm.';}},
   shells:{name:'12 gauge shells · 10',desc:'For the sawed-off.',cost:50,can:()=>S.weapons.includes('sawed'),act:()=>{S.ammo.shells+=10;return '+10 shells.';}},
   mp3:{name:'Zoon MP3 Player',desc:'Earbuds and every radio station on foot. N changes the station.',cost:120,lvl:0,has:()=>!!S.mp3,act:()=>{S.mp3=true;return 'Earbuds in. N changes the station.';}},
-  armor:{name:'Body armor',desc:'Soaks 60% of incoming damage until it wears out.',cost:300,lvl:1,can:()=>S.armor<100,act:()=>{S.armor=100;return 'Vest on.';}},
+  armor:{name:'Body armor',desc:'Stops 75% of incoming damage. Plates wear at half the damage they stop.',cost:300,lvl:1,can:()=>S.armor<100,act:()=>{S.armor=100;return 'Vest on.';}},
   ext:{name:'Glok extended mag',desc:'33 rounds per mag instead of 17.',cost:400,lvl:2,can:()=>S.weapons.includes('glock'),has:()=>S.extMag,act:()=>{S.extMag=true;return 'Extended mag fitted. 33 rounds.';}},
   sawed:{weapon:'sawed',name:'Sawed-off shotgun',desc:'Two shells. Devastating up close.',cost:900,lvl:2},
   draco:{weapon:'draco',name:'Drako',desc:'30-round AK pistol. Full auto. Hold to fire.',cost:2400,lvl:3},
@@ -5557,7 +5558,7 @@ const UPG=[
 const elStash=document.getElementById('stash');
 function openStash(){paused=true;elStash.hidden=false;renderStash();document.getElementById('btnClose').focus();}
 function closeStash(){renderStashLive.open=false;elStash.hidden=true;paused=false;save();}
-function renderStash(){{const g=document.getElementById('btnGym');g.hidden=!S.gym;g.textContent=`Work out · 1 hour · fitness ${S.fit||0}${S.fat?` · weight +${Math.round(S.fat)}`:''}`;}{const fl=document.getElementById('frontList');if(fl){fl.innerHTML=frontsHtml();document.getElementById('frLbl').textContent=`Fronts · wash dirty money · $${Math.round(dirtyNow()).toLocaleString()} dirty`;}}
+function renderStash(){{const g=document.getElementById('btnGym');g.hidden=!S.gym;g.textContent=`Work out · 1 hour · fitness ${S.fit||0} · max health ${maxHP()}${S.fat?` · weight +${Math.round(S.fat)}`:''}`;}{const fl=document.getElementById('frontList');if(fl){fl.innerHTML=frontsHtml();document.getElementById('frLbl').textContent=`Fronts · wash dirty money · $${Math.round(dirtyNow()).toLocaleString()} dirty`;}}
   renderStashLive();const labOn=S.labs>0||S.labKits>0;$('labBox').hidden=!labOn;$('labTease').hidden=labOn;
   document.getElementById('upgList').innerHTML=UPG.filter(u=>!u.hide).map(u=>{const has=u.has(),repLock=repLvl()<u.lvl,locked=repLock||(u.need&&!u.need());return `<div class="row"><div><b>${u.name}</b><span>${u.desc}${repLock?` Needs rep: ${REPN[u.lvl]}.`:''}</span></div><button type="button" data-u="${u.id}" ${has||locked||S.cash<u.cost?'disabled':''}>${has?'Owned':locked?'Locked':'$'+u.cost}</button></div>`;}).join('');
 }
@@ -6627,7 +6628,7 @@ function renderClub(){const C=clubState();let b='';
 document.getElementById('club').addEventListener('click',ev=>{const t=ev.target.closest('[data-cl]');if(!t||t.disabled)return;const a=t.dataset.cl,n=t.dataset.n;const C=S.club;const i=C.ds.indexOf(n);const x=i<0?280:110+i*170;
   if(a==='tip'){if(!spend(CLUBP.tip))return;rain(4,x);clubSay(rapport(n,CLUBP.tip)||`${n} winks and keeps it moving.`,'#ff7fc8');}
   else if(a==='rain'){if(!spend(CLUBP.rain))return;rain(40,x);clubSay(rapport(n,CLUBP.rain)||`You made it rain on ${n}. The whole club is looking.`,'#ff7fc8');}
-  else if(a==='priv'){if(!spend(CLUBP.priv))return;P.hp=100;S.clock+=15;clubSay(rapport(n,CLUBP.priv)||`15 minutes in the back with ${n}. You feel brand new. Health full.`,'#ff7fc8');}
+  else if(a==='priv'){if(!spend(CLUBP.priv))return;P.hp=maxHP();S.clock+=15;clubSay(rapport(n,CLUBP.priv)||`15 minutes in the back with ${n}. You feel brand new. Health full.`,'#ff7fc8');}
   else if(a==='vip'){if(C.vip||!spend(CLUBP.vip))return;C.vip=true;rain(60,280);const rp=Math.max(0,Math.min(8,20-C.rep));C.rep+=rp;gainRep(rp);clubSay('Sparklers, bottles, your crew in the section. Everybody wants to know who you are.','#ff7fc8');}
   else if(a==='pitch'){clubPitch(+n);return;}
   renderClub();});
@@ -7020,7 +7021,7 @@ function update(dt){
   }
   if(V3.on){P.ax=Math.cos(V3.yaw);P.ay=Math.sin(V3.yaw);}else if(pad.aim){P.ax=pad.ax;P.ay=pad.ay;}else if(mouse.on)updAim();else if(!coarse||!hitHeld){P.ax=P.fx;P.ay=P.fy;}
   if(P._kc!==S.cur){P._kc=S.cur;P.knifeOpen=false;}
-  P.boost=Math.max(0,P.boost-dt);P.atkCD-=dt;P.hurtT=(P.hurtT||0)-dt;if(P.hurtT<=0)P.hp=Math.min(100,P.hp+1.5*dt);
+  P.boost=Math.max(0,P.boost-dt);P.atkCD-=dt;P.hurtT=(P.hurtT||0)-dt;if(P.hurtT<=0)P.hp=Math.min(maxHP(),P.hp+1.5*dt);
   if(P.swingT>0){const dur=P.swingDur||0.2,prev=1-P.swingT/dur;P.swingT-=dt;const cur=1-Math.max(0,P.swingT)/dur;
     if(P.swingHit&&prev<P.swingHit.hitAt&&cur>=P.swingHit.hitAt){const landed=melee(P.swingHit);if(!landed&&S.cur==='bat')shake=Math.max(shake,1.5);P.swingHit=null;}}
   if(P.reloadT>0){P.reloadT-=dt;if(P.reloadT<=0)finishReload();}
@@ -7181,7 +7182,7 @@ function ambientPop(){for(const e of npcs)if((e.type==='civ'||e.amb)&&!e.payCop&
   npcs=npcs.filter(e=>!e.dead);const n=npcs.filter(e=>e.type==='civ').length,cap=pedCap();
   for(let k=0;k<3&&n+k<cap;k++){const s=pedSpot(560,1050,true);if(s)spawnAmbient(s);}
   if(n>cap+3){const f=npcs.find(e=>e.type==='civ'&&!onScreen(e,80)&&dist(e,P)>650);if(f)f.dead=true;}}
-function respawn(){descClear();heistLost();if(P.car){P.car.mode='parked';P.car.v=0;P.car=null;}rob=null;if(CF)cfEnd();GR=null;if(S.war){S.war=null;for(const e of npcs)e.war=false;}bullets=[];P.x=STASH.x;P.y=STASH.y;P.hp=100;P.heat=0;P.searchT=0;P.reloadT=0;
+function respawn(){descClear();heistLost();if(P.car){P.car.mode='parked';P.car.v=0;P.car=null;}rob=null;if(CF)cfEnd();GR=null;if(S.war){S.war=null;for(const e of npcs)e.war=false;}bullets=[];P.x=STASH.x;P.y=STASH.y;P.hp=maxHP();P.heat=0;P.searchT=0;P.reloadT=0;
   for(const e of npcs){if(e.type==='cop')e.chase=false;if(e.type==='rival')e.aggro=0;}for(const c of cars)if(c.mode==='cop')c.dead=true;cars=cars.filter(c=>!c.dead);}
 function busted(){const dt0=dirtyNow(),clean=S.cash-dt0,lost=Math.round(dt0*(S.lawyer?0.5:1))+(S.lawyer?0:Math.round(clean*0.1));S.dirty=dt0-Math.round(dt0*(S.lawyer?0.5:1));const hk=S.hidden?0.5:1,lostM={};for(const p of PRODS){lostM[p]=Math.ceil(inv(p)*hk);S.inv[p]=inv(p)-lostM[p];}S.cash-=lost;
   const guns=S.weapons.filter(w=>!WD[w].melee);S.weapons=S.weapons.filter(w=>WD[w].melee);if(!S.weapons.includes(S.cur))S.cur='fists';S.ammo={'9mm':0,shells:0,'7.62':0};S.clip={glock:0,sawed:0,draco:0};S.extMag=false;S.glockSw=false;
@@ -7809,7 +7810,7 @@ function updHud(){document.body.classList.toggle('crouch',!!P.crouch);updStreet(
   $('hCrew').textContent=S.crew;$('hCash').textContent='$'+S.cash.toLocaleString();{const d=Math.round(dirtyNow());$('hDirty').textContent='$'+d.toLocaleString();$('hDirty').hidden=$('hDirtyL').hidden=!d;}$('hProd').textContent=PRODS.filter(p=>p==='weed'||prodOn(p)||inv(p)>0).map(p=>fmtQ(p,inv(p))+(p==='weed'?'':' '+DRUGS[p].slang)).join(' · ')+` · ${Math.round(load())}/${bagCap()}`;{const rd=S.plants.filter(p=>p.g>=1).length,dr=S.plants.some(p=>p.g<1&&p.w<=0);$('hSup').textContent=`${S.plants.length}/${S.slots}`+(rd?` · ${rd} ready`:dr?' · thirsty':'')+(S.cooks&&S.cooks.some(c=>c&&c.g<1)?` · cooking`:S.cooks&&S.cooks.some(c=>c&&c.g>=1)?' · meth ready':'');}
   $('hTurf').textContent=S.hoods.filter(h=>h.owner==='crew').length+' / '+NH;$('hCli').textContent=knownCount();
   {const t=profTier();$('hProf').textContent=t[1];$('hProf').style.color=t[2];}{const l=repLvl();$('hRep').textContent=REPN[l];$('hRepBar').style.width=(l>=REPX.length-1?100:(S.rep-REPX[l])/(REPX[l+1]-REPX[l])*100)+'%';}
-  $('hHp').style.width=Math.max(0,P.hp)+'%';$('hHp').style.background=P.hp<35?'#e0574b':'';$('hSt').style.width=P.stam+'%';
+  $('hHp').style.width=Math.min(100,Math.max(0,P.hp/maxHP()*100))+'%';$('hHp').style.background=P.hp<maxHP()*0.35?'#e0574b':'';$('hSt').style.width=P.stam+'%';
   $('hAr').style.width=Math.max(0,S.armor)+'%';$('hHpN').textContent=Math.max(0,Math.ceil(P.hp));$('hArN').textContent=Math.max(0,Math.ceil(S.armor||0));$('hArL').classList.toggle('none',!(S.armor>0));renderCrewCard();
   const w=cw();$('hWpn').textContent=P.car?P.car.model:w.name;
   $('hRpmW').hidden=!P.car;if(P.car)$('hRpm').style.width=Math.round(Math.min(1,P.car.rpm||0)*100)+'%';
@@ -7973,7 +7974,7 @@ function begin(fromSave){gcHit(fromSave?'/continue':'/new-game',fromSave?'Contin
   {const D=defaults();for(const p of PRODS){S.inv[p]=inv(p);S.store[p]=stored(p);S.q[p]=S.q[p]||D.q[p];S.prices[p]=S.prices[p]||D.prices[p];}}
   if(!S.colV2){if(!S.crewColor||S.crewColor==='#39b8c9')S.crewColor='#4caf50';S.colV2=1;}if(!fromSave)S.crewColor=startCol;else if(menuPicked&&(fromSave.S.closet||[]).includes('crewCol:'+startCol))S.crewColor=startCol;
   GANG.crew.name=S.crew;S.closet=S.closet||['chain'];wardMigrate();if(!S.store)S.store={weed:0,chrome:0};if(S.bag==null)S.bag='';for(const g in GANG)if(!['crew','kings','ghosts'].includes(g))delete GANG[g];restoreGangs();ensureMCs();if(!fromSave)seedGangs();S.war=null;if(!S.garage||!S.garage.length)S.garage=[{gid:0,model:'Dodgy Venom',type:'sport',value:4200,color:'#c8102e',stripes:true}];S.outfit=S.outfit||{};S.crewFit=S.crewFit||{};applyCrew();msgs={};unread={};
-  P.x=STASH.x;P.y=STASH.y;P.hp=100;P.heat=0;P.hood=-1;P.car=null;P.lastCar=null;rob=null;logs=[];fx=[];
+  P.x=STASH.x;P.y=STASH.y;P.hp=maxHP();P.heat=0;P.hood=-1;P.car=null;P.lastCar=null;rob=null;logs=[];fx=[];
   STORES.forEach(s=>s.cd=0);
   S.slot=pickSlot;populate();$('start').hidden=true;$('phoneBtn').hidden=false;$('menuBtn').hidden=false;$('zoomCtl').hidden=false;running=true;paused=false;save();
   log(fromSave?`Welcome back, ${S.crew}.`:`You have 7 g of weed and one plant growing in the backroom. Three people in Midtown want to try it. Find the ? and ${coarse?'tap ACT':'press E'} to hand out free samples.`,'#f2a33a');
@@ -8284,7 +8285,7 @@ function devSpawn(o){const s=spotNear(P.x,P.y,50,160,true)||spotNear(P.x,P.y,40,
 const CHEATS=[
   ['cash500','CASH500','+$500',()=>{S.cash+=500;return '+$500.';}],
   ['cash1k','CASH1K','+$1,000',()=>{S.cash+=1000;return '+$1,000.';}],
-  ['hesoyam','HESOYAM','Health, armor and $250,000',()=>{P.hp=100;S.armor=100;S.cash+=250000;return 'Health, armor and $250,000.';}],
+  ['hesoyam','HESOYAM','Health, armor and $250,000',()=>{P.hp=maxHP();S.armor=100;S.cash+=250000;return 'Health, armor and $250,000.';}],
   ['guns','LXGIWYL','All weapons and ammo',()=>{for(const w of WORDER)if(!S.weapons.includes(w))S.weapons.push(w);S.ammo['9mm']+=200;S.ammo.shells+=60;S.ammo['7.62']+=300;for(const w of ['glock','sawed','draco'])S.clip[w]=magOf(w);return 'Full armory.';}],
   ['god','BAGUVIX','God mode','god'],
   ['ammo','FULLCLIP','Infinite ammo','ammo'],
@@ -8445,7 +8446,7 @@ const fitMul=()=>1+(S.fit||0)/200;
 const runMul=()=>clamp(1+(S.fit||0)/500-(S.fat||0)/300,0.8,1.25);
 function eat(n){S.fat=clamp((S.fat||0)+n,0,60);if(S.fat>=40&&!S.fatWarn){S.fatWarn=true;log('All those coneys are catching up with you. You are slower on foot.','#f2a33a');}}
 function workout(){if(!S.gym||S.cash<0)return;if((S.gymDay===S.day?S.gymN:0)>=BODY.perDay){log('You already worked out twice today. Rest up.','#8a8f98');return;}
-  S.gymN=S.gymDay===S.day?S.gymN+1:1;S.gymDay=S.day;S.fit=clamp((S.fit||0)+BODY.gain,0,100);S.fat=Math.max(0,(S.fat||0)-3);S.clock+=60;if(S.clock>=1440){S.clock-=1440;S.day++;}P.stam=100;log(`Worked out for an hour. Fitness ${S.fit}.`,'#6cc28a');renderStash();}
+  S.gymN=S.gymDay===S.day?S.gymN+1:1;S.gymDay=S.day;S.fit=clamp((S.fit||0)+BODY.gain,0,100);S.fat=Math.max(0,(S.fat||0)-3);S.clock+=60;if(S.clock>=1440){S.clock-=1440;S.day++;}P.stam=100;log(`Worked out for an hour. Fitness ${S.fit}, max health ${maxHP()}.`,'#6cc28a');renderStash();}
 let bodyDay=-1;function bodyTick(){if(!running||bodyDay===S.day)return;if(bodyDay>=0){S.fat=Math.max(0,(S.fat||0)-3);S.fit=Math.max(0,(S.fit||0)-1);if(S.fat<40)S.fatWarn=false;}bodyDay=S.day;}
 // ================= controller (Gamepad API, Xbox and PlayStation layouts) =================
 const PADB={a:0,b:1,x:2,y:3,lb:4,rb:5,lt:6,rt:7,view:8,menu:9,l3:10,r3:11,up:12,down:13,left:14,right:15};
