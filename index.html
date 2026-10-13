@@ -5391,7 +5391,7 @@ function nearestStore(r,kind){let best=null,bd=r;for(const s of STORES){if(kind&
 function nearestCar(r){let best=null,bd=r;for(const c of cars){if(c.payCar||c.mode==='wreck'||c.mode==='cop'||(c.mode==='resp'&&c.st!=='scene')||c.mode==='ems'||c.mode==='gangcar'||c.mode==='pack'||c.mode==='player'||(c.police&&c.mode!=='resp'))continue;const d=Math.hypot(c.x-P.x,c.y-P.y);if(d<bd){bd=d;best=c;}}return best;}
 function actE(){
   if(paused||rob)return;
-  if(P.car){if(inGarage(P.car.x,P.car.y)){openStash();return;}if(nearestStore(130,'kustom')){openKustom();return;}const ch=nearestStore(130,'chop');if(ch)chopCar();return;}
+  if(P.car){if(inGarage(P.car.x,P.car.y)){openStash();return;}if(nearestStore(130,'kustom')){openKustom();return;}const ch=nearestStore(130,'chop');if(ch){chopCar();return;}if(carDealNear())honk();return;}
   {const pk=nearPickup();if(pk){pickUp(pk);return;}}
   {const v=canRob();if(v){robPockets(v);return;}}
   {const b=canCuff();if(b){cuff(b);return;}}
@@ -6747,8 +6747,7 @@ function drawWeather(){if(!running||!S.wx||S.wx.k==='clear')return;const snow=S.
     else{const x=((p.x*vw-clockT*120*p.s)%vw+vw)%vw,y=((p.y*vh+clockT*900*p.s)%vh+vh)%vh;ctx.moveTo(x,y);ctx.lineTo(x-4,y+16*p.s);}}
   if(snow)ctx.fill();else ctx.stroke();}
 // ---- DJ breaks between songs ----
-const DJS=['','Lowkey on 313.7 The Block','Luna on 101.9 The Moon',"the Reverend on 66.6 Devil's Night"];
-const DJV=[null,{rate:1.08,pitch:0.85},{rate:0.92,pitch:1.15},{rate:0.85,pitch:0.55}];
+const DJS=['','Lowkey on 313.7 The Block','Luna on 101.9 The Moon',"the Reverend on 66.6 Devil's Night",'Smooth Earl on 88.7 Paradise Valley Jazz'];
 const DJ={q:[],on:false};
 function djQueue(t){if(t&&DJ.q.length<3)DJ.q.push(t);}
 const NEWSRE=/^(Gang wiped out|New gang in town|Turf taken|Block held|Trap house raided|Turf war|Defend your turf)$|pull back$/;
@@ -6760,12 +6759,9 @@ function djLine(si){const own=S.hoods.filter(h=>h.owner==='crew').length,top=riv
   if(own>=2)opts.push(`Shout out to the ${S.crew}. ${own} hoods and counting.`);
   if(P.heat>=2)opts.push('DPD is out heavy tonight. Keep it moving.');
   return pick(opts);}
-function djSpeak(st,n){const si=stIdx(),line=DJ.q.shift()||djLine(si);DJ.on=true;const a=radioEl();a.pause();
-  $('rSta').textContent=st.name;$('rSong').textContent='DJ: '+line;$('radio').classList.add('on');clearTimeout(RAD.shown);
-  const done=()=>{if(!DJ.on)return;DJ.on=false;$('radio').classList.remove('on');if(RAD.cur===si&&P.car){st.off=startOf(st,n)-rnow();radioPlay(st,n,0);}};
-  if(window.speechSynthesis&&!AU.muted){const u=new SpeechSynthesisUtterance(line);Object.assign(u,DJV[si]||{});u.volume=Math.min(1,0.9*AU.vol('master')*AU.vol('voice'));u.onend=done;u.onerror=done;speechSynthesis.cancel();speechSynthesis.speak(u);setTimeout(done,15000);}
-  else setTimeout(done,4000);}
-function djStop(){if(!DJ.on)return;DJ.on=false;if(window.speechSynthesis)speechSynthesis.cancel();}
+function djSpeak(st,n){const si=stIdx(),line=DJ.q.shift()||djLine(si);st.off=startOf(st,n)-rnow();radioPlay(st,n,0);
+  $('rSta').textContent=st.name;$('rSong').textContent='DJ: '+line;$('radio').classList.add('on');clearTimeout(RAD.shown);RAD.shown=setTimeout(()=>$('radio').classList.remove('on'),6000);}
+function djStop(){DJ.on=false;}
 // ================= criminal profile: professional vs sloppy =================
 // Doing the job or fighting someone who came at you never counts against you; going past what the job needs does.
 const PROF={tiers:[[-60,'Animal','#e0574b'],[-25,'Reckless','#f28a3a'],[25,'Street','#a6abb3'],[60,'Professional','#6cc28a'],[Infinity,'Ghost','#5ec4f2']],chaseT:0,sloppyT:-999,day:-1};
@@ -6878,7 +6874,7 @@ addEventListener('keydown',e=>{if(MG.on){mgKey(e,true);return;}if(W8.open){if(e.
   if(k==='escape'){if(!elStash.hidden){closeStash();return;}if(!elShop.hidden){closeShop();return;}if(!elTrap.hidden){closeTrap();return;}if(!elCas.hidden){closeCasino();return;}if(!elDev.hidden){closeDev();return;}if(PH.open){closePhone();return;}if(!elMap.hidden){closeMap();return;}if(!elPause.hidden){closePause();return;}if(elCall.hidden){openPause();return;}}
   if(!elStash.hidden||!elShop.hidden||!elTrap.hidden||!elCas.hidden||!elDev.hidden||!running)return;
   if(!elCall.hidden&&!keys[k]){if(k>='1'&&k<='6'){callout(+k-1);keys[k]=true;return;}if(k==='escape'||k==='t'){closeCallouts();keys[k]=true;return;}}
-  if(!keys[k]){if(k==='t')openCallouts();if(k==='e')actE();if(k==='f')actF();if(k===' '&&!P.car)attack();if(k==='r')startReload();if(k==='q')switchWeapon(1);if(k==='p'||k==='tab')togglePhone();if(k==='k')AU.toggle();if(k==='m')openMap();if(k==='v')zoomCycle();if(k==='n')radioNext();if(k==='x')useKit();if(k==='c')toggleCrouch();if(k==='-'||k==='_')zoomStep(-1);if(k==='='||k==='+')zoomStep(1);if(k==='h')stickCmd();if(k==='z')focusTry();if(k==='b'&&nearBank())heistGo('loud');if(k==='g'){const f=followers();if(f.length){for(const e of f)dismiss(e);log(`Sent ${f.length>1?'your homies':nickOf(f[0])} home.`,GANG.crew.color);}}
+  if(!keys[k]){if(k==='t')openCallouts();if(k==='e')actE();if(k==='f')actF();if(k===' '&&!P.car)attack();if(k==='r')startReload();if(k==='q')switchWeapon(1);if(k==='p'||k==='tab')togglePhone();if(k==='k')AU.toggle();if(k==='m')openMap();if(k==='v')zoomCycle();if(k==='n')radioNext();if(k==='x')useKit();if(k==='c')toggleCrouch();if(k==='-'||k==='_')zoomStep(-1);if(k==='='||k==='+')zoomStep(1);if(k==='h'){if(P.car)honk();else stickCmd();};if(k==='z')focusTry();if(k==='b'&&nearBank())heistGo('loud');if(k==='g'){const f=followers();if(f.length){for(const e of f)dismiss(e);log(`Sent ${f.length>1?'your homies':nickOf(f[0])} home.`,GANG.crew.color);}}
     if(k>='1'&&k<='6'){if(CF&&k<='4')cfChoose(+k-1);else switchWeapon(0,+k-1);}}
   keys[k]=true;});
 addEventListener('keyup',e=>{if(MG.on)mgKey(e,false);keys[e.key.toLowerCase()]=false;});
@@ -7040,7 +7036,7 @@ function update(dt){
       if(e.flee>0){e.flee-=dt;seek(e,P.x,P.y,105,dt,true);continue;}
       if(fearTick(e,dt))continue;
       const d=c.known&&dealFor(c.id);
-      if(d&&n>=d.start){const ds=Math.hypot(e.x-d.spot.x,e.y-d.spot.y);
+      if(d&&n>=d.start){if(e.carHand&&driveThru(e,d,dt))continue;const ds=Math.hypot(e.x-d.spot.x,e.y-d.spot.y);
         if(ds>30){if(dP>700&&Math.hypot(d.spot.x-P.x,d.spot.y-P.y)>600){e.x=d.spot.x;e.y=d.spot.y;}else seek(e,d.spot.x,d.spot.y,66,dt);}
         else{const a=Math.atan2(P.y-e.y,P.x-e.x);e.fx=Math.cos(a);e.fy=Math.sin(a);}continue;}
       if(c.known&&!e.want&&e.walkCD<=0&&!d&&!S.offers[c.id]&&!cooling(c)&&(c.add>=0.33||c.rel>=3.5)&&n-c.lastDeal>720&&dP<450){e.want=true;e.rs=0;}
@@ -7834,6 +7830,7 @@ function updHud(){document.body.classList.toggle('crouch',!!P.crouch);updStreet(
         else{const p=prospect();if(p&&inv(sampleP(CL(p.cid)))>0)txt=`<kbd>${kE}</kbd>Give ${esc(CL(p.cid).name)} a free sample · ${Math.round(pitchChance(CL(p.cid))*100)}%`;
           else{const kn=knownNear();if(kn&&anyInv())txt=`<kbd>${kE}</kbd>Offer ${esc(CL(kn.cid).name)} a deal`;
             else{const hm=nearHomie(46);if(hm)txt=followers().length>=2?'You already roll with two homies':`<kbd>${kE}</kbd>Recruit ${esc(nickOf(hm))}`;else{const car=nearestCar(52);if(car)txt=car.owned?`<kbd>${kF}</kbd>Get in your Venom`:car.mode==='traffic'?`<kbd>${kF}</kbd>Carjack the ${car.model}`:car===P.lastCar?`<kbd>${kF}</kbd>Get in the ${car.model}`:canBreakIn(car)?`<kbd>${kF}</kbd>Break into the ${car.model}${scanTxt(car)}`:`${car.model}${scanTxt(car)} · needs a ${TIERS[carTier(car)].tn}`;}}}}}}}
+  if(!txt&&P.car&&!paused&&!rob)txt=driveThruTxt(coarse&&!pad.on?kE:kH);
   if(txt){pr.innerHTML=txt;pr.hidden=false;}else pr.hidden=true;
   if(!elStash.hidden)renderStashLive();
   updPhoneBadges();
@@ -8507,7 +8504,7 @@ function padTick(dt){const gp=[...(navigator.getGamepads?navigator.getGamepads()
   const foot=!P.car;
   Object.assign(pad,{lx,ly,rx,ry,thr:foot?0:val(PADB.rt),brk:foot?0:val(PADB.lt),lt:foot&&now.lt,run:foot&&(now.b),hb:!foot&&now.rb,wh:!foot&&now.b,fire:foot?now.rt:now.lb});
   for(const b in PADK){const kk=b==='l3'&&!P.car?'c':PADK[b];if(hit(b))padKey(kk,true);else if(rel(b))padKey(kk,false);}
-  if(hit('left')){const k=P.car?'x':nearBank()?'b':'h';padSt.leftK=k;padKey(k,true);}else if(rel('left'))padKey(padSt.leftK||'h',false);
+  if(hit('left')){const k=P.car?(carDealNear()?'h':'x'):nearBank()?'b':'h';padSt.leftK=k;padKey(k,true);}else if(rel('left'))padKey(padSt.leftK||'h',false);
   if(now.down){padSt.downT+=dt;if(padSt.downT>=0.6&&!padSt.dismissed){padSt.dismissed=true;padKey('g',true);padKey('g',false);}}
   else{if(was.down&&!padSt.dismissed){padKey('t',true);padKey('t',false);}padSt.downT=0;padSt.dismissed=false;}
   if(foot){if(hit('lb'))switchWeapon(-1);if(hit('rb'))switchWeapon(1);}
@@ -8901,8 +8898,8 @@ function towTick(dt){TOW.t+=dt;parkingTick(dt);if(TOW.t<2.5)return;TOW.t=0;if(!t
   if(cars.filter(c=>c.mode==='tow'&&!c.dead).length>=2)return;
   for(const w of cars){if(w.dead||w.mode!=='wreck'||w.towing||w===P.car)continue;w.wt=(w.wt||0)+2.5;if(w.wt>15&&dist(w,P)<1300){sendTow(w,'wreck');break;}}}
 function drawImpound(){const x=IMPOUND.x-camX,y=IMPOUND.y-camY;if(x<-80||y<-60||x>vw+80||y>vh+60)return;ctx.fillStyle='#2a2c30';ctx.fillRect(x-30,y-14,60,10);ctx.fillStyle='#e8b400';ctx.font=`900 10px ${FD}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('IMPOUND',x,y-9);}
-// ================= audio menu: master, music, effects, ambience, voices =================
-const AUDCH=[['master','Master','Everything'],['music','Music','Car radio and club music'],['sfx','Sound effects','Guns, cars, hits, cash, doors'],['amb','City ambience','Traffic hum, wind, rain, distant sirens'],['voice','Voices','Radio DJ']];
+// ================= audio menu: master, music, effects, ambience =================
+const AUDCH=[['master','Master','Everything'],['music','Music','Car radio and club music'],['sfx','Sound effects','Guns, cars, hits, cash, doors'],['amb','City ambience','Traffic hum, wind, rain, distant sirens']];
 const elAud=$('audio');let audBack=null;
 function renderAudio(){$('audList').innerHTML=AUDCH.map(([k,n,d])=>{const v=Math.round(AU.vol(k)*100);return `<label class="arow"><span><b>${n}</b><i>${d}</i></span><input type="range" min="0" max="100" step="5" value="${v}" data-vk="${k}" aria-label="${n} volume"><em id="av_${k}">${v}%</em></label>`;}).join('');
   $('auMute').textContent='Mute all: '+(AU.muted?'On':'Off');}
@@ -8944,6 +8941,18 @@ const noFF=e=>!FF&&e.type==='homie';
 function ffLbl(){$('paFF').textContent=FF?'Friendly fire: On':'Friendly fire: Off';}
 function ffToggle(){FF=!FF;try{localStorage.setItem('mctw-ff',FF?'1':'0');}catch(e){}ffLbl();}
 $('paFF').onclick=ffToggle;ffLbl();
+// ================= drive-thru deals: honk in your own car and the client walks to the driver window =================
+function carDealNear(){const c=P.car;if(!c)return null;const n=nowM();for(const d of S.deals){if(n<d.start||Math.hypot(c.x-d.spot.x,c.y-d.spot.y)>260)continue;const e=npcs.find(x=>x.cid===d.cid&&!x.dead);if(e&&dist(e,c)<320)return {d,e};}return null;}
+function honk(){if(!P.car||paused||LAWT-(P.honkT??-9)<0.6)return;P.honkT=LAWT;AU.horn(P.car.x,P.car.y);
+  const cd=carDealNear();if(!cd||cd.e.carHand)return;const c=CL(cd.d.cid);
+  if(!P.car.owned){say(cd.e,"Who's that? I don't know that car.",2.5);return;}
+  cd.e.carHand=true;say(cd.e,pick(['That you? Coming.','Ayy, on my way.','Bet, walking up.']),2.2);}
+function driveThru(e,d,dt){const c=P.car;if(!c||!c.owned||Math.hypot(c.x-d.spot.x,c.y-d.spot.y)>320||Math.abs(c.v)>90){e.carHand=false;return false;}
+  const lx=Math.sin(c.a),ly=-Math.cos(c.a),W=(CDIM[c.type]||CDIM.sedan)[1],tx=c.x+lx*(W/2+12),ty=c.y+ly*(W/2+12),dx=tx-e.x,dy=ty-e.y,dd=Math.hypot(dx,dy);
+  if(dd>10){const st=Math.min(dd,80*dt);moveEnt(e,dx/dd*st,dy/dd*st);e.fx=dx/dd;e.fy=dy/dd;return true;}
+  e.fx=-lx;e.fy=-ly;if(Math.abs(c.v)<20){e.carHand=false;completeDeal(d,e);}return true;}
+function driveThruTxt(kH){const cd=carDealNear();if(!cd)return '';const nm=esc(CL(cd.d.cid).name);
+  return cd.e.carHand?`${nm} is walking up to your window`:P.car.owned?`<kbd>${kH}</kbd>Honk for ${nm}`:`${nm} only walks up to your own ride`;}
 })();
 </script>
 </html>
