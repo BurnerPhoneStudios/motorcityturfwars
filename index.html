@@ -501,7 +501,7 @@ body.touch #phoneBtn{top:calc(8px + env(safe-area-inset-top,0px));bottom:auto;ri
   <div class="crewname" id="hCrew">Your Crew</div>
   <div class="stats">
     <span class="lbl">Cash</span><span class="val" id="hCash">$0</span>
-    <span class="lbl" id="hDirtyL" title="Dirty money. A bust seizes it. Wash it through a front (stash).">Dirty</span><span class="val" id="hDirty" style="color:#e0574b">$0</span>
+    <span class="lbl" id="hDirtyL" title="Dirty money. A bust seizes it, and big buys need clean cash. Wash it at a gas station ATM ($1,000 a week), the laundromat or the car wash.">Dirty</span><span class="val" id="hDirty" style="color:#e0574b">$0</span>
     <span class="lbl">On you</span><span class="val" id="hProd">0 g</span>
     <span class="lbl">Plants</span><span class="val" id="hSup">0</span>
     <span class="lbl">Clients</span><span class="val" id="hCli">0</span>
@@ -5417,6 +5417,7 @@ function actE(){
   if(dist(P,STASH)<72||inGarage(P.x,P.y)){openStash();return;}
   {const cz=nearCasino();if(cz){openCasino(cz);return;}}
   {const tp=nearTrap();if(tp&&(trapOf(tp)||S.hoods[tp.hood].owner==='crew')){openTrap(tp);return;}}
+  if(atmHere()){atmUse();return;}
   const st=nearestStore(62);if(st){if(st.kind==='kustom'){log('Pull a car up to the bay door to mod it.','#d7dbe1');return;}if(st.kind==='clothes')openWard('store',st);else if(st.kind==='club')openClub(st);else openShop(st);return;}
   const ad=activeDealNear();if(ad){completeDeal(ad.d,ad.e);return;}
   const w=wantCust();if(w){walkUpSale(w);return;}
@@ -5491,7 +5492,7 @@ function scratch(){scratchLeft();const k=curShop?curShop.name:'';S.scratch.n[k]=
 const elShop=document.getElementById('shop');let curShop=null;
 function openShop(st){paused=true;curShop=st;elShop.hidden=false;document.getElementById('shopMsg').textContent='';renderShop();document.getElementById('shClose').focus();}
 function closeShop(){elShop.hidden=true;curShop=null;paused=false;save();}
-function renderShop(){const st=curShop;if(!st)return;const k=SKIND[st.kind];
+function renderShop(){const st=curShop;if(!st)return;if(st.front){renderFront(st);return;}const k=SKIND[st.kind];
   document.getElementById('shTitle').textContent=st.name;document.getElementById('shSub').textContent=k.sub+`  Cash: $${S.cash.toLocaleString()}`;
   const rb=document.getElementById('shRob');
   if(k.rob){const armed=S.weapons.some(w=>w!=='fists');const closed=st.cd>0;
@@ -5565,7 +5566,7 @@ function openStash(){paused=true;elStash.hidden=false;renderStash();document.get
 function closeStash(){renderStashLive.open=false;elStash.hidden=true;paused=false;save();}
 function renderStash(){{const g=document.getElementById('btnGym');g.hidden=!S.gym;g.textContent=`Work out · 1 hour · fitness ${S.fit||0} · max health ${maxHP()}${S.fat?` · weight +${Math.round(S.fat)}`:''}`;}{const fl=document.getElementById('frontList');if(fl){fl.innerHTML=frontsHtml();document.getElementById('frLbl').textContent=`Fronts · wash dirty money · $${Math.round(dirtyNow()).toLocaleString()} dirty`;}}
   renderStashLive();const labOn=S.labs>0||S.labKits>0;$('labBox').hidden=!labOn;$('labTease').hidden=labOn;
-  document.getElementById('upgList').innerHTML=UPG.filter(u=>!u.hide).map(u=>{const has=u.has(),repLock=repLvl()<u.lvl,locked=repLock||(u.need&&!u.need());return `<div class="row"><div><b>${u.name}</b><span>${u.desc}${repLock?` Needs rep: ${REPN[u.lvl]}.`:''}</span></div><button type="button" data-u="${u.id}" ${has||locked||S.cash<u.cost?'disabled':''}>${has?'Owned':locked?'Locked':'$'+u.cost}</button></div>`;}).join('');
+  document.getElementById('upgList').innerHTML=UPG.filter(u=>!u.hide).map(u=>{const has=u.has(),repLock=repLvl()<u.lvl,locked=repLock||(u.need&&!u.need());return `<div class="row"><div><b>${u.name}</b><span>${u.desc}${repLock?` Needs rep: ${REPN[u.lvl]}.`:''}</span></div><button type="button" data-u="${u.id}" ${has||locked||cleanNow()<u.cost?'disabled':''}>${has?'Owned':locked?'Locked':'$'+u.cost+' clean'}</button></div>`;}).join('');
 }
 function plantSvg(g,dry){const h=6+g*26,col=dry?'#b9a24a':g>=1?'#5fbf5a':'#3f9a4a';let l='';const n=1+Math.round(g*4);
   for(let k=0;k<n;k++){const y=38-k*(h/n)-4,w=5+g*7*(1-k/(n+1));l+=`<path d="M20 ${y} q${-w} -3 ${-w-2} -7 q${w*0.6} 1 ${w+2} 7z M20 ${y} q${w} -3 ${w+2} -7 q${-w*0.6} 1 ${-w-2} 7z" fill="${col}"/>`;}
@@ -5629,7 +5630,7 @@ document.getElementById('btnBuy5').onclick=()=>{if(S.cash>=270){S.cash-=270;S.su
 document.getElementById('btnLab').onclick=()=>{if(S.labKits>0&&S.labs<COOK.max){S.labKits--;S.labs++;S.chromeOn=true;AU.door();log(S.labs===1?'Meth lab is set up. Clients who want meth will start asking for it.':'Another lab station is up.','#f2a33a');renderStash();}};
 document.getElementById('btnCollect').onclick=()=>labCollect(null);
 document.getElementById('btnClose').onclick=closeStash;
-document.getElementById('upgList').onclick=ev=>{const id=ev.target.dataset&&ev.target.dataset.u;if(!id)return;const u=UPG.find(x=>x.id===id);if(u&&!u.has()&&S.cash>=u.cost&&repLvl()>=u.lvl&&(!u.need||u.need())){S.cash-=u.cost;u.buy();log(`Bought ${u.name}.`,'#f2a33a');renderStash();phoneDirty=true;}};
+document.getElementById('upgList').onclick=ev=>{const id=ev.target.dataset&&ev.target.dataset.u;if(!id)return;const u=UPG.find(x=>x.id===id);if(u&&!u.has()&&repLvl()>=u.lvl&&(!u.need||u.need())){const pc=payClean(u.cost);if(pc!==true){log(pc,'#f2a33a');return;}u.buy();log(`Bought ${u.name}.`,'#f2a33a');renderStash();phoneDirty=true;}};
 
 // ================= phone =================
 const PH={open:false,app:'msgs',thread:null,cq:1,ct:0};
@@ -6087,7 +6088,7 @@ function renderKustom(){const c=P.car;if(!c)return;let b='';const lv=repLvl();
   b+='</div>';
   $('kBody').innerHTML=b;$('kSub').textContent=`${c.model}${c.owned?' · yours':' · not yours yet'} · Cash $${S.cash.toLocaleString()}`;}
 document.getElementById('kust').addEventListener('click',ev=>{const t=ev.target.closest('[data-k]');if(!t||t.disabled)return;const c=P.car;if(!c)return;const a=t.dataset.k,v=t.dataset.v;
-  const pay=n=>{if(S.cash<n){$('kSub').textContent=`Need $${n}. You have $${S.cash}.`;return false;}S.cash-=n;AU.ping(P.x,P.y);return true;};
+  const pay=n=>{const pc=payClean(n);if(pc!==true){$('kSub').textContent=pc;return false;}AU.ping(P.x,P.y);return true;};
   if(a==='paint'){if(!pay(KPRICE.paint))return;if(v==='crew')c.paint='crew';else{c.paint=null;c.color=v;}}
   else if(a==='stripes'){if(!c.stripes&&!pay(KPRICE.stripes))return;c.stripes=!c.stripes;}
   else if(a==='tint'){if(!c.tint&&!pay(KPRICE.tint))return;c.tint=!c.tint;}
@@ -6866,17 +6867,19 @@ function sceneTick(){if(!running||!S.scenes||!S.scenes.length)return;const n=now
 function sceneWalk(e,dt){if(!e.scene)return false;if(dist(e,e.scene)>150){seek(e,e.scene.x,e.scene.y,55,dt);return true;}return false;}
 // ================= dirty money and laundering fronts =================
 // crime pays in dirty cash; spending burns dirty cash first; a bust seizes the dirty cash; fronts wash it every hour for a cut
-const FRONTS=[{id:'laundro',name:'Spin City Laundromat',cost:6000,rate:250,fee:0.15,desc:'Coin-op on Mack. Washes $250 an hour for a 15% cut.'},
-  {id:'carwash',name:'Motor City Car Wash',cost:15000,rate:600,fee:0.12,desc:'Hand wash on Gratiot. Washes $600 an hour for a 12% cut.'}];
+const FRONTS=[{id:'laundro',name:'Spin City Laundromat',cost:6000,rate:250,fee:0.15,desc:'Coin-op laundromat. Drop dirty cash at the counter; it washes $250 an hour for a 15% cut.'},
+  {id:'carwash',name:'Motor City Car Wash',cost:15000,rate:600,fee:0.12,desc:'Hand car wash. Drop dirty cash at the counter; it washes $600 an hour for a 12% cut.'}];
 function earnDirty(n){if(!n)return;S.cash+=n;S.dirty=(S.dirty||0)+n;}
 const dirtyNow=()=>Math.min(S.dirty||0,Math.max(0,S.cash));
 let washHr=-1,lastC=null;
 function launderTick(){if(!running){lastC=null;return;}if(lastC!=null&&S.cash<lastC)S.dirty=Math.max(0,(S.dirty||0)-(lastC-S.cash));S.dirty=dirtyNow();lastC=S.cash;const hr=S.day*24+Math.floor(S.clock/60);if(hr===washHr)return;const first=washHr<0;washHr=hr;if(first)return;
-  let washed=0,cut=0;for(const f of FRONTS){if(!(S.fronts||{})[f.id]||S.dirty<=0)continue;const n=Math.min(S.dirty,f.rate),c=Math.round(n*f.fee);S.dirty-=n;S.cash-=c;washed+=n;cut+=c;}
-  lastC=S.cash;if(washed){S.washed=(S.washed||0)+washed-cut;if(S.dirty<=0)log(`Your fronts finished washing your money. All clean.`,'#6cc28a');}}
-function buyFront(id){const f=FRONTS.find(x=>x.id===id);if(!f||(S.fronts||{})[id]||S.cash<f.cost)return;S.cash-=f.cost;S.dirty=dirtyNow();(S.fronts||(S.fronts={}))[id]=true;AU.cash();gainRep(15);log(`You own ${f.name} now. It washes dirty cash every hour.`,'#6cc28a');renderStash();}
-function frontsHtml(){return FRONTS.filter(f=>!f.club||(S.fronts||{}).club).map(f=>{const own=(S.fronts||{})[f.id];return `<div class="row"><div><b>${f.name}</b><span>${f.desc}</span></div><button type="button" data-front="${f.id}" ${own||f.club||S.cash<f.cost?'disabled':''}>${own?'Owned':'$'+f.cost.toLocaleString()}</button></div>`;}).join('');}
-document.getElementById('frontList').addEventListener('click',ev=>{const b=ev.target.closest('[data-front]');if(b)buyFront(b.dataset.front);});
+  let washed=0,cut=0;for(const f of FRONTS){if(!(S.fronts||{})[f.id])continue;
+    if(f.club){if(S.dirty<=0)continue;const n=Math.min(S.dirty,f.rate),c=Math.round(n*f.fee);S.dirty-=n;S.cash-=c;washed+=n;cut+=c;continue;}
+    const q=(S.wash||{})[f.id]||0;if(q<=0)continue;const n=Math.min(q,f.rate),c=Math.round(n*f.fee);S.wash[f.id]=q-n;S.cash+=n-c;washed+=n;cut+=c;if(S.wash[f.id]<=0)log(`${f.name} finished your wash. It's all clean now.`,'#6cc28a');}
+  lastC=S.cash;if(washed)S.washed=(S.washed||0)+washed-cut;}
+function buyFront(id){const f=FRONTS.find(x=>x.id===id);if(!f||(S.fronts||{})[id])return;const pc=payClean(f.cost);if(pc!==true)return pc;(S.fronts||(S.fronts={}))[id]=true;gainRep(15);log(`You own ${f.name} now. Drop dirty cash at the counter and it comes back clean.`,'#6cc28a');return true;}
+function frontsHtml(){return FRONTS.filter(f=>!f.club||(S.fronts||{}).club).map(f=>{const own=(S.fronts||{})[f.id],q=Math.round((S.wash||{})[f.id]||0);const note=f.club?f.desc:own?(q?`Washing $${q.toLocaleString()} at ${f.rate}/hour.`:'Nothing in the wash. Drop dirty cash at the counter.'):`${f.desc} Buy it there with $${f.cost.toLocaleString()} clean.`;return `<div class="row"><div><b>${f.name}</b><span>${note}</span></div>${f.club?'':`<button type="button" data-front="${f.id}">Waypoint</button>`}</div>`;}).join('');}
+document.getElementById('frontList').addEventListener('click',ev=>{const b=ev.target.closest('[data-front]');const st=b&&STORES.find(s=>s.front===b.dataset.front);if(st){S.wp={x:st.x,y:st.y};log(`Waypoint set: ${st.name}.`,'#5fd3ff');}});
 // ================= input =================
 const keys={};let joyV={x:0,y:0},runHeld=false,hitHeld=false,mouse={x:0,y:0,on:false,down:false};
 const pad={on:false,ps:false,lx:0,ly:0,rx:0,ry:0,thr:0,brk:0,run:false,fire:false,hb:false,wh:false,lt:false,aim:false,ax:1,ay:0};
@@ -7727,7 +7730,7 @@ function renderWorld(){
   for(const f of fx){if(f.k==='blood'){ctx.fillStyle='rgba(140,16,20,.9)';ctx.fillRect(f.x-camX-1.5,f.y-camY-1.5,3,3);}}
   for(const f of fx){if(f.k==='shell'){ctx.save();ctx.translate(f.x-camX,f.y-camY);ctx.rotate(f.r);ctx.globalAlpha=Math.min(1,f.t);ctx.fillStyle=f.big?'#b3261e':'#d4a94a';ctx.fillRect(-2,-1,f.big?6:4,f.big?3:2);ctx.restore();}else if(f.k==='dust'){ctx.fillStyle=`rgba(190,184,170,${f.t*0.35})`;ctx.beginPath();ctx.arc(f.x-camX,f.y-camY,4+Math.max(0,0.5-f.t)*14,0,7);ctx.fill();}else if(f.k==='tsmoke'){ctx.fillStyle=`rgba(225,225,222,${f.t*0.4})`;ctx.beginPath();ctx.arc(f.x-camX,f.y-camY,6+(1-f.t)*20,0,7);ctx.fill();}}ctx.globalAlpha=1;
   drawParties();drawPickups();drawGarage();
-  drawImpound();for(const c of cars){const x=c.x-camX,y=c.y-camY;if(x>-60&&x<vw+60&&y>-60&&y<vh+60){drawCar(c);if(c.hook)drawHook(c);}}
+  drawImpound();drawATMs();for(const c of cars){const x=c.x-camX,y=c.y-camY;if(x>-60&&x<vw+60&&y>-60&&y<vh+60){drawCar(c);if(c.hook)drawHook(c);}}
   drawDriveBys();drawGarageTop();
   const vis=npcs.filter(e=>{if(e.inCar)return false;const x=e.x-camX,y=e.y-camY;return x>-30&&x<vw+30&&y>-40&&y<vh+30;}).sort((a,b)=>a.y-b.y);
   for(const e of vis)drawNPC(e);
@@ -7848,6 +7851,7 @@ function updHud(){document.body.classList.toggle('crouch',!!P.crouch);updStreet(
         else{const p=prospect();if(p&&inv(sampleP(CL(p.cid)))>0)txt=`<kbd>${kE}</kbd>Give ${esc(CL(p.cid).name)} a free sample · ${Math.round(pitchChance(CL(p.cid))*100)}%`;
           else{const kn=knownNear();if(kn&&anyInv())txt=`<kbd>${kE}</kbd>Offer ${esc(CL(kn.cid).name)} a deal`;
             else{const hm=nearHomie(46);if(hm)txt=followers().length>=2?'You already roll with two homies':`<kbd>${kE}</kbd>Recruit ${esc(nickOf(hm))}`;else{const car=nearestCar(52);if(car)txt=car.owned?`<kbd>${kF}</kbd>Get in your Venom`:car.mode==='traffic'?`<kbd>${kF}</kbd>Carjack the ${car.model}`:car===P.lastCar?`<kbd>${kF}</kbd>Get in the ${car.model}`:canBreakIn(car)?`<kbd>${kF}</kbd>Break into the ${car.model}${scanTxt(car)}`:`${car.model}${scanTxt(car)} · needs a ${TIERS[carTier(car)].tn}`;}}}}}}}
+  if(!paused&&!rob&&atmHere())txt=`<kbd>${kE}</kbd>${atmTxt()}`;
   if(!txt&&P.car&&!paused&&!rob)txt=driveThruTxt(coarse&&!pad.on?kE:kH);
   if(txt){pr.innerHTML=txt;pr.hidden=false;}else pr.hidden=true;
   {const rb=$('bRadio'),on=!!(P.car||S.mp3);if(rb.hidden===on)rb.hidden=!on;}
@@ -8135,7 +8139,7 @@ function renderTrap(){const t=curTrap;if(!t)return;const o=trapOf(t),ours=S.hood
     h+=`<div class="row"><div><b>${D.name} · ${fmtQ(p,o.stock[p]||0)} here</b><span>Sells ${fmtQ(p,TRAP.rate[p]||1)} an hour at $${Math.round(S.prices[p]*TRAP.cut)}. You carry ${fmtQ(p,inv(p))}.</span></div><button type="button" data-t="drop" data-p="${p}" ${n?'':'disabled'}>Drop ${n?fmtQ(p,n):'off'}</button></div>`;}
   $('trBody').innerHTML=h;}
 $('trBody').onclick=ev=>{const b=ev.target.closest('button');if(!b||!curTrap)return;const t=curTrap,a=b.dataset.t;
-  if(a==='buy'){if(S.cash<t.cost||S.hoods[t.hood].owner!=='crew')return;S.cash-=t.cost;AU.cash();(S.traps||(S.traps={}))[t.id]={stock:{},cash:0,shut:0};gainRep(10);$('trMsg').textContent='Keys are yours. Drop off product and the block does the rest.';}
+  if(a==='buy'){if(S.hoods[t.hood].owner!=='crew')return;const pc=payClean(t.cost);if(pc!==true){$('trMsg').textContent=pc;return;}(S.traps||(S.traps={}))[t.id]={stock:{},cash:0,shut:0};gainRep(10);$('trMsg').textContent='Keys are yours. Drop off product and the block does the rest.';}
   else if(a==='cash'){const o=trapOf(t);earnDirty(o.cash);AU.cash();$('trMsg').textContent=`Picked up $${o.cash.toLocaleString()}.`;o.cash=0;}
   else if(a==='drop'){const o=trapOf(t),p=b.dataset.p,n=Math.min(inv(p),Math.floor((TRAP.cap-trapLoad(o))/(UNITW[p]||1)));if(n<=0)return;S.inv[p]-=n;o.stock[p]=(o.stock[p]||0)+n;$('trMsg').textContent=`Dropped off ${fmtQ(p,n)}.`;}
   renderTrap();};
@@ -8398,7 +8402,7 @@ function grabSupply(){S.supRun.got=true;S.wp={x:STASH.x,y:STASH.y};AU.door&&AU.d
 function clubOwnHtml(){if(!clubOwned())return `<div class="sec">Buy the club</div><div class="upg"><div class="row"><div><b>Make Motor City Titties yours · $${BIZ.clubCost.toLocaleString()}</b><span>Nightly takings, washes dirty money, and a warehouse that pulls product from your stash for one big sale. Needs rep: ${REPN[BIZ.clubRep]}.</span></div><button type="button" data-own="buy" ${S.cash<BIZ.clubCost||repLvl()<BIZ.clubRep?'disabled':''}>Buy</button></div></div>`;
   const W=S.ware||{},v=wareVal();return `<div class="sec">Your club · warehouse</div><div class="upg"><div class="row"><div><b>${PRODS.filter(p=>W[p]).map(p=>fmtQ(p,W[p])+' '+DRUGS[p].slang).join(' · ')||'Empty'}</b><span>Staff pull product from your stash every hour. Sell it all in one van run: worth about $${Math.round(v).toLocaleString()}.</span></div><button type="button" data-own="sell" ${v<=0||SELL?'disabled':''}>${SELL?'Run in progress':'Start sell run'}</button></div></div>`;}
 document.getElementById('club').addEventListener('click',ev=>{const b=ev.target.closest('[data-own]');if(!b||b.disabled)return;
-  if(b.dataset.own==='buy'){if(S.cash<BIZ.clubCost||repLvl()<BIZ.clubRep)return;S.cash-=BIZ.clubCost;(S.fronts||(S.fronts={})).club=true;S.ware={weed:0,chrome:0,coke:0};AU.cash();gainRep(30);clubSay('The club is yours. The girls still want their tips.','#ff7fc8');renderClub();}
+  if(b.dataset.own==='buy'){if(repLvl()<BIZ.clubRep)return;const pc=payClean(BIZ.clubCost);if(pc!==true){clubSay(pc,'#e0574b');return;}(S.fronts||(S.fronts={})).club=true;S.ware={weed:0,chrome:0,coke:0};AU.cash();gainRep(30);clubSay('The club is yours. The girls still want their tips.','#ff7fc8');renderClub();}
   else if(b.dataset.own==='sell')startSell();});
 // ================= the Penobscot job: preps, then a loud or quiet finale =================
 const HEIST={name:'First Penobscot Bank',rep:3,gear:2500,quiet:[25000,40000],loud:[18000,30000],fail:8000,cool:3,scoutT:10};
@@ -8974,7 +8978,9 @@ function driveThruTxt(kH){const cd=carDealNear();if(!cd)return '';const nm=esc(C
   return cd.e.carHand?`${nm} is walking up to your window`:P.car.owned?`<kbd>${kH}</kbd>Honk for ${nm}`:`${nm} only walks up to your own ride`;}
 // ================= player count: anonymous GoatCounter hits from the public site only =================
 const GC_URL='https://motorcityturfwars.goatcounter.com/count';
-function gcHit(p,title,ev){if(!PUBLIC_BUILD||location.protocol!=='https:')return;try{const q=new URLSearchParams({p,t:title,s:[screen.width,screen.height,window.devicePixelRatio||1].join(','),rnd:Math.random().toString(36).slice(2)});if(ev)q.set('e','true');else{if(document.referrer)q.set('r',document.referrer);if(location.search)q.set('q',location.search);}new Image().src=GC_URL+'?'+q;}catch(e){}}
+try{if(location.hash==='#me'||location.hash==='#notme'){localStorage.setItem('mctw-me',location.hash==='#me'?'1':'');history.replaceState(null,'',location.pathname+location.search);}}catch(e){}
+const gcMe=()=>{try{return localStorage.getItem('mctw-me')==='1';}catch(e){return false;}};
+function gcHit(p,title,ev){if(!PUBLIC_BUILD||location.protocol!=='https:'||gcMe())return;try{const q=new URLSearchParams({p,t:title,s:[screen.width,screen.height,window.devicePixelRatio||1].join(','),rnd:Math.random().toString(36).slice(2)});if(ev)q.set('e','true');else{if(document.referrer)q.set('r',document.referrer);if(location.search)q.set('q',location.search);}new Image().src=GC_URL+'?'+q;}catch(e){}}
 gcHit(ITCH_BUILD?'/itch':'/','Motor City Turf Wars',false);
 // ================= favicon: police light bar flashes red and blue (Chrome and Edge only show a GIF's first frame); holds still during play =================
 {const F=['iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABhUlEQVR4nO1XsWrDMBB9Mp2Mty4JDdRkCsWQLR+TPT9Qrx69ukPXrKHfETqGZAh46GRcSElKtiZ4KqSTXFmRZLm17Ax5YLCkO7+nO/vOIuDgDUcnfq5OxOsFYceFgTccnXbbjUl+dLq9ggirSXIA2G03hSgTnty2HaMCsuwI4DcShN+5bTt4v7O1H3j7+aBt63wvcwFUxI3SI3qSr/mP2sQqqAXURKKCVW5iFsII3H9k2g9wsKxXAPuSNIHWU9C6gEIK9vMAh9UMAND3U6lTErn5PWu3nwelhIfVrOAj/QwpCS+EJQeA8eCIlzcHSeTm4stAfQCNFLCEPHkdUBeiPxIH0/hsLpx41QQE01jqpAMa4nzspxgPzj9xZQpEL6Jod1VE0YuiNAV9P0USuf8iVkGrDtBI8OobE0DJTaD1SngV0LoArUpYB2QNzIiAcOIhVKxXakamYcXrBel0ewCg3U5FUP0/iJAfTOgEPaCwDUNVfGR2ooYjwvPrFwEu4HBKeIOmj+c/u36b+exIqccAAAAASUVORK5CYII=','iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABfElEQVR4nO1XPYvCQBB9G64KyxVXKVgEK4uAnZX1/Qh7f0HalGnTXGsr9xuuFLlKtBBSWIUUgoJwxSmpBK/a3Gbd3Wy4fFzhg0B2MrvvZWazkyEQ4A5HN9FWJaLtivDj3MAdjm7Hw75OfnS6vZwIq0lyADge9rkoE5HctmmtAtL0AuA3EkR8c9umGKdfxgt+PL8a+9LrOhPARFga/0bwEPAkM37aL8YL0Ou6WgH8JmkCraegdQG5FJwWPs6bOQCg7yXKSXHoZPe832nhFxKeN/PcHOkm5ElEITw5AEwGF7zvKOLQycQXgc0BDFLAE4rkVUAZAZUIE/iz6M4WTN1yAvxZpJxkAhbibOwlmAzuP3FtCmQbUfZ2ZUSxi6EwBX0vQRw6fyLWwegcYJEQ1TcmgJHXgdZPwoeA1gUYnYRVQFXAahEQTF0EmuelilHdsKLtinS6PQAwLqcy6P4fZMgaE2ZgDQpfMHSHj8pPVnBkeFt+E+AfNKdEdGi6Pf8BfxWZ8pz4/2sAAAAASUVORK5CYII=','iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABiUlEQVR4nO1XLWvDQBh+rkyFqKkWKkJNKwJ1VfslVWNQMR0bGRszM1EzUUp/RhlThQ4KEVMhotBCYGItsZ267HK9r7B8TOyBQO7jvee59727946AgzueXPi6KhHtNoQtFwrueHI5HvZ18qPb6xdEdJokB4DjYV/wMuHJLcuuVUCWnQH8eILwM7csG3fZp/GA7w+pOflqmAugIm6MrTV4eZS33T/L2yoToCJRoaPvUi+EHnizbs1HWA2rFcAukibQeghaF1AIQbr2cdouAAADL5EaxaGT/7P90rWvJTxtFwUb6TakJLwQlhwApqMzlh824tDJxetAbQCDELCEPHkVMDqIyhL78+iqLpi55QT480hqZALq4rzsJZiOrre4MgSihSiaXRlR9KPQhmDgJYhD51fEKhidA9QTvPrGBFDyOtD6SfgvoHUBlV3JdJAlsFoEBDMXgaK9VDKqG51otyHdXh8AjNOpCKr7gwj5w4RW0AcKmzBUh4+snyjhiPD0+kWAP/A4JXyHpp/n32jxnOi6a3HbAAAAAElFTkSuQmCC'].map(s=>'data:image/png;base64,'+s),SEQ=[[0,220],[1,90],[2,220],[1,90]],el=document.getElementById('favi');let i=0;
@@ -8983,6 +8989,43 @@ gcHit(ITCH_BUILD?'/itch':'/','Motor City Turf Wars',false);
 const PHS=[['Large',1],['Medium',0.85],['Small',0.72]];let phsI=0;try{phsI=Math.max(0,PHS.findIndex(p=>p[0]===localStorage.getItem('mctw-phs')));}catch(e){}
 function phoneSize(i){phsI=(i+PHS.length)%PHS.length;const [n,k]=PHS[phsI];$('phone').style.setProperty('--phs',k);$('paPhone').textContent='Phone size: '+n;$('phSize').title='Phone size: '+n;try{localStorage.setItem('mctw-phs',n);}catch(e){}}
 $('paPhone').onclick=()=>phoneSize(phsI+1);$('phSize').onclick=ev=>{ev.stopPropagation();phoneSize(phsI+1);};phoneSize(phsI);
+// ================= clean money: gas station ATMs, the laundromat and car wash you walk into, clean-only big buys =================
+const ATM_WEEK=1000;
+const cleanNow=()=>Math.max(0,S.cash-dirtyNow());
+const fmt$=n=>'$'+Math.round(n).toLocaleString();
+function payClean(n){if(cleanNow()<n)return `Needs ${fmt$(n)} clean. You have ${fmt$(Math.floor(cleanNow()))} clean and ${fmt$(dirtyNow())} dirty. Wash it at a gas station ATM, the laundromat or the car wash.`;S.cash-=n;lastC=S.cash;AU.cash();return true;}
+Object.assign(SKIND,{laundro:{sign:'LAUNDROMAT',col:'#5fd3ff',sub:'Coin-op out front. The cash counter in the back washes more than clothes.'},
+  carwash:{sign:'CAR WASH',col:'#7dff9a',sub:'Hand wash and detailing. Cash business, no questions asked.'}});
+ST_ICON.laundro='🧺';ST_ICON.carwash='🧽';
+// the fronts take over plain buildings picked after trap houses and the bank, so saved trap houses never move
+const FRONTB=(()=>{const used=new Set([...TRAPS.map(t=>t.b),BANK&&BANK.b].filter(Boolean)),out={};
+  for(const [id,tx,ty] of [['laundro',(RX[3]+1)*T,RY[2]*T],['carwash',RX[8]*T,RY[3]*T]]){
+    const o=buildings.filter(b=>b.kind==='b'&&!used.has(b)&&b.w>=2&&b.h>=2).map(b=>({b,cx:(b.x+b.w/2)*T,y:(b.y+b.h)*T+12,d:Math.hypot((b.x+b.w/2)*T-tx,(b.y+b.h/2)*T-ty)})).filter(o=>!solidPx(o.cx,o.y)).sort((a,c)=>a.d-c.d)[0];
+    if(!o)continue;used.add(o.b);const f=FRONTS.find(x=>x.id===id);o.b.kind='store';const st={kind:id,name:f.name,x:o.cx,y:o.y,b:o.b,cd:0,hood:o.b.hood,front:id};o.b.st=st;STORES.push(st);out[id]=st;}
+  return out;})();
+function renderFront(st){const f=FRONTS.find(x=>x.id===st.front),own=(S.fronts||{})[f.id],q=Math.round((S.wash||{})[f.id]||0),d=Math.round(dirtyNow());
+  $('shTitle').textContent=st.name;$('shSub').textContent=`${SKIND[st.kind].sub}  Clean ${fmt$(cleanNow())} · Dirty ${fmt$(d)}`;$('shRob').innerHTML='';
+  const pct=Math.round(f.fee*100);
+  $('shList').innerHTML=!own?`<div class="row"><div><b>Buy ${esc(f.name)}</b><span>Drop dirty cash at the counter and it comes back clean: ${fmt$(f.rate)} an hour for a ${pct}% cut. Paid with clean money.</span></div><button type="button" data-fr="buy" ${cleanNow()<f.cost?'disabled':''}>${fmt$(f.cost)} clean</button></div>`
+    :`<div class="row"><div><b>In the wash</b><span>${q?`${fmt$(q)} washing at ${fmt$(f.rate)} an hour, ${pct}% cut. Clean cash lands in your pocket each hour.`:'Nothing in the wash right now.'}</span></div></div>`+
+     `<div class="row"><div><b>Drop off dirty cash</b><span>${d?`You have ${fmt$(d)} dirty on you.`:'No dirty cash on you.'}</span></div><div class="bt">${[500,1000].map(n=>`<button type="button" class="ghost" data-fr="drop" data-n="${n}" ${d<=0?'disabled':''}>${fmt$(Math.min(n,d)||n)}</button>`).join('')}<button type="button" data-fr="drop" data-n="all" ${d<=0?'disabled':''}>All of it</button></div></div>`;}
+$('shList').addEventListener('click',ev=>{const b=ev.target.closest('[data-fr]');const st=curShop;if(!b||b.disabled||!st||!st.front)return;const f=FRONTS.find(x=>x.id===st.front);let msg='';
+  if(b.dataset.fr==='buy'){const r=buyFront(f.id);msg=r===true?`${f.name} is yours. Drop dirty cash at the counter.`:r||'';}
+  else{const d=Math.round(dirtyNow()),amt=b.dataset.n==='all'?d:Math.min(d,+b.dataset.n);if(amt<=0)return;(S.wash||(S.wash={}))[f.id]=(S.wash[f.id]||0)+amt;S.dirty-=amt;S.cash-=amt;lastC=S.cash;AU.cash();msg=`Dropped off ${fmt$(amt)}. It comes back clean, ${fmt$(f.rate)} an hour.`;log(`${f.name}: ${msg}`,'#5fd3ff');}
+  renderFront(st);$('shopMsg').textContent=msg;});
+// ATMs beside every gas station
+const ATMS=STORES.filter(s=>s.kind==='gas').map(s=>{for(const dx of [T*1.6,-T*1.6]){const p={x:s.x+dx,y:s.y};if(!hit(p.x,p.y,10))return p;}return null;}).filter(Boolean);
+const atmHere=()=>!P.car&&ATMS.find(a=>dist(a,P)<34);
+const atmWeek=()=>{const wk=Math.floor(S.day/7);if(!S.atm||S.atm.wk!==wk)S.atm={wk,dep:0};return S.atm;};
+const atmLeft=()=>Math.max(0,ATM_WEEK-atmWeek().dep);
+function atmTxt(){const l=atmLeft(),d=Math.round(dirtyNow());return l<=0?`ATM · weekly limit reached, resets Day ${(atmWeek().wk+1)*7}`:d<=0?`ATM · deposit dirty cash (${fmt$(l)} left this week)`:`ATM · deposit ${fmt$(Math.min(l,d))} of dirty cash`;}
+function atmUse(){const a=atmWeek(),l=atmLeft(),d=Math.round(dirtyNow());
+  if(l<=0){log(`ATM: you hit the ${fmt$(ATM_WEEK)} weekly limit. It resets on Day ${(a.wk+1)*7}. The laundromat and car wash take more.`,'#f2a33a');return;}
+  if(d<=0){log('ATM: no dirty cash on you.','#8a8f98');return;}
+  const amt=Math.min(l,d);a.dep+=amt;S.dirty-=amt;lastC=S.cash;AU.cash();log(`ATM: deposited ${fmt$(amt)}. It's clean now. ${fmt$(atmLeft())} left this week.`,'#6cc28a');save();}
+function drawATMs(){for(const a of ATMS){const x=a.x-camX,y=a.y-camY;if(x<-30||y<-30||x>vw+30||y>vh+30)continue;
+  ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(x-7,y-9,16,22);ctx.fillStyle='#2a2c30';ctx.fillRect(x-9,y-11,18,22);ctx.fillStyle='#4fd1ff';ctx.fillRect(x-6,y-8,12,7);ctx.fillStyle='#6cc28a';ctx.fillRect(x-6,y+2,12,2);
+  ctx.fillStyle='#d7dbe1';ctx.font=`900 ${fpx(9)}px ${FD}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('ATM',x,y+17);}}
 })();
 </script>
 </html>
