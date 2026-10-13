@@ -243,6 +243,7 @@ body.touch #menuBtn{top:calc(266px + env(safe-area-inset-top,0px));bottom:auto}
 #bRun{right:20px;bottom:calc(32px + env(safe-area-inset-bottom,0px));background:#2a2b30;color:var(--chrome);width:58px;height:58px}
 #bCar{right:96px;bottom:calc(128px + env(safe-area-inset-bottom,0px));background:#2a2b30;color:var(--chrome);width:58px;height:58px}
 #bDuck{right:166px;bottom:calc(148px + env(safe-area-inset-bottom,0px));background:#2a2b30;color:var(--chrome);width:52px;height:52px;font-size:13px}body.crouch #bDuck{background:#f2a33a;color:#111}
+#bRadio{right:102px;bottom:calc(196px + env(safe-area-inset-bottom,0px));background:#2a2b30;color:var(--sodium);width:46px;height:46px;font-size:20px}
 #bSwp{right:166px;bottom:calc(84px + env(safe-area-inset-bottom,0px));background:#2a2b30;color:var(--chrome);width:54px;height:54px;font-size:14px}
 body.touch #log{bottom:calc(200px + env(safe-area-inset-bottom,0px));max-width:calc(100% - 32px)}
 body.touch #mini{top:calc(212px + env(safe-area-inset-top,0px));bottom:auto;width:132px;height:93px}
@@ -429,6 +430,7 @@ body.touch #zoomCtl{top:calc(212px + env(safe-area-inset-top,0px));bottom:auto;r
   body.touch #bHit{right:68px;bottom:calc(22px + env(safe-area-inset-bottom,0px));width:56px;height:56px}
   body.touch #bRun{right:12px;bottom:calc(14px + env(safe-area-inset-bottom,0px));width:44px;height:44px;font-size:11px}
   body.touch #bCar{right:70px;bottom:calc(86px + env(safe-area-inset-bottom,0px));width:44px;height:44px;font-size:11px}
+  body.touch #bRadio{right:180px;bottom:calc(112px + env(safe-area-inset-bottom,0px));width:38px;height:38px;font-size:17px}
   body.touch #bSwp{right:128px;bottom:calc(60px + env(safe-area-inset-bottom,0px));width:42px;height:42px;font-size:11px}
   body.touch #bDuck{right:128px;bottom:calc(110px + env(safe-area-inset-bottom,0px));width:42px;height:42px;font-size:9px}
   body.touch #prompt{bottom:calc(164px + env(safe-area-inset-bottom,0px));font-size:14px;padding:5px 10px}
@@ -595,6 +597,7 @@ body.touch #phoneBtn{top:calc(8px + env(safe-area-inset-top,0px));bottom:auto;ri
   <button class="tb" id="bCar" type="button">Car</button>
   <button class="tb" id="bSwp" type="button">Swap</button>
   <button class="tb" id="bDuck" type="button">Crouch</button>
+  <button class="tb" id="bRadio" type="button" aria-label="Next radio station" hidden>♫</button>
 </div>
 
 <div class="overlay" id="stash" hidden>
@@ -6907,7 +6910,7 @@ if(coarse){document.body.classList.add('touch');document.getElementById('touch')
  const end=ev=>{if(ev.pointerId===pid){pid=null;joyV={x:0,y:0};knob.style.transform='';}};
  joy.addEventListener('pointerup',end);joy.addEventListener('pointercancel',end);
  const tap=(id,fn)=>document.getElementById(id).addEventListener('pointerdown',ev=>{ev.preventDefault();fn();});
- tap('bAct',actE);tap('bCar',actF);tap('bSwp',()=>switchWeapon(1));
+ tap('bAct',actE);tap('bCar',actF);tap('bSwp',()=>switchWeapon(1));tap('bRadio',radioNext);
  const bh=document.getElementById('bHit');bh.addEventListener('pointerdown',ev=>{ev.preventDefault();hitHeld=true;attack();});bh.addEventListener('pointerup',()=>hitHeld=false);bh.addEventListener('pointercancel',()=>hitHeld=false);
  document.getElementById('bDuck').addEventListener('pointerdown',ev=>{ev.preventDefault();toggleCrouch();});const br=document.getElementById('bRun');br.addEventListener('pointerdown',ev=>{ev.preventDefault();runHeld=true;});
  br.addEventListener('pointerup',()=>runHeld=false);br.addEventListener('pointercancel',()=>runHeld=false);}
@@ -7845,6 +7848,7 @@ function updHud(){document.body.classList.toggle('crouch',!!P.crouch);updStreet(
             else{const hm=nearHomie(46);if(hm)txt=followers().length>=2?'You already roll with two homies':`<kbd>${kE}</kbd>Recruit ${esc(nickOf(hm))}`;else{const car=nearestCar(52);if(car)txt=car.owned?`<kbd>${kF}</kbd>Get in your Venom`:car.mode==='traffic'?`<kbd>${kF}</kbd>Carjack the ${car.model}`:car===P.lastCar?`<kbd>${kF}</kbd>Get in the ${car.model}`:canBreakIn(car)?`<kbd>${kF}</kbd>Break into the ${car.model}${scanTxt(car)}`:`${car.model}${scanTxt(car)} · needs a ${TIERS[carTier(car)].tn}`;}}}}}}}
   if(!txt&&P.car&&!paused&&!rob)txt=driveThruTxt(coarse&&!pad.on?kE:kH);
   if(txt){pr.innerHTML=txt;pr.hidden=false;}else pr.hidden=true;
+  {const rb=$('bRadio'),on=!!(P.car||S.mp3);if(rb.hidden===on)rb.hidden=!on;}
   if(!elStash.hidden)renderStashLive();
   updPhoneBadges();
 }
