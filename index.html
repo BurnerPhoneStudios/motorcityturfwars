@@ -9057,11 +9057,15 @@ function tiltRoof(b){let c=TILT.roofs.get(b.id);if(c){TILT.roofs.delete(b.id);TI
   const k=chunkScale;c=document.createElement('canvas');c.width=Math.max(1,Math.ceil(b.w*T*k));c.height=Math.max(1,Math.ceil(b.h*T*k));const g=c.getContext('2d');g.scale(k,k);drawBuildingStatic(g,b,b.x*T,b.y*T);
   TILT.roofs.set(b.id,c);if(TILT.roofs.size>90)TILT.roofs.delete(TILT.roofs.keys().next().value);return c;}
 function tiltWallCol(b){if(b.kind==='walkup')return b.brick||'#6e3426';if(b.kind==='house')return b.style==='brick'?'#6e3a2c':shade(b.roofC||'#7a6a58',0.25);return v3WALL[b.id%v3WALL.length];}
-function tiltFace(p0,p1,q0,q1,col,nF,lit,night){ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(p0[0],p0[1]);ctx.lineTo(p1[0],p1[1]);ctx.lineTo(q1[0],q1[1]);ctx.lineTo(q0[0],q0[1]);ctx.closePath();ctx.fill();
-  const fh=Math.hypot(q0[0]-p0[0],q0[1]-p0[1])/nF;if(fh<3)return;
-  ctx.lineWidth=Math.max(1,fh*0.38);ctx.setLineDash([Math.max(4,fh*1.3),Math.max(3,fh*0.7)]);ctx.strokeStyle=night>0.3&&lit?'#e8c56a':'rgba(28,36,48,.5)';
-  for(let k=0;k<nF;k++){const t=(k+0.55)/nF;ctx.beginPath();ctx.moveTo(p0[0]+(q0[0]-p0[0])*t,p0[1]+(q0[1]-p0[1])*t);ctx.lineTo(p1[0]+(q1[0]-p1[0])*t,p1[1]+(q1[1]-p1[1])*t);ctx.stroke();}
-  ctx.setLineDash([]);ctx.lineWidth=1;ctx.strokeStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.moveTo(q0[0],q0[1]);ctx.lineTo(q1[0],q1[1]);ctx.stroke();}
+function tiltFace(p0,p1,q0,q1,col,nF,lit,night,len,seed){ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(p0[0],p0[1]);ctx.lineTo(p1[0],p1[1]);ctx.lineTo(q1[0],q1[1]);ctx.lineTo(q0[0],q0[1]);ctx.closePath();ctx.fill();
+  const fh=Math.hypot(q0[0]-p0[0],q0[1]-p0[1])/nF;
+  if(fh>=2.5){const nC=Math.max(1,Math.round(len/26)),on=night>0.3&&lit;
+    const at=(u,t)=>{const bx=p0[0]+(p1[0]-p0[0])*u,by=p0[1]+(p1[1]-p0[1])*u,tx=q0[0]+(q1[0]-q0[0])*u,ty=q0[1]+(q1[1]-q0[1])*u;return [bx+(tx-bx)*t,by+(ty-by)*t];};
+    const dark=new Path2D(),glow=new Path2D();
+    for(let k=0;k<nF;k++){const t0=(k+0.28)/nF,t1=(k+0.78)/nF;for(let c=0;c<nC;c++){const u0=(c+0.18)/nC,u1=(c+0.82)/nC;
+      const pth=on&&hsh(seed+c*7,k*13+seed)<0.55?glow:dark;const a=at(u0,t0),b=at(u1,t0),d=at(u1,t1),e=at(u0,t1);pth.moveTo(a[0],a[1]);pth.lineTo(b[0],b[1]);pth.lineTo(d[0],d[1]);pth.lineTo(e[0],e[1]);pth.closePath();}}
+    ctx.fillStyle='rgba(28,36,48,.55)';ctx.fill(dark);if(on){ctx.fillStyle='#e8c56a';ctx.fill(glow);}}
+  ctx.lineWidth=1;ctx.strokeStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.moveTo(q0[0],q0[1]);ctx.lineTo(q1[0],q1[1]);ctx.stroke();}
 const tiltWatch=e=>!e.dead&&!e.inCar&&(e.type==='rival'||e.type==='cop'||e.type==='homie'||e.aggro>0||e.war);
 function drawTilt(){const cx=vw/2,cy=vh/2,night=nightAmt(),list=[],pts=[];
   for(const e of npcs)if(tiltWatch(e))pts.push(e.x-camX,e.y-camY);
@@ -9074,12 +9078,12 @@ function drawTilt(){const cx=vw/2,cy=vh/2,night=nightAmt(),list=[],pts=[];
     const rx0=cx+(x0-cx)*s,ry0=cy+(y0-cy)*s,rx1=cx+(x1-cx)*s,ry1=cy+(y1-cy)*s;let under=false;
     for(let i=0;i<pts.length&&!under;i+=2)under=pts[i]>rx0&&pts[i]<rx1&&pts[i+1]>ry0&&pts[i+1]<ry1;
     b._ta=(b._ta??1)+((under?0.35:1)-(b._ta??1))*0.2;
-    const paint=al=>{ctx.globalAlpha=al;if(!inside){const col=tiltWallCol(b),nF=Math.max(1,Math.min(26,Math.round(z/40))),lit=(b.id*7)%3!==0;
+    const paint=al=>{ctx.globalAlpha=al;if(!inside){const col=tiltWallCol(b),nF=Math.max(1,Math.min(20,Math.round(z/42))),lit=(b.id*7)%3!==0;
         const A=[x0,y0],B=[x1,y0],C=[x1,y1],D=[x0,y1],A2=up(...A),B2=up(...B),C2=up(...C),D2=up(...D);
-        if(cy<y0)tiltFace(A,B,A2,B2,shade(col,0.08),nF,lit,night);
-        if(cy>y1)tiltFace(D,C,D2,C2,shade(col,-0.28),nF,lit,night);
-        if(cx<x0)tiltFace(A,D,A2,D2,shade(col,-0.08),nF,lit,night);
-        if(cx>x1)tiltFace(B,C,B2,C2,shade(col,-0.18),nF,lit,night);}
+        if(cy<y0)tiltFace(A,B,A2,B2,shade(col,0.08),nF,lit,night,r.w,b.id*31+1);
+        if(cy>y1)tiltFace(D,C,D2,C2,shade(col,-0.28),nF,lit,night,r.w,b.id*31+2);
+        if(cx<x0)tiltFace(A,D,A2,D2,shade(col,-0.08),nF,lit,night,r.h,b.id*31+3);
+        if(cx>x1)tiltFace(B,C,B2,C2,shade(col,-0.18),nF,lit,night,r.h,b.id*31+4);}
       const fx=r.x-b.x*T,fy=r.y-b.y*T,k=chunkScale;
       ctx.save();ctx.translate(cx,cy);ctx.scale(s,s);ctx.translate(-cx,-cy);ctx.drawImage(tiltRoof(b),fx*k,fy*k,r.w*k,r.h*k,x0,y0,r.w,r.h);
       if(b.kind==='store')drawStoreSign(b);else drawTag(b);ctx.restore();};
