@@ -9049,7 +9049,7 @@ function drawATMs(){for(const a of ATMS){const x=a.x-camX,y=a.y-camY;if(x<-30||y
 // ================= 2.5D buildings: GTA 2 style walls and lifted roofs on the 2D map =================
 const TILT={on:false,K:1/550,sMax:2.5,roofs:new Map()};
 const tiltS=z=>1+Math.min(TILT.sMax-1,z*TILT.K);
-try{TILT.on=localStorage.getItem('mctw-tilt')==='1';}catch(e){}
+TILT.on=true;try{TILT.on=localStorage.getItem('mctw-bld')!=='flat';}catch(e){}
 const TILT_KIND=new Set(['b','store','stash','hq','walkup','house','casino','casino2','station','conv','rencen','fisher','factory','shed','arena']);
 function tiltRect(b){const x=b.x*T,y=b.y*T,w=b.w*T,h=b.h*T;
   if(b.kind==='house'){const n=b.face==='n',hy=n?y+14:y+4;return {x:x+6,y:hy,w:w-12,h:h-18};}
@@ -9145,8 +9145,8 @@ function stashBanners(D,C,D2,C2,z,r){const col=GANG.crew.color,tag=crewTag(),tl=
     ctx.fillStyle='rgba(0,0,0,.35)';const h0=at(a-0.01,top),h1=at(bb+0.01,top),h2=at(bb+0.01,top-tl*0.06),h3=at(a-0.01,top-tl*0.06);ctx.beginPath();[h0,h1,h2,h3].forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.fill();ctx.restore();
     ctx.strokeStyle=shade(col,-0.45);ctx.lineWidth=1;ctx.beginPath();pts.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath();ctx.stroke();
   }}
-function tiltSet(on){if(TILT.on!==on)chunks.clear();TILT.on=on;$('paTilt').textContent='Buildings: '+(on?'3D':'Flat');try{localStorage.setItem('mctw-tilt',on?'1':'0');}catch(e){}}
-$('paTilt').onclick=()=>tiltSet(!TILT.on);tiltSet(TILT.on);
+function tiltSet(on){if(TILT.on!==on)chunks.clear();TILT.on=on;$('paTilt').textContent='Buildings: '+(on?'3D':'Flat');}
+$('paTilt').onclick=()=>{tiltSet(!TILT.on);try{localStorage.setItem('mctw-bld',TILT.on?'3d':'flat');}catch(e){}};tiltSet(TILT.on);
 function vehLift(c,g,x,y,pv){if(!TILT.on||g!==ctx||pv)return ()=>[0,0];const ca=Math.cos(c.a),sa=Math.sin(c.a),dx=x-vw/2,dy=y-vh/2;
   return z=>{const k=tiltS(z)-1,wx=dx*k,wy=dy*k;return [wx*ca+wy*sa,-wx*sa+wy*ca];};}
 })();
