@@ -5405,7 +5405,7 @@ function gunNoise(x,y,byPlayer){if(byPlayer)P.firedT=LAWT;
   for(const e of npcs)if((e.type==='civ'||e.type==='cust')&&Math.hypot(e.x-x,e.y-y)<450)e.flee=4;
   if(!byPlayer)return;
   const war=inWarZone(x,y);let h=0.12;let cop=false;for(const e of npcs)if(e.type==='cop'&&!e.dead&&Math.hypot(e.x-x,e.y-y)<520&&(!war||copSeesPt(e,x,y))){cop=true;break;}
-  if(cop)h+=0.5;if(S.cur==='glock')h*=GLOCK_HEAT[S.glockTag]||1;const gangFight=war||npcs.some(o=>o.type==='rival'&&!o.dead&&(o.atP>0||o.aggro>0)&&Math.hypot(o.x-x,o.y-y)<650);if(gangFight)h=cop?0.15:0.01;addHeat(h,x,y);
+  if(cop)h+=0.5;if(S.cur==='glock')h*=GLOCK_HEAT[S.glockTag]||1;const gangFight=war||npcs.some(o=>o.type==='rival'&&!o.dead&&(o.atP>0||o.aggro>0)&&Math.hypot(o.x-x,o.y-y)<650);if(gangFight)h=war?0:cop?0.15:0.01;if(h>0)addHeat(h,x,y);
   if(tShot<=0){tShot=25;log(war?'DPD is holding a perimeter while the war plays out.':cop?'Cops heard the shots.':'ShotSpotter picked up gunfire. DPD is looking.','#e0574b');}
 }
 function homieShoot(e,t){e.firedT=LAWT;const a=Math.atan2(t.y-e.y,t.x-e.x)+(R()-.5)*0.25;bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*900,vy:Math.sin(a)*900,life:.5,dmg:11,own:'h',mk:t});fx.push({k:'flash',x:e.x+Math.cos(a)*20,y:e.y+Math.sin(a)*20,a,t:.06});AU.gun('glock',e.x,e.y,false);gunNoise(e.x,e.y,false);}
@@ -6221,14 +6221,21 @@ function recruit(e){if(followers().length>=2){log('You already roll with two hom
 function dismiss(e){if(e.gun){const g=e.gun;crewTake(e,true);log(`${nickOf(e)} handed the ${WD[g].name} back.`,GANG.crew.color);}e.follow=false;e.amb=true;e.inCar=false;S.followers=followers().length;say(e,pick(['Bet. Hit my line.','In a minute, boss.']),2.2);}
 function ensureFollowers(){const want=Math.min(2,S.followers||0);const have=followers().length;for(let k=have;k<want;k++){const s=spotNear(P.x,P.y,40,90,false)||{x:P.x+30,y:P.y};const kit=(S.crewKit||[])[k]||{gun:'glock',ammo:34};const e=mkNPC('homie',s.x,s.y,{follow:true,wasFollower:true,hp:80,aggro:0,gun:kit.gun,ammo:kit.ammo||0,nick:kit.nick,home:hoodOf(P.x,P.y),look:homieLook()});crewArm(e);}}
 function followerTarget(e,r){{const c=crewPick(e,r);if(c!==undefined)return c;}let t=null,bd=r;for(const o of npcs){if(o.dead||o.down>0)continue;const hostile=(o.type==='rival'&&(o.aggro>0||o.war||o.tgt===e))||(o.type==='cop'&&o.chase&&P.heat>=3&&!S.no12);if(!hostile)continue;const d=Math.hypot(o.x-e.x,o.y-e.y);if(d<bd&&los(e.x,e.y,o.x,o.y)){bd=d;t=o;}}return t;}
+function clearShot(e,t){const dx=t.x-e.x,dy=t.y-e.y,L=Math.hypot(dx,dy)||1,ux=dx/L,uy=dy/L;
+  const hit=(x,y,r)=>{const px=x-e.x,py=y-e.y,al=px*ux+py*uy;return al>16&&al<L-16&&Math.abs(px*uy-py*ux)<r;};
+  for(const c of cars){if(c.dead||(e.inCar&&c===P.car)||(t.car&&c===t.car))continue;if(hit(c.x,c.y,26))return false;}
+  if(!P.car&&hit(P.x,P.y,15))return false;
+  for(const o of npcs){if(o===e||o===t||o.dead||o.inCar)continue;if((o.type==='homie'||o.type==='civ'||o.type==='cust'||o.type==='medic')&&hit(o.x,o.y,13))return false;}return true;}
+function sidestep(e,t,dt){const a=Math.atan2(t.y-e.y,t.x-e.x);if(!(e.ssT>LAWT)){e.ssT=LAWT+1.4;e.ssd=e.ssd?-e.ssd:(R()<.5?1:-1);}
+  const ox=e.x,oy=e.y;moveEnt(e,-Math.sin(a)*e.ssd*130*dt,Math.cos(a)*e.ssd*130*dt);if(Math.hypot(e.x-ox,e.y-oy)<0.4){e.ssd=-e.ssd;e.ssT=LAWT+1.4;}e.fx=Math.cos(a);e.fy=Math.sin(a);}
 function crewNerve(e,t){if(t===CREW.mark||isCopT(t)||LAWT-(t.firedT||-99)<3||t.tgt===e||t.atP>0||nerveOK(e))return true;
   if(!(e.heldSaid>LAWT)){e.heldSaid=LAWT+8;say(e,pick(TALK12),2);}return false;}
 function updFollower(e,dt){e.cd-=dt;if(e.wanted>0)e.wanted-=dt;
   if(e.inCar){const c=P.car;if(!c){e.inCar=false;return;}e.x=c.x;e.y=c.y;const t=followerTarget(e,320);
-    if(t&&e.gun&&e.ammo>0){e.aimA=Math.atan2(t.y-c.y,t.x-c.x);e.showT=0.6;if(e.cd<=0&&crewNerve(e,t))crewShoot(e,t);}else if(e.showT>0)e.showT-=dt;return;}
+    if(t&&e.gun&&e.ammo>0){e.aimA=Math.atan2(t.y-c.y,t.x-c.x);e.showT=0.6;if(e.cd<=0&&clearShot(e,t)&&crewNerve(e,t))crewShoot(e,t);}else if(e.showT>0)e.showT-=dt;return;}
   const t=followerTarget(e,380);const d=dist(e,P);
   if(t){const a=Math.atan2(t.y-e.y,t.x-e.x);e.fx=Math.cos(a);e.fy=Math.sin(a);if(!e.hyped){e.hyped=true;say(e,pick(["I got you, boss!","Slide on 'em!",'On gang!','Get down!']),2);}
-    if(e.gun&&e.ammo>0&&Math.hypot(t.x-e.x,t.y-e.y)>60){if(e.cd<=0&&crewNerve(e,t))crewShoot(e,t);if(d>220)seek(e,P.x,P.y,160,dt);}
+    if(e.gun&&e.ammo>0&&Math.hypot(t.x-e.x,t.y-e.y)>60){if(!clearShot(e,t)){sidestep(e,t,dt);return;}if(e.cd<=0&&crewNerve(e,t))crewShoot(e,t);if(d>220)seek(e,P.x,P.y,160,dt);}
     else if(!(e.gun&&e.ammo>0)&&Math.hypot(t.x-e.x,t.y-e.y)>26&&t.type){seek(e,t.x,t.y,150,dt);}else if(e.cd<=0){e.cd=0.7;damageNPC(t,10,'homie',t.x-e.x,t.y-e.y);e.punchT=0.18;}return;}
   e.hyped=false;
   if(d>950){const s=spotNear(P.x,P.y,140,240,false);if(s){e.x=s.x;e.y=s.y;}return;}
@@ -6238,9 +6245,9 @@ function followersExit(c){let k=0;for(const e of followers()){if(!e.inCar)contin
 // ---------- turf wars + raids ----------
 function warStart(hood,g,def){if(S.war||!GANG[g])return;S.war={hood,g,wave:0,waves:def?2:3,def:!!def,t:0,away:0,gap:2.5,respond:75,arrived:!def};
   card(def?'Defend your turf':'Turf war',def?`${GANG[g].name} are rolling on ${HN[hood]}. Hold the block.`:`${GANG[g].name} want smoke over ${HN[hood]}. Survive ${S.war.waves} waves to take it.`,GANG[g].color);}
-function warSpawn(){const W=S.war,g=W.g,n=3+W.wave+Math.min(3,repLvl());let made=0,guns=0;
+function warSpawn(){const W=S.war,g=W.g,n=2+W.wave+Math.min(2,repLvl()>>1);let made=0,guns=0;
   for(let k=0;k<n*3&&made<n;k++){const s=spotNear(P.x,P.y,330,560,false);if(!s||hoodOf(s.x,s.y)!==W.hood&&R()<0.6)continue;const armed=guns<2&&R()<0.45+W.wave*0.15;if(armed)guns++;mkNPC('rival',s.x,s.y,{gang:g,home:W.hood,aggro:6,war:true,hp:44+W.wave*6,armed});made++;}
-  if(W.wave===W.waves-1&&R()<0.7)spawnDriveBy(g,'P');
+  if(W.wave===W.waves-1&&R()<0.4){const n0=cars.length;spawnDriveBy(g,'P');const dc=cars[cars.length-1];if(cars.length>n0&&dc.mode==='gangcar')dc.gun='glock';}
   W.left=made;}
 function warTick(dt){const W=S.war;if(!W)return;W.t+=dt;if(!GANG[W.g]||GANG[W.g].gone){S.war=null;return;}
   const inHood=hoodOf(P.x,P.y)===W.hood;
@@ -6251,6 +6258,7 @@ function warTick(dt){const W=S.war;if(!W)return;W.t+=dt;if(!GANG[W.g]||GANG[W.g]
     if(W.wave>=W.waves){if(W.def){addInf(W.hood,'crew',25);card('Block held',`${HN[W.hood]} stays ${S.crew} turf.`,GANG.crew.color);gainRep(40);}
       else{const h=S.hoods[W.hood];for(const k in h.inf)h.inf[k]=Math.min(h.inf[k],8);h.inf.crew=78;refreshOwners();card('Turf taken',`${HN[W.hood]} is ${S.crew} turf now.`,GANG.crew.color);gainRep(70);addBeef(W.g,1);}
       S.war=null;return;}
+    if(W.wave>0&&P.hp<maxHP()){P.hp=Math.min(maxHP(),P.hp+30);floatText(P.x,P.y-24,'+30','#6cc28a');}
     W.wave++;W.gap=4;warSpawn();log(`Wave ${W.wave} of ${W.waves}. Here they come.`,GANG[W.g].color);}}
 function warKill(e,hood){if(S.war||!isRG(e.gang))return;const h=S.hoods[hood];if(!h||h.owner!==e.gang||hoodOf(P.x,P.y)!==hood)return;
   const k=(S.warHeat||(S.warHeat={}));k[hood]=(k[hood]||0)+1;if(k[hood]>=4){k[hood]=0;warStart(hood,e.gang,false);}else if(k[hood]===2)log(`${GANG[e.gang].name} are getting heated. Drop ${4-k[hood]} more in ${HN[hood]} to start a turf war.`,GANG[e.gang].color);}
@@ -7125,15 +7133,15 @@ function update(dt){
         if(e.armed&&e.drawT==null)e.drawT=e.war?0.2:0.6+R()*0.6;
         if(e.drawT>0){e.drawT-=dt;const a=Math.atan2(P.y-e.y,P.x-e.x);e.fx=Math.cos(a);e.fy=Math.sin(a);if(dP<150&&!e.drawSaid){e.drawSaid=true;say(e,pick(['Run it!','What you on?!',"Oh you think it's a game?",'Wrong block, dawg.']),1.6);}continue;}
         if(e.armed&&dP<380&&dP>70){if(e.cd<=0){e.cd=0.9+R()*.5;npcShoot(e,10);}if(dP>230)seek(e,P.x,P.y,78,dt);}
-        else if(dP>28)seek(e,P.x,P.y,104,dt);
-        else if(e.cd<=0&&!P.car){e.cd=0.9;hurtPlayer(8);e.punchT=0.18;}
+        else if(dP>28){if(e.war&&dP<120&&npcs.filter(o=>o!==e&&o.war&&!o.dead&&Math.hypot(o.x-P.x,o.y-P.y)<44).length>=2){const a=Math.atan2(e.y-P.y,e.x-P.x);moveEnt(e,-Math.sin(a)*40*dt+(dP<90?Math.cos(a)*50*dt:0),Math.cos(a)*40*dt+(dP<90?Math.sin(a)*50*dt:0));e.fx=-Math.cos(a);e.fy=-Math.sin(a);}else seek(e,P.x,P.y,104,dt);}
+        else if(e.cd<=0&&!P.car){e.cd=e.war?1.3:0.9;hurtPlayer(e.war?7:8);e.punchT=0.18;}
         if(dP<200)e.aggro=Math.max(e.aggro,1);}
       else if(e.homing||hoodOf(e.x,e.y)!==e.home){e.homing=true;goHome(e,dt,52,e.home);}
       else walk(e,dt,e.amb?28:40);
     }
     else if(e.type==='homie'){if(e.follow){updFollower(e,dt);continue;}e.cd-=dt;let tgt=null,td=e.guard?420:e.armed?330:220;for(const o of npcs){if(o.dead||o.type!=='rival'||(o.aggro<=0&&o.tgt!==e&&!o.war))continue;const d=dist(o,e);if(d<td){td=d;tgt=o;}}
       if(tgt){const a=Math.atan2(tgt.y-e.y,tgt.x-e.x);e.fx=Math.cos(a);e.fy=Math.sin(a);if(!e.hyped){e.hyped=true;say(e,pick(["I got you, boss!","Slide on 'em!",'On gang!']),2);}
-        if(e.armed&&td>60){if(e.cd<=0){e.cd=0.8+R()*.6;homieShoot(e,tgt);}if(td>250)seek(e,tgt.x,tgt.y,80,dt);}
+        if(e.armed&&td>60){if(!clearShot(e,tgt))sidestep(e,tgt,dt);else{if(e.cd<=0){e.cd=0.8+R()*.6;homieShoot(e,tgt);}if(td>250)seek(e,tgt.x,tgt.y,80,dt);}}
         else if(td>26)seek(e,tgt.x,tgt.y,105,dt);else if(e.cd<=0){e.cd=0.8;damageNPC(tgt,9,'homie',tgt.x-e.x,tgt.y-e.y);e.punchT=0.18;}}
       else if(e.guard){e.hyped=false;const d=Math.hypot(e.x-e.post.x,e.y-e.post.y);if(d>14)seek(e,e.post.x,e.post.y,70,dt);else{e.fx=0;e.fy=1;}}
       else{e.hyped=false;if(e.homing||hoodOf(e.x,e.y)!==e.home){e.homing=true;goHome(e,dt,52,e.home);}else walk(e,dt,28);}}
