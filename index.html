@@ -5593,7 +5593,7 @@ const UPG=[
 const elStash=document.getElementById('stash');
 function openStash(){paused=true;elStash.hidden=false;renderStash();document.getElementById('btnClose').focus();}
 function closeStash(){renderStashLive.open=false;elStash.hidden=true;paused=false;save();}
-function renderStash(){sleepBtn(document.getElementById('btnSleep'));{const g=document.getElementById('btnGym');g.hidden=!S.gym;g.textContent=`Work out · 1 hour · fitness ${S.fit||0} · max health ${maxHP()}${S.fat?` · weight +${Math.round(S.fat)}`:''}`;}{const fl=document.getElementById('frontList');if(fl){fl.innerHTML=frontsHtml();document.getElementById('frLbl').textContent=`Fronts · wash dirty money · $${Math.round(dirtyNow()).toLocaleString()} dirty`;}}
+function renderStash(){sleepBtn(document.getElementById('btnSleep'));{const g=document.getElementById('btnGym');g.hidden=!S.gym;{const used=S.gymDay===S.day?S.gymN||0:0,left=Math.max(0,BODY.perDay-used),max=(S.fit||0)>=100;g.disabled=left<=0||max;g.textContent=max?`Weight bench · maxed out · ${maxHP()} health, full strength`:left?`Weight bench · 1 hour · ${left} of ${BODY.perDay} left today · fitness ${S.fit||0}/100 · max health ${maxHP()}/200${S.fat?` · weight +${Math.round(S.fat)}`:''}`:`Weight bench · done for today · max health ${maxHP()}/200`;}}{const fl=document.getElementById('frontList');if(fl){fl.innerHTML=frontsHtml();document.getElementById('frLbl').textContent=`Fronts · wash dirty money · $${Math.round(dirtyNow()).toLocaleString()} dirty`;}}
   renderStashLive();const labOn=S.labs>0||S.labKits>0;$('labBox').hidden=!labOn;$('labTease').hidden=labOn;
   document.getElementById('upgList').innerHTML=UPG.filter(u=>!u.hide).map(u=>{const has=u.has(),repLock=repLvl()<u.lvl,locked=repLock||(u.need&&!u.need());return `<div class="row"><div><b>${u.name}</b><span>${u.desc}${repLock?` Needs rep: ${REPN[u.lvl]}.`:''}${!has&&!locked&&cleanNow()<u.cost?` You have ${fmt$(cleanNow())} clean.`:''}</span></div><button type="button" data-u="${u.id}" ${has||locked||cleanNow()<u.cost?'disabled':''}>${has?'Owned':locked?'Locked':'$'+u.cost+' clean'}</button></div>`;}).join('');
 }
@@ -8552,7 +8552,7 @@ const BODY={gym:300,gain:4,perDay:2};
 const fitMul=()=>1+(S.fit||0)/200;
 const runMul=()=>clamp(1+(S.fit||0)/500-(S.fat||0)/300,0.8,1.25);
 function eat(n){S.fat=clamp((S.fat||0)+n,0,60);if(S.fat>=40&&!S.fatWarn){S.fatWarn=true;log('All those coneys are catching up with you. You are slower on foot.','#f2a33a');}}
-function workout(){if(!S.gym||S.cash<0)return;if((S.gymDay===S.day?S.gymN:0)>=BODY.perDay){log('You already worked out twice today. Rest up.','#8a8f98');return;}
+function workout(){if(!S.gym||S.cash<0)return;if((S.fit||0)>=100){log('You are maxed out. 200 health, full strength.','#8a8f98');return;}if((S.gymDay===S.day?S.gymN:0)>=BODY.perDay){log('You already worked out twice today. Rest up.','#8a8f98');return;}
   S.gymN=S.gymDay===S.day?S.gymN+1:1;S.gymDay=S.day;S.fit=clamp((S.fit||0)+BODY.gain,0,100);S.fat=Math.max(0,(S.fat||0)-3);S.clock+=60;if(S.clock>=1440){S.clock-=1440;S.day++;}P.stam=100;log(`Worked out for an hour. Fitness ${S.fit}, max health ${maxHP()}.`,'#6cc28a');renderStash();}
 let bodyDay=-1;function bodyTick(){if(!running||bodyDay===S.day)return;if(bodyDay>=0){S.fat=Math.max(0,(S.fat||0)-3);S.fit=Math.max(0,(S.fit||0)-1);if(S.fat<40)S.fatWarn=false;}bodyDay=S.day;}
 // ================= controller (Gamepad API, Xbox and PlayStation layouts) =================
