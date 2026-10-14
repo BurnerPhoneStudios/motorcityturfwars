@@ -635,6 +635,7 @@ body.wpnwheel #goals,body.wpnwheel #card{visibility:hidden}
         <button type="button" id="btnHarvest">Harvest</button>
         <button type="button" class="ghost" id="btnRush" style="grid-column:1/-1">Rush harvest all · 22 g each</button>
       <button type="button" class="ghost" id="btnGym" style="grid-column:1/-1" hidden>Work out · 1 hour</button>
+      <button type="button" class="ghost" id="btnSleep" style="grid-column:1/-1">Sleep till 7 AM</button>
       </div>
       <div class="note" id="labTease" style="margin-bottom:14px">Meth lab: buy a lab setup in the back room at Uncle Rell's Tires (needs rep: Known). Up to 4 stations.</div>
       <div id="labBox" hidden>
@@ -749,6 +750,7 @@ body.wpnwheel #goals,body.wpnwheel #card{visibility:hidden}
     <div class="sub" id="trSub"></div>
     <div id="trMsg"></div>
     <div class="upg" id="trBody"></div>
+    <button type="button" class="ghost" id="trSleep" style="width:100%;margin-bottom:8px" hidden>Sleep till 7 AM</button>
     <button type="button" class="ghost" id="trClose" style="width:100%">Leave (Esc)</button>
   </div>
 </div>
@@ -5591,7 +5593,7 @@ const UPG=[
 const elStash=document.getElementById('stash');
 function openStash(){paused=true;elStash.hidden=false;renderStash();document.getElementById('btnClose').focus();}
 function closeStash(){renderStashLive.open=false;elStash.hidden=true;paused=false;save();}
-function renderStash(){{const g=document.getElementById('btnGym');g.hidden=!S.gym;g.textContent=`Work out · 1 hour · fitness ${S.fit||0} · max health ${maxHP()}${S.fat?` · weight +${Math.round(S.fat)}`:''}`;}{const fl=document.getElementById('frontList');if(fl){fl.innerHTML=frontsHtml();document.getElementById('frLbl').textContent=`Fronts · wash dirty money · $${Math.round(dirtyNow()).toLocaleString()} dirty`;}}
+function renderStash(){sleepBtn(document.getElementById('btnSleep'));{const g=document.getElementById('btnGym');g.hidden=!S.gym;g.textContent=`Work out · 1 hour · fitness ${S.fit||0} · max health ${maxHP()}${S.fat?` · weight +${Math.round(S.fat)}`:''}`;}{const fl=document.getElementById('frontList');if(fl){fl.innerHTML=frontsHtml();document.getElementById('frLbl').textContent=`Fronts · wash dirty money · $${Math.round(dirtyNow()).toLocaleString()} dirty`;}}
   renderStashLive();const labOn=S.labs>0||S.labKits>0;$('labBox').hidden=!labOn;$('labTease').hidden=labOn;
   document.getElementById('upgList').innerHTML=UPG.filter(u=>!u.hide).map(u=>{const has=u.has(),repLock=repLvl()<u.lvl,locked=repLock||(u.need&&!u.need());return `<div class="row"><div><b>${u.name}</b><span>${u.desc}${repLock?` Needs rep: ${REPN[u.lvl]}.`:''}${!has&&!locked&&cleanNow()<u.cost?` You have ${fmt$(cleanNow())} clean.`:''}</span></div><button type="button" data-u="${u.id}" ${has||locked||cleanNow()<u.cost?'disabled':''}>${has?'Owned':locked?'Locked':'$'+u.cost+' clean'}</button></div>`;}).join('');
 }
@@ -6148,7 +6150,7 @@ function emsTick(dt){
   const c=baseCar({mode:'ems',type:'ems',model:'EMS Ambulance',color:'#f1efe9',value:0,x:s.x,y:s.y,a:Math.atan2(b.y-s.y,b.x-s.x),v:140,st:'drive',q,medics:[],stk:0,rev:0,lt:0});
   for(const o of q)o.claim=c;cars.push(c);}
 function emsTarget(c){c.q=c.q.filter(b=>BODIES.includes(b)&&!b.done);return c.q[0]||null;}
-function emsLeave(c){c.st='leave';for(const b of c.q)if(!b.done)b.claim=null;c.q=[];for(const m of c.medics)m.dead=true;c.medics=[];}
+function emsLeave(c){if(c.st!=='leave'&&emsToHosp(c)){for(const b of c.q)if(!b.done)b.claim=null;c.q=[];return;}c.st='leave';for(const b of c.q)if(!b.done)b.claim=null;c.q=[];for(const m of c.medics)m.dead=true;c.medics=[];}
 function updEMS(c,dt){c.lt+=dt;
   if(c.st==='drive'){const b=emsTarget(c);if(!b){emsLeave(c);return;}
     const dx=b.x-c.x,dy=b.y-c.y,d=Math.hypot(dx,dy);
@@ -6172,10 +6174,11 @@ function updEMS(c,dt){c.lt+=dt;
         else{b.carried=true;say(M[0],pick(["We lost him. Load him up.",'Get the stretcher.',"He's gone."]),2.4);J.ph='carry';J.t=0;}}}
     else if(J.ph==='carry'){const rx=c.x-Math.cos(c.a)*44,ry=c.y-Math.sin(c.a)*44;M.forEach((m,i)=>{const ox=-Math.sin(c.a)*(i?10:-10),oy=Math.cos(c.a)*(i?10:-10);seek(m,rx+ox+(J.b.x-rx)*0,ry+oy,46,dt);});
       const mx=(M[0].x+M[1].x)/2,my=(M[0].y+M[1].y)/2;J.b.x=mx;J.b.y=my;J.b.a=Math.atan2(M[1].y-M[0].y,M[1].x-M[0].x)+Math.PI/2;J.b.vx=0;J.b.vy=0;J.b.va=0;
-      if(Math.hypot(mx-rx,my-ry)<26||J.t>18){J.b.done=true;bodyGone(J.b);AU.door();J.ph='back';J.t=0;}}
+      if(Math.hypot(mx-rx,my-ry)<26||J.t>18){J.b.done=true;c.load=(c.load||0)+1;bodyGone(J.b);AU.door();J.ph='back';J.t=0;}}
     else if(J.ph==='back'){let n=0;M.forEach((m,i)=>{const tx=c.x-Math.sin(c.a)*(i?22:-22),ty=c.y+Math.cos(c.a)*(i?22:-22);if(Math.hypot(m.x-tx,m.y-ty)>14)seek(m,tx,ty,80,dt);else n++;});
       if(n===2||J.t>10){M.forEach(m=>m.dead=true);c.medics=[];c.job=null;const nb=emsTarget(c);if(nb&&dist(nb,c)>110){c.st='drive';c.lt=Math.min(c.lt,30);}else if(!nb)emsLeave(c);}}
     return;}
+  if(c.st==='hosp'||c.st==='bay'){updEMSHosp(c,dt);return;}
   if(c.st==='leave'){driveAway(c,dt,190,150);}}
 function reviveBody(b){const k=b.kind||{};let e=null;
   if(k.type==='cust'&&k.cid!=null){const c=CL(k.cid);c.hurt=false;if(!npcs.some(o=>o.cid===c.id))e=mkNPC('cust',b.x,b.y,{cid:c.id,look:c.look,want:false,rs:0,pitchCD:60,walkCD:200});if(c.known){log(`Paramedics saved ${c.name}.`,'#6cc28a');addRel(c,-0.5);}}
@@ -7753,7 +7756,7 @@ function drawHideout(roofOnly){if(!S.banner||!STASHB||(TILT.on&&!roofOnly))retur
   ctx.save();ctx.globalAlpha=0.28;ctx.fillStyle=col;ctx.font=`900 ${Math.min(90,w*0.2)}px ${FD}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.translate(bx+(w-4*T)/2,by+h*0.3);ctx.rotate(-0.08);ctx.fillText(tag,0,0);ctx.restore();if(roofOnly)return;
   for(const k of [0.1,0.42]){const x=bx+w*k-15,y=by+h-78;const wave=Math.sin(clockT*2+k*7)*2;ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(x+4,y+6,30,64);ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+30,y);ctx.lineTo(x+30+wave,y+62);ctx.lineTo(x+15+wave,y+52);ctx.lineTo(x+wave,y+62);ctx.closePath();ctx.fill();
     ctx.fillStyle='#111';ctx.fillRect(x-2,y-3,34,4);ctx.fillStyle='#111';ctx.font=`900 ${fpx(13)}px ${FD}`;ctx.textAlign='center';ctx.textBaseline='middle';[...tag].forEach((ch,i)=>ctx.fillText(ch,x+15+wave*0.5,y+12+i*13));}}
-function drawHospital(){const st=STORES.find(s=>s.kind==='hospital');if(!st||!st.b)return;const b=st.b,x=b.x*T-camX,y=b.y*T-camY,w=b.w*T,h=b.h*T;if(x>vw+40||y>vh+40||x+w<-40||y+h<-40)return;
+function drawHospital(){hospCanopy();drawHospBay();if(TILT.on)return;const st=STORES.find(s=>s.kind==='hospital');if(!st||!st.b)return;const b=st.b,x=b.x*T-camX,y=b.y*T-camY,w=b.w*T,h=b.h*T;if(x>vw+40||y>vh+40||x+w<-40||y+h<-40)return;
   ctx.fillStyle='#d9dde2';ctx.fillRect(x+6,y+6,w-12,h-12);ctx.fillStyle='#c4c9cf';for(let k=0;k<4;k++)ctx.fillRect(x+12+k*(w-24)/4,y+10,(w-24)/4-6,10);
   const cx=x+w*0.35,cy=y+h*0.48,r=Math.min(w,h)*0.22;ctx.fillStyle='#3a3d42';ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.fill();ctx.strokeStyle='#f2d24f';ctx.lineWidth=3;ctx.beginPath();ctx.arc(cx,cy,r-5,0,7);ctx.stroke();
   ctx.fillStyle='#f1efe9';ctx.font=`900 ${Math.round(r*1.1)}px ${FD}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('H',cx,cy+2);
@@ -8218,7 +8221,7 @@ function trapTick(){if(!running)return;const hr=S.day*24+Math.floor(S.clock/60);
 const elTrap=document.getElementById('trap');let curTrap=null;
 function openTrap(t){paused=true;curTrap=t;elTrap.hidden=false;$('trMsg').textContent='';renderTrap();$('trClose').focus();}
 function closeTrap(){elTrap.hidden=true;curTrap=null;paused=false;save();}
-function renderTrap(){const t=curTrap;if(!t)return;const o=trapOf(t),ours=S.hoods[t.hood].owner==='crew',hr=S.day*24+Math.floor(S.clock/60);
+function renderTrap(){const t=curTrap;if(!t)return;const o=trapOf(t),ours=S.hoods[t.hood].owner==='crew',hr=S.day*24+Math.floor(S.clock/60);{const sb=$('trSleep');sb.hidden=!o||!ours;sleepBtn(sb);}
   $('trTitle').textContent=`Trap house · ${HN[t.hood]}`;
   if(!o){$('trSub').textContent=`Boarded-up spot on a quiet block. Stock it and the corner sells for you, ${Math.round(TRAP.cut*100)}% of your price, a little every hour. Cops raid spots that run hot.`;
     $('trBody').innerHTML=`<div class="row"><div><b>Buy it · $${t.cost.toLocaleString()}</b><span>${ours?`You have $${S.cash.toLocaleString()}.`:'Only on your own turf. Take this hood first.'}</span></div><button type="button" data-t="buy" ${!ours||S.cash<t.cost?'disabled':''}>Buy</button></div>`;return;}
@@ -9151,7 +9154,7 @@ function tiltZ(b){if(b===STASHB)return 130;if(BANK&&b===BANK.b)return 840;if(b.k
 function tiltRoof(b){let c=TILT.roofs.get(b.id);if(c){TILT.roofs.delete(b.id);TILT.roofs.set(b.id,c);return c;}
   const k=chunkScale;c=document.createElement('canvas');c.width=Math.max(1,Math.ceil(b.w*T*k));c.height=Math.max(1,Math.ceil(b.h*T*k));const g=c.getContext('2d');g.scale(k,k);drawBuildingStatic(g,b,b.x*T,b.y*T);
   TILT.roofs.set(b.id,c);if(TILT.roofs.size>90)TILT.roofs.delete(TILT.roofs.keys().next().value);return c;}
-function tiltWallCol(b){if(b.kind==='walkup')return b.brick||'#6e3426';if(b.kind==='house')return b.style==='brick'?'#6e3a2c':shade(b.roofC||'#7a6a58',0.25);return v3WALL[b.id%v3WALL.length];}
+function tiltWallCol(b){if(isHospB(b))return hospWall;if(b.kind==='walkup')return b.brick||'#6e3426';if(b.kind==='house')return b.style==='brick'?'#6e3a2c':shade(b.roofC||'#7a6a58',0.25);return v3WALL[b.id%v3WALL.length];}
 function tiltFace(p0,p1,q0,q1,col,nF,lit,night,len,seed){ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(p0[0],p0[1]);ctx.lineTo(p1[0],p1[1]);ctx.lineTo(q1[0],q1[1]);ctx.lineTo(q0[0],q0[1]);ctx.closePath();ctx.fill();
   const fh=Math.hypot(q0[0]-p0[0],q0[1]-p0[1])/nF;
   if(fh>=2.5){const nC=Math.max(1,Math.round(len/26)),on=night>0.3&&lit;
@@ -9200,10 +9203,11 @@ function drawTilt(){drawProps();const cx=vw/2,cy=vh/2,night=nightAmt(),list=[],p
         if(cx>x1)tiltFace(B,C,B2,C2,shade(col,-0.18),nF,lit,night,r.h,b.id*31+4);
         if(b===STASHB&&cy>y1)stashFront(D,C,D2,C2,z,r);
         if(b.dealer&&cy>y1)dealerFront(D,C,D2,C2,z);
+        if(isHospB(b)&&cy>y1)hospFront(D,C,D2,C2,z);
         if(BANK&&b===BANK.b&&BANKBACK){const f=BANKBACK.face;if(f==='n'&&cy<y0)backDoorFace(A,B,A2,B2,r.w,z);else if(f==='s'&&cy>y1)backDoorFace(D,C,D2,C2,r.w,z);else if(f==='w'&&cx<x0)backDoorFace(A,D,A2,D2,r.h,z);else if(f==='e'&&cx>x1)backDoorFace(B,C,B2,C2,r.h,z);}};
     const roof=()=>{const fx=r.x-b.x*T,fy=r.y-b.y*T,k=chunkScale;
       ctx.save();ctx.translate(cx,cy);ctx.scale(s,s);ctx.translate(-cx,-cy);ctx.drawImage(tiltRoof(b),fx*k,fy*k,r.w*k,r.h*k,x0,y0,r.w,r.h);
-      if(b.dealer)dealerRoof(x0,y0,r.w,r.h);if(b.kind==='store')drawStoreSign(b);else drawTag(b);if(b===STASHB)drawHideout(true);ctx.restore();};
+      if(b.dealer)dealerRoof(x0,y0,r.w,r.h);if(isHospB(b))hospRoof(x0,y0,r.w,r.h);if(b.kind==='store')drawStoreSign(b);else drawTag(b);if(b===STASHB)drawHideout(true);ctx.restore();};
     const paint=f=>{if(inside){ctx.globalAlpha=0.18;f();}
       else if(b._ta>0.98){ctx.globalAlpha=1;f();}
       else{ctx.save();ctx.beginPath();ctx.rect(x0,y0,r.w,r.h);ctx.clip();ctx.globalAlpha=1;f();ctx.restore();
@@ -9427,6 +9431,58 @@ function drawGangDeal(){const D=GDL.cur;if(!D||D.st!=='hand')return;const e=D.e,
   const lerp=(p,q,t)=>[p.x+(q.x-p.x)*t-camX,p.y+(q.y-p.y)*t-camY];
   if(k<1||D.ht<2.6){const [cx,cy]=lerp(b,e,k*0.5);ctx.fillStyle='#4f9a52';ctx.fillRect(cx-4,cy-2.5,8,5);ctx.strokeStyle='#2c5a2e';ctx.lineWidth=1;ctx.strokeRect(cx-4,cy-2.5,8,5);}
   if(k2>0&&D.ht<2.6){const [bx,by]=lerp(e,b,0.5*k2);ctx.fillStyle='#e9e6df';ctx.beginPath();ctx.arc(bx,by,3.2,0,7);ctx.fill();ctx.fillStyle='#6b8f3a';ctx.beginPath();ctx.arc(bx,by,1.8,0,7);ctx.fill();}}
+// ================= sleep at the stash or your trap house: after 7 PM, out till 7 AM, the night still plays out =================
+const SLEEP={from:19*60,until:5*60,wake:7*60};
+const canSleepNow=()=>S.clock>=SLEEP.from||S.clock<SLEEP.until;
+function sleepState(){if(!canSleepNow())return {ok:false,txt:'Sleep · only after 7 PM'};if(P.heat>0.05)return {ok:false,txt:'Sleep · lose the cops first'};return {ok:true,txt:'Sleep till 7 AM · full health'};}
+function sleepBtn(el){if(!el)return;const s=sleepState();el.textContent=s.txt;el.disabled=!s.ok;}
+function sleepNight(){const s=sleepState();if(!s.ok)return s.txt;
+  let left=(SLEEP.wake-S.clock+1440)%1440;const mins=left;
+  while(left>0){const m=Math.min(60,left);left-=m;S.clock+=m;if(S.clock>=1440){S.clock-=1440;S.day++;}
+    if(S.cooks)for(const c of S.cooks){if(c&&c.g<1)c.g=Math.min(1,c.g+m/COOK.time*(S.fastCook?2:1));}
+    const gm=m*bonusMul('grow');for(const p of S.plants){if(S.drip)p.w=1;if(p.g>=1||p.w<=0)continue;p.g=Math.min(1,p.g+gm/GROW.time*(p.boost||1));p.w=Math.max(0,p.w-gm/GROW.dry);}
+    for(const st of STORES)if(st.cd>0)st.cd=Math.max(0,st.cd-m);
+    trapTick();launderTick();jobTick();}
+  P.hp=maxHP();P.stam=100;P.heat=0;fx=fx.filter(f=>f.k!=='txt');
+  const h=Math.floor(mins/60);log(`Slept ${h} hour${h===1?'':'s'}. Day ${S.day}, 7:00 AM. Health full.`,'#6cc28a');
+  if(S.plants.some(p=>p.g>=1))S.readyWarn=false;if(S.cooks&&S.cooks.some(c=>c&&c.g>=1))S.cookWarn=false;save();return true;}
+document.getElementById('btnSleep').onclick=()=>{const r=sleepNight();if(r!==true)return;renderStash();};
+$('trSleep').onclick=()=>{const r=sleepNight();if(r!==true){$('trMsg').textContent=r;return;}$('trMsg').textContent='You slept on the couch in the back. 7:00 AM.';renderTrap();};
+// ================= Detroit General in 3D and the emergency bay ambulances unload at =================
+const HOSP=(()=>{const st=STORES.find(s=>s.kind==='hospital');if(!st)return null;const b=st.b,by=(b.y+b.h)*T;let ry=by;while(ry<by+4*T&&!roadPx(st.x,ry))ry+=4;
+  return {st,b,door:{x:st.x,y:by+10},bay:{x:st.x,y:ry+20,a:Math.PI},curb:ry,cw:3*T};})();
+const isHospB=b=>!!(HOSP&&b===HOSP.b);
+function hospRoof(x0,y0,w,h){const g=ctx;g.fillStyle='#dfe3e8';g.fillRect(x0,y0,w,h);g.strokeStyle='rgba(120,128,138,.5)';g.lineWidth=2;g.strokeRect(x0+5,y0+5,w-10,h-10);
+  g.fillStyle='#b9bfc6';for(const [fx,fy] of [[0.15,0.12],[0.75,0.12],[0.15,0.8]]){g.fillRect(x0+w*fx,y0+h*fy,w*0.14,h*0.06);}
+  const r=Math.min(w,h)*0.28,cx=x0+w/2,cy=y0+h*0.42;g.fillStyle='#3a3d42';g.beginPath();g.arc(cx,cy,r,0,7);g.fill();g.strokeStyle='#f2d24f';g.lineWidth=3;g.beginPath();g.arc(cx,cy,r-5,0,7);g.stroke();
+  g.fillStyle='#f1efe9';g.font=`900 ${Math.round(r*1.05)}px ${FD}`;g.textAlign='center';g.textBaseline='middle';g.fillText('H',cx,cy+2);
+  const kx=cx,ky=y0+h*0.78,s2=Math.min(w,h)*0.12;g.fillStyle='#d9473c';g.fillRect(kx-s2,ky-s2*0.33,s2*2,s2*0.66);g.fillRect(kx-s2*0.33,ky-s2,s2*0.66,s2*2);}
+function hospFront(D,C,D2,C2,z){const t1=Math.min(0.5,46/z),q=(pts,col)=>{ctx.fillStyle=col;faceQuad(D,C,D2,C2,pts);ctx.fill();};
+  q([[0.3,0],[0.7,0],[0.7,t1],[0.3,t1]],'rgba(150,200,240,.75)');ctx.strokeStyle='rgba(30,36,44,.8)';ctx.lineWidth=1.5;for(const u of [0.4,0.5,0.6]){faceQuad(D,C,D2,C2,[[u,0],[u,t1]]);ctx.stroke();}
+  q([[0.22,t1+0.01],[0.78,t1+0.01],[0.78,t1+0.06],[0.22,t1+0.06]],'#d9473c');}
+const hospWall='#dfe3e8';
+function hospCanopy(){if(!HOSP)return;const {st,b,curb}=HOSP,x=st.x-HOSP.cw/2,y=(b.y+b.h)*T,w=HOSP.cw,h=Math.max(20,curb-y-4);
+  const sx=x-camX,sy=y-camY;if(sx>vw+60||sy>vh+60||sx+w<-60||sy+h<-200)return;
+  ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=2;ctx.setLineDash([10,8]);ctx.strokeRect(sx+4,curb-camY+4,w-8,34);ctx.setLineDash([]);
+  ctx.fillStyle='rgba(255,90,90,.85)';ctx.font=`900 ${fpx(13)}px ${FD}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('AMBULANCE',sx+w/2,curb-camY+21);
+  if(!TILT.on){ctx.fillStyle='rgba(235,238,242,.86)';ctx.fillRect(sx,sy,w,h);ctx.fillStyle='#d9473c';ctx.fillRect(sx,sy+h-6,w,6);ctx.fillStyle='#d9473c';ctx.font=`900 ${fpx(15)}px ${FD}`;ctx.fillText('EMERGENCY',sx+w/2,sy+h/2-2);return;}
+  const z=46,P0=[[x,y],[x+w,y],[x+w,y+h],[x,y+h]].map(p=>propLift(p[0],p[1],z));
+  ctx.strokeStyle='#8c9198';ctx.lineWidth=3;for(const p of [[x+6,y+h-4],[x+w-6,y+h-4]]){const a=[p[0]-camX,p[1]-camY],t=propLift(p[0],p[1],z);ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(t[0],t[1]);ctx.stroke();}
+  ctx.fillStyle='rgba(235,238,242,.95)';ctx.beginPath();P0.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fill();
+  const s=tiltS(z);ctx.fillStyle='#d9473c';ctx.beginPath();ctx.moveTo(P0[3][0],P0[3][1]);ctx.lineTo(P0[2][0],P0[2][1]);ctx.lineTo(P0[2][0],P0[2][1]-6*s);ctx.lineTo(P0[3][0],P0[3][1]-6*s);ctx.closePath();ctx.fill();
+  ctx.save();ctx.translate((P0[0][0]+P0[2][0])/2,(P0[0][1]+P0[2][1])/2);ctx.scale(s,s);ctx.fillStyle='#d9473c';ctx.font=`900 ${fpx(15)}px ${FD}`;ctx.fillText('EMERGENCY',0,0);ctx.restore();}
+// ---- ambulance run to the bay ----
+function emsToHosp(c){if(!HOSP||!(c.load>0))return false;for(const m of c.medics)m.dead=true;c.medics=[];c.st='hosp';c.lt=0;c.wp=null;return true;}
+function updEMSHosp(c,dt){c.lt+=dt;const B=HOSP.bay;
+  if(c.st==='hosp'){if(dist(c,P)>1700&&!onScreen(c,100)){c.dead=true;return;}const d=Math.hypot(B.x-c.x,B.y-c.y);
+    if(d<70||c.lt>90){c.st='bay';c.v=0;c.bt=0;const rx=c.x-Math.cos(c.a)*34,ry=c.y-Math.sin(c.a)*34,sx=-Math.sin(c.a),sy=Math.cos(c.a);
+      c.medics=[0,1].map(i=>mkNPC('medic',rx+sx*(i?10:-10),ry+sy*(i?10:-10),{hp:60,role:i,ems:c}));c.str={x:rx,y:ry,a:c.a};AU.door();return;}
+    if(d<200){const diff=angDiff(c.a,Math.atan2(B.y-c.y,B.x-c.x));c.a+=clamp(diff*2,-1,1)*2*dt;c.v+=(70-c.v)*Math.min(1,dt*1.5);carMove(c,dt,false);}else steerRoute(c,B.x,B.y,dt,230);return;}
+  if(c.st==='bay'){c.v=0;c.bt+=dt;const M=c.medics,dr=HOSP.door;
+    if(M.length===2&&!M.some(m=>m.dead)){M.forEach((m,i)=>seek(m,dr.x+(i?10:-10),dr.y+4,46,dt));c.str.x=(M[0].x+M[1].x)/2;c.str.y=(M[0].y+M[1].y)/2;c.str.a=Math.atan2(M[1].y-M[0].y,M[1].x-M[0].x)+Math.PI/2;
+      if(Math.hypot(c.str.x-dr.x,c.str.y-dr.y)<22||c.bt>12){M.forEach(m=>m.dead=true);c.medics=[];c.str=null;c.load=0;c.bt=Math.max(c.bt,8);AU.door();}}
+    if(c.bt>11){c.str=null;for(const m of c.medics)m.dead=true;c.medics=[];c.st='leave';c.lt=0;c.exit=null;}}}
+function drawHospBay(){for(const c of cars)if(c.mode==='ems'&&c.str&&!c.dead)drawStretcher(c.str);}
 })();
 </script>
 </html>
