@@ -5269,11 +5269,13 @@ function walk(e,dt,sp){if(e.idle>0){e.idle-=dt;return;}if(e.look&&e.look.old)sp*
 function goHome(e,dt,sp,home){if(!e.ht||e.htH!==home||(e.htT=(e.htT||0)+dt)>30){e.ht=null;for(let k=0;k<6&&!e.ht;k++){const q=spotIn(home);if(q&&!(e.type==='rival'&&atPD(q.x,q.y)))e.ht=q;}if(!e.ht)e.ht={x:e.x,y:e.y};e.htH=home;e.htT=0;}seek(e,e.ht.x,e.ht.y,sp,dt);if(Math.hypot(e.x-e.ht.x,e.y-e.ht.y)<40){e.ht=null;e.homing=false;}}
 function wander(e,dt,sp){e.t-=dt;const ox=e.x,oy=e.y;moveEnt(e,e.dx*sp*dt,e.dy*sp*dt);if(e.dx||e.dy){e.fx=e.dx;e.fy=e.dy;}if(e.t<=0||Math.hypot(e.x-ox,e.y-oy)<sp*dt*0.3)pickDir(e);}
 function seek(e,tx,ty,sp,dt,away){let dx=tx-e.x,dy=ty-e.y;const d=Math.hypot(dx,dy)||1;dx/=d;dy/=d;if(away){dx=-dx;dy=-dy;}
-  if(e.detour>0){e.detour-=dt;dx=e.ddx;dy=e.ddy;}
+  if(e.detour>0){e.detour-=dt;e.dTot=(e.dTot||0)+dt;const ax=Math.abs(dx)>=Math.abs(dy);
+    if(e.dTot<12&&hit(e.x+(ax?Math.sign(dx):0)*26,e.y+(ax?0:Math.sign(dy))*26,e.r))e.detour=Math.max(e.detour,0.15);dx=e.ddx;dy=e.ddy;}else e.dTot=0;
   const ox=e.x,oy=e.y;moveEnt(e,dx*sp*dt,dy*sp*dt);e.fx=dx;e.fy=dy;
-  if(e.detour<=0&&Math.hypot(e.x-ox,e.y-oy)<sp*dt*0.25){
+  if(Math.hypot(e.x-ox,e.y-oy)<sp*dt*0.25){
+    if(e.detour>0){if(!e.dFlip){e.ddx=-e.ddx;e.ddy=-e.ddy;e.dFlip=true;}else e.detour=0;return;}
     const opts=Math.abs(dx)>Math.abs(dy)?[[0,Math.sign(dy)||1],[0,-(Math.sign(dy)||1)]]:[[Math.sign(dx)||1,0],[-(Math.sign(dx)||1),0]];
-    for(const o of opts)if(!hit(e.x+o[0]*26,e.y+o[1]*26,e.r)){e.ddx=o[0];e.ddy=o[1];e.detour=0.55;break;}}}
+    for(const o of opts)if(!hit(e.x+o[0]*26,e.y+o[1]*26,e.r)){e.ddx=o[0];e.ddy=o[1];e.detour=0.55;e.dFlip=false;break;}}}
 function spawnClient(c,minD){const s=spotIn(c.home,minD);if(!s)return null;return mkNPC('cust',s.x,s.y,{cid:c.id,look:c.look,want:false,rs:0,pitchCD:0,walkCD:30+R()*60});}
 function spawnRival(g,own,minD){const home=own.length?own[(R()*own.length)|0]:(g==='kings'?H_GT:11);const s=spotIn(home,minD);if(!s)return;
   const lv=repLvl();const armed=lv>=2&&R()<(lv>=4?0.6:0.35);mkNPC('rival',s.x,s.y,{gang:g,home,aggro:0,hp:armed?48:40,armed});}
@@ -7295,7 +7297,7 @@ function drawTile(g,tx,ty,x,y){
     break;}
   case WATER:{g.fillStyle='#0f2638';g.fillRect(x,y,T,T);speckle(g,x,y,T,T,8,['rgba(140,180,210,.05)'],rn,3);break;}
   case WINDSOR:{g.fillStyle=ty===86?'#2f4029':'#262f22';g.fillRect(x,y,T,T);speckle(g,x,y,T,T,24,['#34472d','#22301f','#3a4d33'],rn,2);
-    if(ty===86){g.fillStyle='#6b6a63';g.fillRect(x,y,T,5);g.fillStyle='#8b8f96';g.fillRect(x,y+5,T,2);if(rn()<.35){g.fillStyle='#2b532a';g.beginPath();g.arc(x+24,y+28,13,0,7);g.fill();g.fillStyle='#38683a';g.beginPath();g.arc(x+20,y+24,7,0,7);g.fill();}}
+    if(ty===86){g.fillStyle='#6b6a63';g.fillRect(x,y,T,5);g.fillStyle='#8b8f96';g.fillRect(x,y+5,T,2);if(rn()<.35){if(PROPSINK)PROPSINK.push({k:'tree',x:tx*T+24,y:ty*T+28,r:13});else{g.fillStyle='#2b532a';g.beginPath();g.arc(x+24,y+28,13,0,7);g.fill();g.fillStyle='#38683a';g.beginPath();g.arc(x+20,y+24,7,0,7);g.fill();}}}
     else{if(rn()<.7){const bw=18+rn()*26,bh=16+rn()*26;g.fillStyle='rgba(0,0,0,.35)';g.fillRect(x+6,y+6,bw,bh);g.fillStyle=pickR(rn,['#3a3d44','#4a4038','#2e3138','#55504a']);g.fillRect(x+2,y+2,bw,bh);}}
     break;}
   case YARD:{g.fillStyle='#37452b';g.fillRect(x,y,T,T);speckle(g,x,y,T,T,40,['#3e4d30','#2f3b25','#46553a','#4a4232'],rn,2);
@@ -7368,7 +7370,7 @@ const LMDRAW={
     if(b.cond===2){const gr=g.createRadialGradient(hx+hw/2,hy+hh/2,4,hx+hw/2,hy+hh/2,hw*0.7);gr.addColorStop(0,'rgba(0,0,0,.55)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(hx,hy,hw,hh);roofHoles(g,hx,hy,hw,hh,rn,vic?3:2,vic);
       g.fillStyle='#2a2420';for(let k=0;k<6;k++)g.fillRect(x+rn()*w,n?y+h-rn()*10:y+rn()*10,5,4);boards(g,hx-3,hy+hh*0.3,4,hh*0.4,2,rn,true);}
     if(b.dlba){const sx=hx+hw*0.05,sy=n?y+1:y+h-11;g.fillStyle='#f2f2ee';g.fillRect(sx,sy,24,10);g.fillStyle='#1d4f91';g.font=`700 7px ${FB}`;g.textAlign='center';g.textBaseline='middle';g.fillText('DLBA',sx+12,sy+5.5);}
-    if(b.tree)overgrowth(g,n?hx+hw:hx,n?hy+hh:hy,rn,14+rn()*8);
+    if(b.tree){const tx0=n?hx+hw:hx,ty0=n?hy+hh:hy,tr=14+rn()*8;if(!TILT.on)overgrowth(g,tx0,ty0,rn,tr);else if(PROPSINK&&tx0>=0&&ty0>=0&&tx0<CHP&&ty0<CHP)PROPSINK.push({k:'tree',x:b.x*T+tx0-x,y:b.y*T+ty0-y,r:tr});}
   },
   walkup(g,b,x,y,w,h,rn){const br=b.brick||'#6e3426';
     g.fillStyle=br;g.fillRect(x,y,w,h);g.strokeStyle='rgba(0,0,0,.2)';g.lineWidth=1;for(let q=y+3;q<y+h;q+=4){g.beginPath();g.moveTo(x,q);g.lineTo(x+7,q);g.moveTo(x+w-7,q);g.lineTo(x+w,q);g.stroke();}
@@ -7697,9 +7699,27 @@ function drawCar(c,g2,px,py,pv){const g=g2||ctx;if(isBike(c)){drawBike(c,g,px??(
   if(c.burn>0){const k=Math.min(1,c.burn/3);for(let i=0;i<7;i++){const ph=(clockT*2.6+i*0.143)%1,ox=Math.cos(c.a)*((i%3)-1)*12+Math.sin(clockT*9+i)*3,oy=Math.sin(c.a)*((i%3)-1)*12-ph*20;g.fillStyle=`rgba(255,${(110+(1-ph)*110)|0},40,${0.8*(1-ph)*k})`;g.beginPath();g.arc(x+ox,y+oy,(7+(i%2)*3)*(1-ph*0.5),0,7);g.fill();}}
   if(!pv&&c.owned&&c.mode==='parked'&&running&&c===nearOwned()&&Math.hypot(c.x-P.x,c.y-P.y)<260){g.fillStyle=hexA(GANG.crew.color,.9);g.font=`700 ${fpx(12)}px ${FB}`;g.textAlign='center';g.textBaseline='middle';g.fillText(`YOUR ${c.model.toUpperCase()}`,x,y-24);}
 }
+function drawCrane3D(c,L){const H=520,ca=Math.cos(c.a),sa=Math.sin(c.a),up=(wx,wy,z)=>propLift(wx,wy,z),k=tiltS(H);
+  const tip=[c.x+ca*L,c.y+sa*L],tail=[c.x-ca*120,c.y-sa*120];
+  ctx.strokeStyle='rgba(0,0,0,.3)';ctx.lineWidth=10;ctx.beginPath();ctx.moveTo(tail[0]-camX+60,tail[1]-camY+70);ctx.lineTo(tip[0]-camX+60,tip[1]-camY+70);ctx.stroke();
+  ctx.fillStyle='#3a3d42';ctx.fillRect(c.x-camX-22,c.y-camY-22,44,44);
+  const m=13,cs=[[-m,-m],[m,-m],[m,m],[-m,m]];
+  ctx.strokeStyle='#c99a24';ctx.lineWidth=2.5;ctx.beginPath();for(const [ox,oy] of cs){const a=up(c.x+ox,c.y+oy,0),b=up(c.x+ox,c.y+oy,H);ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);}ctx.stroke();
+  ctx.strokeStyle='rgba(201,154,36,.75)';ctx.lineWidth=1.2;ctx.beginPath();const seg=12;
+  for(let i=0;i<seg;i++){const z0=H*i/seg,z1=H*(i+1)/seg;for(let q=0;q<4;q++){const [ax,ay]=cs[q],[bx2,by2]=cs[(q+1)%4],p=up(c.x+ax,c.y+ay,z0),r=up(c.x+bx2,c.y+by2,z1),h=up(c.x+bx2,c.y+by2,z0);ctx.moveTo(p[0],p[1]);ctx.lineTo(r[0],r[1]);ctx.moveTo(p[0],p[1]);ctx.lineTo(h[0],h[1]);}}ctx.stroke();
+  const T0=up(tail[0],tail[1],H),T1=up(tip[0],tip[1],H),pk=up(c.x,c.y,H+90);
+  ctx.strokeStyle='#8c9198';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(T0[0],T0[1]);ctx.lineTo(pk[0],pk[1]);ctx.lineTo(T1[0],T1[1]);ctx.stroke();
+  ctx.strokeStyle='#d9a930';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(up(c.x,c.y,H)[0],up(c.x,c.y,H)[1]);ctx.lineTo(pk[0],pk[1]);ctx.stroke();
+  ctx.lineWidth=9*k;ctx.beginPath();ctx.moveTo(T0[0],T0[1]);ctx.lineTo(T1[0],T1[1]);ctx.stroke();
+  ctx.strokeStyle='#8a6a1c';ctx.lineWidth=2*k;ctx.setLineDash([8*k,8*k]);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='#3a3a3a';ctx.save();ctx.translate(T0[0],T0[1]);ctx.rotate(c.a);ctx.fillRect(-18*k,-15*k,36*k,30*k);ctx.restore();
+  const cb=up(c.x+ca*20,c.y+sa*20,H-4);ctx.fillStyle='#e8b93a';ctx.save();ctx.translate(cb[0],cb[1]);ctx.rotate(c.a);ctx.fillRect(-12*k,-12*k,24*k,24*k);ctx.fillStyle='#3b4a5c';ctx.fillRect(4*k,-9*k,7*k,18*k);ctx.restore();
+  const hx=c.x+ca*360,hy=c.y+sa*360,h0=up(hx,hy,H),h1=up(hx,hy,H*0.38),s1=tiltS(H*0.38);
+  ctx.strokeStyle='#aab0b8';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(h0[0],h0[1]);ctx.lineTo(h1[0],h1[1]);ctx.stroke();ctx.fillStyle='#6b6b6b';ctx.fillRect(h1[0]-7*s1,h1[1]-5*s1,14*s1,10*s1);ctx.fillStyle='#e8762b';ctx.fillRect(h1[0]-7*s1,h1[1]+5*s1,14*s1,3*s1);}
 function drawCrane(c){
   const x=c.x-camX,y=c.y-camY;if(x<-700||x>vw+700||y<-700||y>vh+700)return;
   const L=520,ex=x+Math.cos(c.a)*L,ey=y+Math.sin(c.a)*L,bx=x-Math.cos(c.a)*120,by=y-Math.sin(c.a)*120;
+  if(TILT.on){drawCrane3D(c,L);return;}
   ctx.strokeStyle='rgba(0,0,0,.35)';ctx.lineWidth=12;ctx.beginPath();ctx.moveTo(bx+30,by+36);ctx.lineTo(ex+30,ey+36);ctx.stroke();
   ctx.strokeStyle='#d9a930';ctx.lineWidth=10;ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(ex,ey);ctx.stroke();
   ctx.strokeStyle='#8a6a1c';ctx.lineWidth=2;ctx.setLineDash([8,8]);ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(ex,ey);ctx.stroke();ctx.setLineDash([]);
