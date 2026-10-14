@@ -4,7 +4,7 @@ A top-down Detroit crime sandbox you play in the browser. Grow, deal, run your b
 
 > **For entertainment purposes only. 17+.** The game asks players to confirm they're 17 or older before it starts. Motor City Turf Wars is a work of fiction. Burner Phone Studios does not support or encourage using, selling or making drugs, or violence of any kind, in real life. If you or someone you know is struggling with drugs or alcohol, the SAMHSA National Helpline is free, confidential and open 24/7: 1-800-662-4357.
 
-**Play free:** https://burnerphonestudios.github.io/motorcityturfwars/
+**Play free:** https://burnerphonestudios.itch.io/motor-city-turf-wars/
 
 Music by **Saint Reject**, used with permission. The songs in `radio/` are not covered by the game's license and may not be reused.
 
