@@ -5356,7 +5356,7 @@ function damageNPC(e,d,src,nx,ny){
   if(src==='npc'){if(e.hp<=0){e.dead=true;if(e.type==='rival'){addInf(hi,e.gang,-4);if(DMG_BY&&GANG[DMG_BY])addInf(hi,DMG_BY,2);refreshOwners();}else if(e.type==='homie'&&e.follow){S.followers=Math.max(0,(S.followers||1)-1);log(`${nickOf(e)} got hit.`,GANG.crew.color);}else if(e.type==='cust'){const c=CL(e.cid);if(e.inj)c.hurt=true;else loseClient(c);}}
     else if(e.type==='civ'||e.type==='cust')e.flee=4;else if(e.type==='rival'&&!e.tgt&&DMG_BY){const sh=npcs.find(o=>o.type==='rival'&&o.gang===DMG_BY&&!o.dead&&dist(o,e)<500);if(sh)e.tgt=sh;}}
   else if(e.type==='rival'){e.aggro=8;e.prov=7;if(isMC(e.gang))GANG[e.gang].mad=LAWT+60;for(const o of npcs)if(o.type==='rival'&&o.gang===e.gang&&o!==e&&!o.dead&&dist(o,e)<260)o.prov=Math.max(o.prov||0,4);addBeef(e.gang,0.3);if(CF&&CF.e===e)cfFight(e);
-    if(src==='melee'){const w=witness(e.x,e.y);addHeat(Math.min(.6,w.civ*.12)+w.cop*.8);}
+    if(src==='melee'){const w=witness(e.x,e.y);if(w.cop)addHeat(w.cop*.4);}
     if(e.hp<=0){e.dead=true;addBeef(e.gang,isMC(e.gang)?0.5:1);if(isMC(e.gang))mcLoss(e.gang);dropCash(e.x,e.y,e.hr);
       addInf(hi,'crew',4);addInf(hi,e.gang,-6);gainRep(6);{const gg=GANG[e.gang]||{name:'rival',color:'#c9ccd2'};log(`Dropped ${/^[AEIOU]/.test(gg.name)?'an':'a'} ${gg.name} soldier in ${HN[hi]}.`,gg.color);}refreshOwners();if(src!=='homie')warKill(e,hi);}}
   else if(e.type==='cop'){e.chase=true;
@@ -5392,7 +5392,7 @@ function melee(w){
 // somebody already on the ground: keep swinging and they don't get back up
 function stompBody(w){for(const b of BODIES){if(!b.alive||b.carried)continue;const dx=b.x-P.x,dy=b.y-P.y,d=Math.hypot(dx,dy);if(d>w.range+6||!los(P.x,P.y,b.x,b.y))continue;const dot=(dx*P.ax+dy*P.ay)/(d||1);if(d>26&&dot<0.3)continue;
     b.beat=(b.beat||0)+(w===WD.bat?3:w===WD.knife?3:1);bleed(b.x,b.y,dx/(d||1),dy/(d||1),4);fx.push({k:'hit',x:b.x,y:b.y,t:.2,big:w===WD.bat});AU.hit(w===WD.bat?'bat':w===WD.knife?'knife':'fists',b.x,b.y);shake=Math.max(shake,w===WD.bat?4:2);b.vx+=dx/(d||1)*40;b.vy+=dy/(d||1)*40;
-    if(b.beat>=3){bodyDied(b);b.pool=Math.max(b.pool||0,0.6);floatText(b.x,b.y-24,'FINISHED','#e0574b');const w2=witness(b.x,b.y);addHeat(0.3+Math.min(.6,w2.civ*.15)+w2.cop*1.2,b.x,b.y);}
+    if(b.beat>=3){bodyDied(b);b.pool=Math.max(b.pool||0,0.6);floatText(b.x,b.y-24,'FINISHED','#e0574b');const w2=witness(b.x,b.y),gb=b.kind&&b.kind.type==='rival';if(!gb||w2.cop)addHeat(gb?w2.cop*0.5:0.3+Math.min(.6,w2.civ*.15)+w2.cop*1.2,b.x,b.y);}
     return true;}return false;}
 function startReload(){const w=cw();if(w.melee){knifeFlip();return;}const id=S.cur;if(S.clip[id]>=magOf(id)||S.ammo[w.ammo]<=0||P.reloadT>0)return;P.reloadT=w.reload;AU.reload(w.reload);}
 function finishReload(){const w=cw();if(w.melee)return;const id=S.cur;const take=Math.min(magOf(id)-S.clip[id],S.ammo[w.ammo]);S.clip[id]+=take;S.ammo[w.ammo]-=take;}
@@ -5403,7 +5403,7 @@ function gunNoise(x,y,byPlayer){if(byPlayer)P.firedT=LAWT;
   for(const e of npcs)if((e.type==='civ'||e.type==='cust')&&Math.hypot(e.x-x,e.y-y)<450)e.flee=4;
   if(!byPlayer)return;
   const war=inWarZone(x,y);let h=0.12;let cop=false;for(const e of npcs)if(e.type==='cop'&&!e.dead&&Math.hypot(e.x-x,e.y-y)<520&&(!war||copSeesPt(e,x,y))){cop=true;break;}
-  if(cop)h+=0.5;if(S.cur==='glock')h*=GLOCK_HEAT[S.glockTag]||1;const selfDef=war||npcs.some(o=>o.type==='rival'&&!o.dead&&o.atP>0&&Math.hypot(o.x-x,o.y-y)<650);if(selfDef)h*=0.45;addHeat(h,x,y);
+  if(cop)h+=0.5;if(S.cur==='glock')h*=GLOCK_HEAT[S.glockTag]||1;const gangFight=war||npcs.some(o=>o.type==='rival'&&!o.dead&&(o.atP>0||o.aggro>0)&&Math.hypot(o.x-x,o.y-y)<650);if(gangFight)h=cop?0.15:0.01;addHeat(h,x,y);
   if(tShot<=0){tShot=25;log(war?'DPD is holding a perimeter while the war plays out.':cop?'Cops heard the shots.':'ShotSpotter picked up gunfire. DPD is looking.','#e0574b');}
 }
 function homieShoot(e,t){e.firedT=LAWT;const a=Math.atan2(t.y-e.y,t.x-e.x)+(R()-.5)*0.25;bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*900,vy:Math.sin(a)*900,life:.5,dmg:11,own:'h',mk:t});fx.push({k:'flash',x:e.x+Math.cos(a)*20,y:e.y+Math.sin(a)*20,a,t:.06});AU.gun('glock',e.x,e.y,false);gunNoise(e.x,e.y,false);}
@@ -8420,14 +8420,15 @@ $('devClose').onclick=closeDev;$('paDev').onclick=openDev;
 addEventListener('keydown',ev=>{if(!running||ev.repeat||(ev.key!=='`'&&ev.key!=='F2'))return;ev.preventDefault();if(document.activeElement&&document.activeElement.id==='devCode'&&ev.key==='`')return;elDev.hidden?openDev():closeDev();});
 $('devCode').addEventListener('keydown',ev=>{ev.stopPropagation();if(ev.key==='Escape'){closeDev();return;}if(ev.key!=='Enter')return;const v=ev.target.value.trim().toUpperCase().replace(/\s+/g,''),c=CHEATS.find(x=>x[1]===v);ev.target.value='';
   if(c)runCheat(c[0]);else $('devMsg').textContent='Nothing happened. Check the code.';});
-// ================= daily jobs (payphone hits, bail bounties, export list), Gun Van, weekly bonus =================
+// ================= jobs: weekly payphone hit and bail bounty, daily export list and Gun Van, weekly bonus =================
 const JOBS={hit:{pay:1500,melee:750,quiet:500},bounty:{alive:2000,dead:600}};
 const BONUS=[['trap','Trap house week: trap houses make double'],['fence','Hot wheels week: fence and export pay double'],['jobs','Contract week: hits and bounties pay double'],['grow','Green week: plants grow twice as fast']];
 const bonusNow=()=>BONUS[Math.floor(S.day/7)%BONUS.length];
 const bonusMul=k=>running&&bonusNow()[0]===k?2:1;
 const FIRST=['Lil','Big','Young','Slim','Fat','Baby'],LAST=['Tone','Rell','Deuce','Moe','Pooh','Ray','Smoke','Boo','Nook'];
-function jobsDay(){if(S.jobs&&S.jobs.day===S.day)return S.jobs;const ms=[...new Set(MODELS.map(m=>m[0]))].sort(()=>R()-.5).slice(0,3);
-  S.jobs={day:S.day,hit:null,bounty:null,hitDone:false,bountyDone:false,export:ms,exported:[],gv:null};gunVanMove();return S.jobs;}
+function jobsDay(){if(S.jobs&&S.jobs.day===S.day)return S.jobs;const ms=[...new Set(MODELS.map(m=>m[0]))].sort(()=>R()-.5).slice(0,3);const o=S.jobs,wk=Math.floor(S.day/7),keep=!!(o&&o.wk===wk);
+  if(keep)for(const k of ['hit','bounty'])if(o[k])o[k].spawned=false;
+  S.jobs={day:S.day,wk,hit:keep?o.hit:null,bounty:keep?o.bounty:null,hitDone:keep&&o.hitDone,bountyDone:keep&&o.bountyDone,export:ms,exported:[],gv:null};gunVanMove();return S.jobs;}
 function jobSpot(){for(let k=0;k<20;k++){const h=(R()*NH)|0,r=hoodRect(h),x=r.x+R()*r.w,y=r.y+R()*r.h,s=spotNear(x,y,0,200,false);if(s&&dist(s,P)>700)return s;}return spotNear(P.x,P.y,700,1200,false);}
 function jobTake(kind){const J=jobsDay();if(J[kind]||J[kind+'Done'])return;const s=jobSpot();if(!s)return;const name=pick(FIRST)+' '+pick(LAST);J[kind]={x:s.x,y:s.y,name,hood:hoodOf(s.x,s.y)};
   log(kind==='hit'?`Contract: ${name} in ${HN[J[kind].hood]}. Quiet or up close pays extra.`:`Bounty: ${name} skipped bail. Last seen in ${HN[J[kind].hood]}. Alive pays more.`,'#ff4fd8');phoneDirty=true;}
@@ -8453,8 +8454,8 @@ function gunVanMove(){const J=S.jobs,keep=J&&J.gv;const s=keep||jobSpot();if(!s)
 function jobsHtml(){const J=jobsDay(),bn=bonusNow(),gvH=HN[gunVan.hood];
   const row=(k,title,desc,state)=>`<div class="crow" style="cursor:default"><span class="top">${title}<span class="r">${state}</span></span><span class="note">${desc}</span>${!J[k]&&!J[k+'Done']?`<button type="button" data-a="job" data-v="${k}">Take it</button>`:J[k]?`<button type="button" class="ghost" data-a="jobtrack" data-v="${k}">Show on map</button>`:''}</div>`;
   return `<div class="note" style="color:#ffd34f;margin-bottom:8px">This week: ${bn[1]}.</div>`+
-    row('hit','Payphone hit',`$${JOBS.hit.pay*bonusMul('jobs')}. +$${JOBS.hit.melee} up close, +$${JOBS.hit.quiet} if nobody sees it.`,J.hitDone?'Done today':J.hit?J.hit.name+' · '+HN[J.hit.hood]:'Open')+
-    row('bounty','Bail bounty',`$${JOBS.bounty.alive*bonusMul('jobs')} alive (knock them down, E to cuff, drive to DPD HQ). $${JOBS.bounty.dead} dead.`,J.bountyDone?'Done today':J.bounty?(J.bounty.cap?'Cuffed · go to HQ':J.bounty.name+' · '+HN[J.bounty.hood]):'Open')+
+    row('hit','Payphone hit',`One a week. $${JOBS.hit.pay*bonusMul('jobs')}. +$${JOBS.hit.melee} up close, +$${JOBS.hit.quiet} if nobody sees it.`,J.hitDone?`Done this week · next on Day ${(J.wk+1)*7}`:J.hit?J.hit.name+' · '+HN[J.hit.hood]:'Open')+
+    row('bounty','Bail bounty',`One a week. $${JOBS.bounty.alive*bonusMul('jobs')} alive (knock them down, E to cuff, drive to DPD HQ). $${JOBS.bounty.dead} dead.`,J.bountyDone?`Done this week · next on Day ${(J.wk+1)*7}`:J.bounty?(J.bounty.cap?'Cuffed · go to HQ':J.bounty.name+' · '+HN[J.bounty.hood]):'Open')+
     `<div class="crow" style="cursor:default"><span class="top">Export list · Dequindre<span class="r">${J.exported.length}/3</span></span><span class="note">Bring these to the chop shop today for 60% of their value: ${J.export.map(m=>J.exported.includes(m)?`<s>${m}</s>`:`<b>${m}</b>`).join(', ')}.</span></div>`+
     `<div class="crow" style="cursor:default"><span class="top">Gun Van<span class="r">${gvH}</span></span><span class="note">Parked in ${gvH} today. 20% off, stock changes daily.</span><button type="button" class="ghost" data-a="jobtrack" data-v="gunvan">Show on map</button></div>`+heistHtml();}
 function jobAction(a,v){if(a==='job')jobTake(v);else if(a==='hgear'){const h=heist();if(!h.gear&&S.cash>=HEIST.gear){S.cash-=HEIST.gear;h.gear=true;AU.cash();log('Drill, bags and masks. Gear is ready.','#ff4fd8');}}
