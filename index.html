@@ -7077,7 +7077,7 @@ function update(dt){
   if(P.reloadT>0){P.reloadT-=dt;if(P.reloadT<=0)finishReload();}
   if(cw().auto&&(mouse.down||pad.fire||(!P.car&&(keys[' ']||hitHeld))))attack();
   const nh=hoodOf(P.x,P.y);if(nh!==P.hood){P.hood=nh;showBanner();updHoodHud();}
-  updRob(dt);updJob(dt);cfTick(dt);streetTalk(dt);emsTick(dt);gangTick(dt);stashGarageTick(dt);fenceTick(dt);folksTick(dt);garbageEnsure(dt);
+  updRob(dt);updJob(dt);cfTick(dt);streetTalk(dt);emsTick(dt);gangTick(dt);stashGarageTick(dt);fenceTick(dt);folksTick(dt);garbageEnsure(dt);gangDealTick(dt);
   tClients+=dt;if(tClients>1){tClients=0;clientTick();}
   {const L=npcs;for(let a=0;a<L.length;a++){const e=L[a];if(e.dead||e.down>0||e.guard||e.inCar)continue;for(let b=a+1;b<L.length;b++){const o=L[b];if(o.dead||o.down>0||o.guard||o.inCar)continue;const dx=o.x-e.x,dy=o.y-e.y;if(dx>18||dx<-18||dy>18||dy<-18)continue;const d=Math.hypot(dx,dy)||0.01;if(d<18){const k=(18-d)*0.25/d;moveP(e,-dx*k,-dy*k);moveP(o,dx*k,dy*k);}}}}
   const n=nowM();
@@ -7112,6 +7112,7 @@ function update(dt){
       if(CF&&CF.e===e){const a=Math.atan2(P.y-e.y,P.x-e.x);if(dP>64)seek(e,P.x,P.y,90,dt);e.fx=Math.cos(a);e.fy=Math.sin(a);continue;}
       if(e.war)e.aggro=Math.max(e.aggro,5);
       if(pdBackOff(e,dt))continue;
+      if(e.gDeal&&e.aggro<=0)continue;
       if(e.aggro<=0&&rivalTgtTick(e,dt))continue;
       if(e.party&&e.aggro<=0){partyNpc(e,dt);continue;}
       const rs=rivalSees(e);if(e.aggro<=0&&dP<170&&rs&&S.hoods[hi].owner===e.gang&&beefOf(e.gang)>=3)e.aggro=6;
@@ -7820,7 +7821,7 @@ function renderWorld(){
   drawFences();drawImpound();drawATMs();drawBackDoor();for(const c of cars){const x=c.x-camX,y=c.y-camY;if(x>-60&&x<vw+60&&y>-60&&y<vh+60){drawCar(c);if(c.hook)drawHook(c);}}
   drawDriveBys();drawGarageTop();
   const vis=npcs.filter(e=>{if(e.inCar)return false;const x=e.x-camX,y=e.y-camY;return x>-30&&x<vw+30&&y>-40&&y<vh+30;}).sort((a,b)=>a.y-b.y);
-  for(const e of vis)drawNPC(e);drawGarbage();
+  for(const e of vis)drawNPC(e);drawGarbage();drawGangDeal();
   if(!P.car)drawPlayer();
   ctx.lineCap='round';for(const b of bullets){ctx.strokeStyle=b.own==='p'?'#ffe6a3':'#ffb19c';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(b.x-camX,b.y-camY);ctx.lineTo(b.x-camX-b.vx*0.018,b.y-camY-b.vy*0.018);ctx.stroke();}ctx.lineCap='butt';
   for(const f of fx){if(f.k==='boom'){const p=1-f.t/.7,bx=f.x-camX,by=f.y-camY;ctx.fillStyle=`rgba(255,${(190-p*130)|0},60,${0.85*(1-p)})`;ctx.beginPath();ctx.arc(bx,by,20+p*70,0,7);ctx.fill();ctx.strokeStyle=`rgba(255,240,200,${0.6*(1-p)})`;ctx.lineWidth=3;ctx.beginPath();ctx.arc(bx,by,30+p*110,0,7);ctx.stroke();}else if(f.k==='flash'){ctx.fillStyle=`rgba(255,220,140,${f.t/.06})`;ctx.beginPath();ctx.arc(f.x-camX,f.y-camY,9,0,7);ctx.fill();}else if(f.k==='spark'){ctx.fillStyle=`rgba(255,200,120,${f.t/.15})`;ctx.fillRect(f.x-camX-2,f.y-camY-2,4,4);}else if(f.k==='hit'){const p=1-f.t/.2,x=f.x-camX,y=f.y-camY,r=(f.big?10:6)+p*(f.big?16:10);ctx.strokeStyle=`rgba(255,240,200,${1-p})`;ctx.lineWidth=f.big?3:2;ctx.beginPath();for(let k=0;k<8;k++){const a=k*0.785+0.2;ctx.moveTo(x+Math.cos(a)*r*0.4,y+Math.sin(a)*r*0.4);ctx.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);}ctx.stroke();}else if(f.k==='steam'){const a=Math.min(1,f.t/2)*0.22;ctx.fillStyle=`rgba(220,224,230,${a})`;ctx.beginPath();ctx.arc(f.x-camX,f.y-camY,10+(3-f.t)*6,0,7);ctx.fill();}}
@@ -9402,6 +9403,29 @@ function drawWheel(){if(WH.down&&!WH.open&&running&&!paused&&performance.now()-W
   const s=WD[WH.sel]||WD[S.cur];g.fillStyle='#f2a33a';fitFont(g,s.name.toUpperCase(),Math.round(R0*0.26),R0*1.6,FD);g.fillText(s.name.toUpperCase(),cx,cy-(s.melee?0:8));
   if(!s.melee){g.fillStyle='#c9cdd3';g.font=`700 ${Math.round(R0*0.2)}px ${FB}`;g.fillText(wheelAmmo(WH.sel||S.cur),cx,cy+R0*0.22);}
   g.restore();}
+// ================= rival corner boys serve their own buyers on their turf =================
+const GDL={t:12,cur:null};
+const GD_LINES={ask:['You good?','Lemme get a twenty.','You still got that?','What you got today?','Bless me, bro.'],sell:['Here go.','Bet. Keep it movin\'.','Run it back later.','Don\'t be standin\' round.','Say less.'],done:['Appreciate you.','Good lookin\'.','Bet.']};
+function gangDealTick(dt){const D=GDL.cur;
+  if(D){const e=D.e,b=D.b;D.t+=dt;
+    if(e.dead||b.dead||e.aggro>0||b.flee>0||(e.down||0)>0||dist(e,P)>1400||D.t>40){GDL.why=[e.dead,b.dead,e.aggro,b.flee,e.down,Math.round(dist(e,P)),D.t].join(',');gangDealEnd();return;}
+    const d=dist(e,b),a=Math.atan2(b.y-e.y,b.x-e.x);e.fx=Math.cos(a);e.fy=Math.sin(a);
+    if(D.st==='walk'){b.idle=1;seek(b,e.x,e.y,44,dt);if(d<30){D.st='hand';D.ht=0;say(b,pick(GD_LINES.ask),2);}}
+    else if(D.st==='hand'){b.idle=1;b.fx=-e.fx;b.fy=-e.fy;D.ht+=dt;if(D.ht>1.2&&!D.said){D.said=true;say(e,pick(GD_LINES.sell),2);}
+      if(D.ht>2.6){D.st='leave';floatText(e.x,e.y-22,'$'+D.cash,'#6cc28a');if(R()<0.5)say(b,pick(GD_LINES.done),1.6);b.idle=0;b.t=0;pickDirP&&pickDirP(b);D.lt=0;}}
+    else if(D.st==='leave'){D.lt+=dt;if(D.lt>1.5)gangDealEnd();}
+    return;}
+  if((GDL.t-=dt)>0||!running||S.war)return;GDL.t=22+R()*20;
+  const hi=hoodOf(P.x,P.y),g=S.hoods[hi]&&S.hoods[hi].owner;if(!isRG(g))return;
+  const e=npcs.filter(o=>o.type==='rival'&&o.gang===g&&!o.dead&&o.aggro<=0&&!o.war&&!o.party&&!o.tgt&&(o.down||0)<=0&&!roadPx(o.x,o.y)&&dist(o,P)>180&&dist(o,P)<700).sort((a,c)=>dist(a,P)-dist(c,P))[0];if(!e)return;
+  let s=null;for(let k=0;k<20&&!s;k++){const q=spotNear(e.x,e.y,120,240,false);if(q&&!roadPx(q.x,q.y)&&los(q.x,q.y,e.x,e.y))s=q;}if(!s)return;
+  const b=mkNPC('civ',s.x,s.y,{look:makeLook('cust'),idle:1,gBuy:true});
+  GDL.cur={e,b,st:'walk',t:0,cash:pick([20,20,40,50,60,100])};e.gDeal=true;}
+function gangDealEnd(){const D=GDL.cur;if(!D)return;D.e.gDeal=false;D.b.gBuy=false;D.b.idle=0;GDL.cur=null;}
+function drawGangDeal(){const D=GDL.cur;if(!D||D.st!=='hand')return;const e=D.e,b=D.b,k=Math.min(1,D.ht/1.2),k2=Math.max(0,Math.min(1,(D.ht-1.2)/1.2));
+  const lerp=(p,q,t)=>[p.x+(q.x-p.x)*t-camX,p.y+(q.y-p.y)*t-camY];
+  if(k<1||D.ht<2.6){const [cx,cy]=lerp(b,e,k*0.5);ctx.fillStyle='#4f9a52';ctx.fillRect(cx-4,cy-2.5,8,5);ctx.strokeStyle='#2c5a2e';ctx.lineWidth=1;ctx.strokeRect(cx-4,cy-2.5,8,5);}
+  if(k2>0&&D.ht<2.6){const [bx,by]=lerp(e,b,0.5*k2);ctx.fillStyle='#e9e6df';ctx.beginPath();ctx.arc(bx,by,3.2,0,7);ctx.fill();ctx.fillStyle='#6b8f3a';ctx.beginPath();ctx.arc(bx,by,1.8,0,7);ctx.fill();}}
 })();
 </script>
 </html>
