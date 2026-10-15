@@ -6442,7 +6442,7 @@ function baseBike(o,kind){const pool=BIKEM.filter(m=>!kind||m[2]===kind);const m
 function drawBike(c,g,x,y){const [L]=CDIM[c.type]||CDIM.rocket;const hl=L/2,ch=c.type==='chopper';const wreck=c.mode==='wreck',wh=wreck?0:(c.wh||0);
   g.save();g.translate(x+3,y+5);g.rotate(c.a);g.fillStyle='rgba(0,0,0,.35)';g.beginPath();g.ellipse(-wh*3,0,hl+2-wh*3,6,0,0,7);g.fill();if(wh>0.05){g.fillStyle=`rgba(0,0,0,${0.18*wh})`;g.beginPath();g.ellipse(hl+wh*5,0,5,4,0,0,7);g.fill();}g.restore();
   g.save();g.translate(x,y);g.rotate(c.a);if(wh>0.01){g.translate(-hl*0.12*wh,0);g.scale(1-0.16*wh,1);}
-  g.fillStyle='#0c0c0d';rr(g,hl-9,-2.6,9,5.2,2.4);g.fill();rr(g,-hl,-3.2,10,6.4,2.4);g.fill();
+  {const rate=wreck?0:wheelTick(c);drawTire(g,hl-4.5,0,9,5.2,c.wph||0,wreck?0:(c.wst||0)*0.7,rate);drawTire(g,-hl+5,0,10,6.4,c.wph||0,0,rate);}
   g.fillStyle='#5a5d63';g.fillRect(hl-6,-0.7,3,1.4);g.fillRect(-hl+3.5,-0.8,3,1.6);
   {const [tx,ty]=vehLift(c,g,x,y,false)(9);g.translate(tx,ty);}
   const col=wreck?'#2a2622':paintCol(c);
@@ -7021,7 +7021,7 @@ function updPlayerCar(c,dt){
     if(c.rev){if(ad<1.4||c.v>40)c.rev=false;}else if(ad>2.3&&c.v<30)c.rev=true;
     if(!c.rev){thr=Math.min(1,jm)*(ad>1&&c.v>200?0.4:1);st=clamp(diff*1.4,-1,1);}else{thr=-Math.min(1,jm);st=-clamp((diff-Math.PI*Math.sign(diff))*1.4,-1,1);}}
   else{thr=(keys.w||keys.arrowup?1:0)-(keys.s||keys.arrowdown?1:0);st=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0);}
-  thr=fuelGate(c,thr,dt);
+  thr=fuelGate(c,thr,dt);c.spin=thr>0.5&&c.v>-5&&c.v<130&&c.fuel>0?(130-c.v)*3*thr:0;
   const ng=(PERF[c.type]||PERF.sedan)[3];if(c.gear==null)c.gear=0;if(c.shiftT==null)c.shiftT=0;
   const top=gearTop(c,c.gear),lo=c.gear?gearTop(c,c.gear-1)*0.55:0;
   c.rpm=c.v<=0?Math.min(1,Math.abs(c.v)/110):clamp((c.v-lo)/Math.max(1,top-lo),0,1.05);
@@ -7352,6 +7352,7 @@ function drawTile(g,tx,ty,x,y){
   case ALLEY:{g.fillStyle='#2f2c29';g.fillRect(x,y,T,T);speckle(g,x,y,T,T,22,['rgba(255,255,255,.04)','rgba(0,0,0,.2)'],rn);
     if(rn()<.35){g.fillStyle='rgba(0,0,0,.35)';g.fillRect(x+7,y+9,24,15);if(PROPSINK)PROPSINK.push({k:'dumpster',x:tx*T+4,y:ty*T+6});else{g.fillStyle='#2d5a3d';g.fillRect(x+4,y+6,24,15);g.fillStyle='#3b7350';g.fillRect(x+4,y+6,24,4);}}
     if(rn()<.3){g.fillStyle='#1c1c1e';for(let k=0;k<3;k++){g.beginPath();g.arc(x+26+rn()*14,y+28+rn()*12,4+rn()*2,0,7);g.fill();}}
+    else if(rn()<.4){const s=(tx*31+ty*17)%97;if(PROPSINK)PROPSINK.push({k:'bricks',x:tx*T+33,y:ty*T+33,s});else drawBricksFlat(g,x+33,y+33,s);}
     break;}
   case PARK:{g.fillStyle='#2a4127';g.fillRect(x,y,T,T);speckle(g,x,y,T,T,30,['#30492c','#253a22','#355230'],rn,2);
     const h=hsh(tx,ty);if(h<.38){g.fillStyle='rgba(0,0,0,.28)';g.beginPath();g.arc(x+28,y+30,18,0,7);g.fill();if(PROPSINK)PROPSINK.push({k:'tree',x:tx*T+22,y:ty*T+22,r:18});else{g.fillStyle='#2b532a';g.beginPath();g.arc(x+22,y+22,18,0,7);g.fill();g.fillStyle='#346433';g.beginPath();g.arc(x+18,y+18,12,0,7);g.fill();g.fillStyle='#447c3d';g.beginPath();g.arc(x+15,y+15,6,0,7);g.fill();}}
@@ -7377,11 +7378,11 @@ function drawTile(g,tx,ty,x,y){
     break;}
   case YARD:{g.fillStyle='#37452b';g.fillRect(x,y,T,T);speckle(g,x,y,T,T,40,['#3e4d30','#2f3b25','#46553a','#4a4232'],rn,2);
     if(rn()<.25){g.fillStyle='#5a4c38';g.beginPath();g.ellipse(x+rn()*T,y+rn()*T,8,5,0,0,7);g.fill();}
-    if(rn()<.08){g.strokeStyle='#1a1a1a';g.lineWidth=3;g.beginPath();g.arc(x+12+rn()*24,y+12+rn()*24,5,0,7);g.stroke();}
+    if(rn()<.08){const ox=12+rn()*24,oy=12+rn()*24;if(PROPSINK)PROPSINK.push({k:'tires',x:tx*T+ox,y:ty*T+oy,n:1});else{g.strokeStyle='#1a1a1a';g.lineWidth=3;g.beginPath();g.arc(x+ox,y+oy,5,0,7);g.stroke();}}
     break;}
   case VACANT:{g.fillStyle='#3f4c2b';g.fillRect(x,y,T,T);speckle(g,x,y,T,T,70,['#4b5b33','#34401f','#56663a','#5d5a3a','#6b6440'],rn,2.5);
     for(let k=0;k<5;k++){g.strokeStyle='rgba(120,140,70,.5)';g.lineWidth=1;const bx=x+rn()*T,by=y+rn()*T;g.beginPath();g.moveTo(bx,by);g.lineTo(bx+(rn()-.5)*6,by-6);g.stroke();}
-    const j=rn();if(j<.12){g.strokeStyle='#141414';g.lineWidth=3.5;g.beginPath();g.arc(x+18,y+20,6,0,7);g.stroke();g.beginPath();g.arc(x+30,y+26,6,0,7);g.stroke();}
+    const j=rn();if(j<.12){if(PROPSINK)PROPSINK.push({k:'tires',x:tx*T+18,y:ty*T+20,n:2,s:(tx+ty)%3});else{g.strokeStyle='#141414';g.lineWidth=3.5;g.beginPath();g.arc(x+18,y+20,6,0,7);g.stroke();g.beginPath();g.arc(x+30,y+26,6,0,7);g.stroke();}}
     else if(j<.2){g.save();g.translate(x+24,y+24);g.rotate(rn()*3);g.fillStyle='#b8ad94';g.fillRect(-14,-9,28,18);g.fillStyle='rgba(120,90,60,.5)';g.fillRect(-6,-4,9,7);g.restore();}
     else if(j<.32){g.fillStyle='#7a3d2e';for(let k=0;k<6;k++)g.fillRect(x+10+rn()*26,y+10+rn()*26,6,3);g.fillStyle='#8a8478';for(let k=0;k<4;k++)g.fillRect(x+10+rn()*26,y+10+rn()*26,4,4);}
     else if(j<.36){g.strokeStyle='#8a8d92';g.lineWidth=1.5;g.strokeRect(x+16,y+16,16,11);g.beginPath();g.moveTo(x+16,y+27);g.lineTo(x+14,y+31);g.stroke();}
@@ -7585,6 +7586,11 @@ function getChunk(cx,cy){const key=cx+','+cy;let c=chunks.get(key);if(c){chunks.
   chunks.set(key,c);if(chunks.size>14)chunks.delete(chunks.keys().next().value);
   return c;}
 
+const BRICKC=['#8e3b2a','#a2482f','#7a3324','#9a5a3c','#b0553a'];
+function brickList(s){const L=[],r=k=>((s*9301+k*49297)%233280)/233280;
+  for(let k=0;k<4;k++)L.push([-17+k*10,-3,0]);for(let k=0;k<3;k++)L.push([-12+k*10,-3,1]);for(let k=0;k<2;k++)L.push([-7+k*10,-3,2]);for(let k=0;k<3;k++)L.push([-15+k*10,3,0]);
+  for(let k=0;k<4;k++)L.push([-20+r(k)*36,10+r(k+7)*8,0,r(k+3)>.5]);return L;}
+function drawBricksFlat(g,x,y,s){for(const [bx,by,lv,rot] of brickList(s)){g.fillStyle=BRICKC[(s+bx*3+lv)&3|0]||BRICKC[0];g.fillRect(x+bx,y+by-lv*2,rot?5:9,rot?9:5);g.fillStyle='rgba(0,0,0,.25)';g.fillRect(x+bx,y+by-lv*2+(rot?8:4),rot?5:9,1);}}
 const TXS=()=>Math.max(1.05,1.15/(camZ||1)),fpx=n=>Math.round(n*TXS());
 // ================= render: dynamic =================
 const radSpr=(stops)=>{const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d'),gr=g.createRadialGradient(64,64,0,64,64,64);for(const [o,col] of stops)gr.addColorStop(o,col);g.fillStyle=gr;g.fillRect(0,0,128,128);return c;};
@@ -7735,7 +7741,7 @@ function drawCar(c,g2,px,py,pv){const g=g2||ctx;if(isBike(c)){drawBike(c,g,px??(
   {const gc=c.mode!=='wreck'&&glowCol(c);if(gc){g.save();g.translate(x,y);g.rotate(c.a);g.globalCompositeOperation='lighter';const gr=g.createRadialGradient(0,0,4,0,0,L*0.75);gr.addColorStop(0,hexA(gc,0.55));gr.addColorStop(1,hexA(gc,0));g.fillStyle=gr;g.beginPath();g.ellipse(0,0,L*0.75,Wd*1.1,0,0,7);g.fill();g.restore();}}
   const pq=vehLift(c,g,x,y,pv);
   g.save();g.translate(x,y);g.rotate(c.a);
-  g.fillStyle='#0c0c0d';for(const sx of [-L*0.3,L*0.3])for(const sy of [-1,1])g.fillRect(sx-5.5,sy*hw-(sy<0?2:1),11,3);{const rc=rimCol(c);if(rc){g.fillStyle=rc;for(const sx of [-L*0.3,L*0.3])for(const sy of [-1,1])g.fillRect(sx-3,sy*hw-(sy<0?2.6:-0.6),6,2);}}
+  {const rate=wheelTick(c),wst=c.mode==='wreck'?0:c.wst||0;for(const sx of [-L*0.3,L*0.3])for(const sy of [-1,1])drawTire(g,sx,sy*hw+(sy<0?-0.5:0.5),12,4.2,c.wph||0,sx>0?wst:0,rate);}{const rc=rimCol(c);if(rc){g.fillStyle=rc;for(const sx of [-L*0.3,L*0.3])for(const sy of [-1,1])g.fillRect(sx-3,sy*hw-(sy<0?2.6:-0.6),6,2);}}
   const col=c.mode==='wreck'?'#2a2622':paintCol(c);
   {const [ax,ay]=pq(4),[bx,by]=pq(8);g.fillStyle=shade(col,-0.55);rr(g,-hl+ax,-hw+ay,L,Wd,rad);g.fill();g.fillStyle=shade(col,-0.35);rr(g,-hl+bx,-hw+by,L,Wd,rad);g.fill();}
   const [tx,ty]=pq(11),[ux,uy]=pq(18),cdx=ux-tx,cdy=uy-ty;g.translate(tx,ty);
@@ -9244,6 +9250,8 @@ function drawProp(p,night){
   else if(p.k==='hydrant'){propDisc(p.x,p.y,0,4.5,'#6e5812');propDisc(p.x,p.y,5,4.5,'#c9a227');propDisc(p.x,p.y,9,3.2,'#e0b934');propDisc(p.x,p.y,11,1.8,'#8a6d16');}
   else if(p.k==='can'){propDisc(p.x,p.y,0,5.5,'#1f2225');propDisc(p.x,p.y,5,5.5,'#2f3337');propDisc(p.x,p.y,11,5.5,'#3a3f45');propDisc(p.x,p.y,13,5.8,'#4a5056');propDisc(p.x,p.y,13.5,2,'#2a2d31');}
   else if(p.k==='cone'){for(let z=0;z<=14;z+=2)propDisc(p.x,p.y,z,6-z*0.36,z===6||z===8?'#eeeeee':z<2?'#b85a1e':'#e8762b');}
+  else if(p.k==='tires'){for(let n=0;n<p.n;n++){const tx=p.x+n*12,ty=p.y+n*6,h=1+((p.s||0)+n)%2;for(let k=0;k<h;k++){for(let z=k*4;z<k*4+4;z+=1)propDisc(tx,ty,z,6.5,'#121212');propDisc(tx,ty,k*4+4,6.5,'#262626');}propDisc(tx,ty,h*4+0.2,2.8,'#0a0a0a');}}
+  else if(p.k==='bricks'){for(const [bx,by,lv,rot] of brickList(p.s)){const c=BRICKC[(p.s+bx*3+lv)&3|0]||BRICKC[0];propBox(p.x+bx,p.y+by,rot?5:9,rot?9:5,4+lv*4,c,shade(c,-0.3));}}
   else if(p.k==='dumpster')propBox(p.x,p.y,24,15,16,'#2d5a3d','#1f4029','#3b7350');}
 function drawProps(){const night=nightAmt(),cx0=Math.floor(camX/CHP)-1,cy0=Math.floor(camY/CHP)-1,cx1=Math.floor((camX+vw)/CHP)+1,cy1=Math.floor((camY+vh)/CHP)+1;
   for(let cy=cy0;cy<=cy1;cy++)for(let cx=cx0;cx<=cx1;cx++){const c=chunks.get(cx+','+cy);if(!c||!c.props)continue;
@@ -9645,6 +9653,12 @@ function drawFreeway(){const F=FWY;if(F.x1-camX<-80||F.x0-camX>vw+80||F.y1-camY<
   for(const c of cars){if(!c.up||c.dead)continue;const x=c.x-camX,y=c.y-camY;if(x<-60||y<-60||x>vw+60||y>vh+60)continue;fwyLift(fwyZ(c.x),()=>{drawCar(c);if(c.hook)drawHook(c);});}
   for(const e of npcs)if(e.up&&!e.inCar&&!e.dead)fwyLift(fwyZ(e.x),()=>drawNPC(e));
   if(!P.car&&P.up)fwyLift(fwyZ(P.x),drawPlayer);}
+// ================= tires: tread rolls with the car, spins faster on a hard launch, front wheels steer =================
+function wheelTick(c){const now=performance.now(),dt=Math.min(0.05,(now-(c._wt||now))/1000);c._wt=now;if(!running||paused)return 0;
+  const rate=(c.v||0)+(c.spin||0);c.wph=((c.wph||0)+Math.sign(rate)*Math.min(Math.abs(rate)*dt*0.5,1.35))%120;
+  const da=c._la==null?0:angDiff(c._la,c.a);c._la=c.a;const want=dt>0&&Math.abs(c.v||0)>4?clamp(da/dt*(c.v<0?-0.22:0.22),-0.45,0.45):(c.wst||0)*0.9;c.wst=(c.wst||0)+(want-(c.wst||0))*Math.min(1,dt*10);return rate;}
+function drawTire(g,x,y,len,wid,ph,st,rate){g.save();g.translate(x,y);if(st)g.rotate(st);g.fillStyle='#0c0c0d';g.fillRect(-len/2,-wid/2,len,wid);
+  const fast=Math.abs(rate)>170;g.fillStyle=fast?'rgba(70,70,74,.35)':'#303034';const o=((ph%3)+3)%3;for(let k=-len/2+o;k<len/2-0.5;k+=3)g.fillRect(k,-wid/2,fast?1.6:1.1,wid);g.restore();}
 })();
 </script>
 </html>
