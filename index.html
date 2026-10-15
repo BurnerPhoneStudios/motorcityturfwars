@@ -507,6 +507,7 @@ body.wpnwheel #goals,body.wpnwheel #card{visibility:hidden}
 .credbox .crsec{margin-top:16px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#8a8f98}
 .credbox .crname{font-size:24px;font-weight:700;color:var(--chrome);margin-top:4px}
 .credbox .crrole{font-size:15px;color:#c9ccd2;margin-top:2px}
+#bugWhat{font-family:var(--body);font-size:17px;background:#0e0f12;color:var(--chrome);border:1px solid var(--line);padding:10px 12px;box-sizing:border-box}
 </style>
 
 <canvas id="game"></canvas>
@@ -571,6 +572,7 @@ body.wpnwheel #goals,body.wpnwheel #card{visibility:hidden}
       <button type="button" class="ghost" id="paTilt">Buildings: Flat</button>
       <button type="button" class="ghost" id="paDev">Dev menu &amp; cheats (`)</button>
       <button type="button" class="ghost v3only" id="paView">View: Overhead view</button>
+      <button type="button" class="ghost" id="paBug">Report a bug</button>
       <button type="button" class="ghost" id="paCredits">Credits</button>
       <button type="button" class="ghost" id="paQuit">Save and quit to menu</button>
     </div>
@@ -793,7 +795,7 @@ body.wpnwheel #goals,body.wpnwheel #card{visibility:hidden}
     <p class="lead">Nobody knows your name yet. You start with one weed plant in the backroom and three people in Midtown who want to try it. Free samples turn them into clients. Grow, sell, reinvest. Set your price, answer texts on your burner, meet clients on time and build them from Neutral to Loyal. Your Dodgy Venom is parked outside the stash. The Ambassador Bridge to Canada stays closed for now.</p>
     <div class="sec">Save slots</div>
     <div class="slots" id="slots"></div>
-    <div class="filerow"><button type="button" class="ghost" id="btnAudio">Audio</button><button type="button" class="ghost" id="btnCredits">Credits</button><button type="button" class="ghost" id="btnImport">Load a save file</button><button type="button" class="ghost" id="btnFolder" hidden>Choose a save folder</button><input type="file" id="fileIn" accept=".json,application/json" hidden></div>
+    <div class="filerow"><button type="button" class="ghost" id="btnAudio">Audio</button><button type="button" class="ghost" id="btnCredits">Credits</button><button type="button" class="ghost" id="btnBug">Report a bug</button><button type="button" class="ghost" id="btnImport">Load a save file</button><button type="button" class="ghost" id="btnFolder" hidden>Choose a save folder</button><input type="file" id="fileIn" accept=".json,application/json" hidden></div>
     <div class="fmsg" id="fileMsg"></div>
     <div class="form" id="newForm" hidden>
       <div class="nfl" id="newLbl">New game · Slot 1</div>
@@ -898,6 +900,16 @@ body.wpnwheel #goals,body.wpnwheel #card{visibility:hidden}
     <div style="display:flex;gap:8px;margin:12px 0"><input id="shareLink" readonly style="flex:1;min-width:0" aria-label="Game link"><button type="button" id="shareCopy">Copy</button></div>
     <div class="sub" id="shareMsg" style="color:#6cc28a;min-height:1.2em"></div>
     <div style="display:flex;gap:8px"><button type="button" id="shareGo" style="flex:1">Share</button><button type="button" class="ghost" id="shareLater" style="flex:1">Not now</button></div>
+  </div>
+</div>
+<div class="overlay" id="bugRep" hidden>
+  <div class="modal" role="dialog" aria-labelledby="bgTitle" style="max-width:460px">
+    <h2 id="bgTitle">Report a bug</h2>
+    <div class="sub">Tell us what went wrong. We'll copy your report with some game info, then open the game's itch.io page. Paste it in the comments at the bottom.</div>
+    <textarea id="bugWhat" rows="5" maxlength="1500" placeholder="What happened? What were you doing right before?" style="width:100%;margin-top:12px;resize:vertical"></textarea>
+    <div class="sub" id="bugInfo" style="font-size:13px;color:#8a8f98;margin-top:6px"></div>
+    <div class="sub" id="bugMsg" style="color:#6cc28a;min-height:1.2em"></div>
+    <div style="display:flex;gap:8px;margin-top:6px"><button type="button" id="bugSend" style="flex:1">Copy and open itch.io</button><button type="button" class="ghost" id="bugClose" style="flex:1">Back</button></div>
   </div>
 </div>
 <div class="overlay" id="credits" hidden>
@@ -9685,6 +9697,19 @@ function credOpen(fromPause){credFromPause=fromPause;if(fromPause)elPause.hidden
 function credClose(){elCred.hidden=true;if(credFromPause)elPause.hidden=false;}
 $('paCredits').onclick=()=>credOpen(true);$('btnCredits').onclick=()=>credOpen(false);$('crClose').onclick=credClose;
 addEventListener('keydown',e=>{if(!elCred.hidden&&e.key==='Escape'){e.stopImmediatePropagation();credClose();}},true);
+// ================= report a bug: builds a report with game info, copies it and opens the itch.io page =================
+const elBug=$('bugRep');let bugFromPause=false;
+function bugInfo(){const inGame=running&&S&&S.day;const h=inGame?HN[hoodOf(P.x,P.y)]:'main menu';
+  return [inGame?`Day ${S.day} ${fmtT(nowM())}`:'Not in a game',`Where: ${h}${P.car?` (driving the ${P.car.model})`:''}`,inGame?`Heat ${P.heat.toFixed(1)} · health ${Math.round(P.hp)}`:'',`3D buildings ${TILT.on?'on':'off'} · ${pad.on?'controller':matchMedia('(pointer:coarse)').matches?'touch':'keyboard'} · screen ${innerWidth}x${innerHeight}`,`Browser: ${navigator.userAgent.slice(0,160)}`].filter(Boolean).join('\n');}
+function bugOpen(fromPause){bugFromPause=fromPause;if(fromPause)elPause.hidden=true;$('bugMsg').textContent='';$('bugInfo').textContent='Sent along with it: '+bugInfo().split('\n').slice(0,3).join(' · ');elBug.hidden=false;paused=true;$('bugWhat').focus();}
+function bugClose(){elBug.hidden=true;if(bugFromPause)elPause.hidden=false;else if(elPause.hidden&&running)paused=false;}
+async function bugSend(){const what=$('bugWhat').value.trim();if(what.length<5){$('bugMsg').style.color='#f2a33a';$('bugMsg').textContent='Write a few words about what went wrong first.';return;}
+  const rep=`[Bug report] Motor City Turf Wars\n${what}\n---\n${bugInfo()}`;let ok=false;try{await navigator.clipboard.writeText(rep);ok=true;}catch(e){}
+  if(!ok){const t=$('bugWhat');const old=t.value;t.value=rep;t.select();try{ok=document.execCommand('copy');}catch(e){}t.value=old;}
+  $('bugMsg').style.color='#6cc28a';$('bugMsg').textContent=ok?'Copied. Paste it in the comments on the itch.io page. Thanks!':'Could not copy. Select your text, copy it, and post it in the itch.io comments.';
+  try{window.open(SHARE.url,'_blank','noopener');}catch(e){}}
+$('paBug').onclick=()=>bugOpen(true);$('btnBug').onclick=()=>bugOpen(false);$('bugClose').onclick=bugClose;$('bugSend').onclick=bugSend;
+addEventListener('keydown',e=>{if(elBug.hidden)return;if(e.key==='Escape'){e.stopImmediatePropagation();bugClose();}else e.stopPropagation();},true);
 })();
 </script>
 </html>
