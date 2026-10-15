@@ -570,6 +570,7 @@ body.wpnwheel #goals,body.wpnwheel #card{visibility:hidden}
       <button type="button" class="ghost" id="paZoom">Camera: Close</button>
       <button type="button" class="ghost" id="paPhone">Phone size: Large</button>
       <button type="button" class="ghost" id="paTilt">Buildings: Flat</button>
+      <button type="button" class="ghost" id="paFull">Fullscreen: Off (F11)</button>
       <button type="button" class="ghost" id="paDev">Dev menu &amp; cheats (`)</button>
       <button type="button" class="ghost v3only" id="paView">View: Overhead view</button>
       <button type="button" class="ghost" id="paBug">Report a bug</button>
@@ -9710,6 +9711,18 @@ async function bugSend(){const what=$('bugWhat').value.trim();if(what.length<5){
   try{window.open(SHARE.url,'_blank','noopener');}catch(e){}}
 $('paBug').onclick=()=>bugOpen(true);$('btnBug').onclick=()=>bugOpen(false);$('bugClose').onclick=bugClose;$('bugSend').onclick=bugSend;
 addEventListener('keydown',e=>{if(elBug.hidden)return;if(e.key==='Escape'){e.stopImmediatePropagation();bugClose();}else e.stopPropagation();},true);
+// ================= fullscreen: our own toggle locks Esc so menus close without dropping fullscreen; Backspace also backs out =================
+const FSC={locked:false};
+const fsOn=()=>!!document.fullscreenElement;
+function fsLabel(){$('paFull').textContent=`Fullscreen: ${fsOn()?'On · hold Esc to leave':'Off'} (F11)`;}
+async function fsToggle(){try{if(fsOn()){await document.exitFullscreen();return;}await document.documentElement.requestFullscreen({navigationUI:'hide'});
+  if(navigator.keyboard&&navigator.keyboard.lock){await navigator.keyboard.lock(['Escape']);FSC.locked=true;}}catch(e){FSC.locked=false;}fsLabel();}
+document.addEventListener('fullscreenchange',()=>{if(!fsOn()&&FSC.locked){try{navigator.keyboard.unlock();}catch(e){}FSC.locked=false;}fsLabel();});
+$('paFull').onclick=fsToggle;fsLabel();
+addEventListener('keydown',e=>{if(e.key==='F11'){e.preventDefault();e.stopImmediatePropagation();if(!e.repeat)fsToggle();return;}
+  if(e.key!=='Backspace'||e.repeat)return;const t=e.target;if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable))return;
+  if(!(paused||!$('phone').hidden||W8.open||DL.open))return;e.preventDefault();e.stopImmediatePropagation();
+  dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));dispatchEvent(new KeyboardEvent('keyup',{key:'Escape',bubbles:true}));},true);
 })();
 </script>
 </html>
