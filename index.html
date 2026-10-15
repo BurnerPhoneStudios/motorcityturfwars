@@ -503,6 +503,10 @@ body.wpnwheel #goals,body.wpnwheel #card{visibility:hidden}
 .fuelrow .pumps{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .fuelrow .pumps button{min-width:64px}
 .fuelrow .pumpn.on{background:#6cc28a;color:#0d1a12}
+.credbox{text-align:center}
+.credbox .crsec{margin-top:16px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#8a8f98}
+.credbox .crname{font-size:24px;font-weight:700;color:var(--chrome);margin-top:4px}
+.credbox .crrole{font-size:15px;color:#c9ccd2;margin-top:2px}
 </style>
 
 <canvas id="game"></canvas>
@@ -567,6 +571,7 @@ body.wpnwheel #goals,body.wpnwheel #card{visibility:hidden}
       <button type="button" class="ghost" id="paTilt">Buildings: Flat</button>
       <button type="button" class="ghost" id="paDev">Dev menu &amp; cheats (`)</button>
       <button type="button" class="ghost v3only" id="paView">View: Overhead view</button>
+      <button type="button" class="ghost" id="paCredits">Credits</button>
       <button type="button" class="ghost" id="paQuit">Save and quit to menu</button>
     </div>
   </div>
@@ -788,7 +793,7 @@ body.wpnwheel #goals,body.wpnwheel #card{visibility:hidden}
     <p class="lead">Nobody knows your name yet. You start with one weed plant in the backroom and three people in Midtown who want to try it. Free samples turn them into clients. Grow, sell, reinvest. Set your price, answer texts on your burner, meet clients on time and build them from Neutral to Loyal. Your Dodgy Venom is parked outside the stash. The Ambassador Bridge to Canada stays closed for now.</p>
     <div class="sec">Save slots</div>
     <div class="slots" id="slots"></div>
-    <div class="filerow"><button type="button" class="ghost" id="btnAudio">Audio</button><button type="button" class="ghost" id="btnImport">Load a save file</button><button type="button" class="ghost" id="btnFolder" hidden>Choose a save folder</button><input type="file" id="fileIn" accept=".json,application/json" hidden></div>
+    <div class="filerow"><button type="button" class="ghost" id="btnAudio">Audio</button><button type="button" class="ghost" id="btnCredits">Credits</button><button type="button" class="ghost" id="btnImport">Load a save file</button><button type="button" class="ghost" id="btnFolder" hidden>Choose a save folder</button><input type="file" id="fileIn" accept=".json,application/json" hidden></div>
     <div class="fmsg" id="fileMsg"></div>
     <div class="form" id="newForm" hidden>
       <div class="nfl" id="newLbl">New game · Slot 1</div>
@@ -893,6 +898,21 @@ body.wpnwheel #goals,body.wpnwheel #card{visibility:hidden}
     <div style="display:flex;gap:8px;margin:12px 0"><input id="shareLink" readonly style="flex:1;min-width:0" aria-label="Game link"><button type="button" id="shareCopy">Copy</button></div>
     <div class="sub" id="shareMsg" style="color:#6cc28a;min-height:1.2em"></div>
     <div style="display:flex;gap:8px"><button type="button" id="shareGo" style="flex:1">Share</button><button type="button" class="ghost" id="shareLater" style="flex:1">Not now</button></div>
+  </div>
+</div>
+<div class="overlay" id="credits" hidden>
+  <div class="modal credbox" role="dialog" aria-labelledby="crTitle" style="max-width:440px">
+    <h2 id="crTitle">Credits</h2>
+    <div class="sub">Motor City Turf Wars · a Burner Phone Studios game</div>
+    <div class="crsec">Made by</div>
+    <div class="crname">Tim Winnie</div>
+    <div class="crname">Ryan Lyell</div>
+    <div class="crsec">Shoutout</div>
+    <div class="crname">Saint Reject</div>
+    <div class="crrole">aka Antonio St.John · music on the radio</div>
+    <div class="crsec">Thanks</div>
+    <div class="crrole">Everybody who plays, shares it and sends in bugs.</div>
+    <button type="button" id="crClose" style="width:100%;margin-top:16px">Back</button>
   </div>
 </div>
 <div class="overlay" id="sleepScene" hidden><canvas id="sleepC" width="480" height="300" aria-label="You sleep through the night"></canvas></div>
@@ -9659,6 +9679,12 @@ function wheelTick(c){const now=performance.now(),dt=Math.min(0.05,(now-(c._wt||
   const da=c._la==null?0:angDiff(c._la,c.a);c._la=c.a;const want=dt>0&&Math.abs(c.v||0)>4?clamp(da/dt*(c.v<0?-0.22:0.22),-0.45,0.45):(c.wst||0)*0.9;c.wst=(c.wst||0)+(want-(c.wst||0))*Math.min(1,dt*10);return rate;}
 function drawTire(g,x,y,len,wid,ph,st,rate){g.save();g.translate(x,y);if(st)g.rotate(st);g.fillStyle='#0c0c0d';g.fillRect(-len/2,-wid/2,len,wid);
   const fast=Math.abs(rate)>170;g.fillStyle=fast?'rgba(70,70,74,.35)':'#303034';const o=((ph%3)+3)%3;for(let k=-len/2+o;k<len/2-0.5;k+=3)g.fillRect(k,-wid/2,fast?1.6:1.1,wid);g.restore();}
+// ================= credits: main menu and pause menu =================
+const elCred=$('credits');let credFromPause=false;
+function credOpen(fromPause){credFromPause=fromPause;if(fromPause)elPause.hidden=true;elCred.hidden=false;$('crClose').focus();}
+function credClose(){elCred.hidden=true;if(credFromPause)elPause.hidden=false;}
+$('paCredits').onclick=()=>credOpen(true);$('btnCredits').onclick=()=>credOpen(false);$('crClose').onclick=credClose;
+addEventListener('keydown',e=>{if(!elCred.hidden&&e.key==='Escape'){e.stopImmediatePropagation();credClose();}},true);
 })();
 </script>
 </html>
