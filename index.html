@@ -637,17 +637,17 @@ body.wpnwheel #goals,body.wpnwheel #card{visibility:hidden}
       <button type="button" class="ghost" id="btnGym" style="grid-column:1/-1" hidden>Work out · 1 hour</button>
       <button type="button" class="ghost" id="btnSleep" style="grid-column:1/-1">Sleep till 7 AM</button>
       </div>
-      <div class="note" id="labTease" style="margin-bottom:14px">Meth lab: buy a lab setup in the back room at Uncle Rell's Tires (needs rep: Known). Up to 4 stations.</div>
+      <div class="note" id="labTease" style="margin-bottom:14px">Shrooms: buy a grow tent at House Depo (needs rep: Known). Up to 4 tents.</div>
       <div id="labBox" hidden>
-        <div class="sec" id="lLbl">Meth lab</div>
+        <div class="sec" id="lLbl">Shroom tents</div>
         <div class="grow" id="labGrid"></div>
-        <div class="note" style="margin:-4px 0 8px">Supplies <b id="sSup"></b> · Meth <b id="sProd"></b> · each supply cooks 3–7 bags</div>
+        <div class="note" style="margin:-4px 0 8px">Spawn bags <b id="sSup"></b> · Shrooms <b id="sProd"></b> · each spawn bag grows 3–7 bags</div>
         <div class="acts">
-          <button type="button" id="btnBuy">Supplies · $60</button>
-          <button type="button" id="btnBuy5">5 supplies · $270</button>
-          <button type="button" id="btnLab">Set up lab</button>
-          <button type="button" id="btnCollect">Collect</button>
-          <button type="button" class="ghost" id="btnSteal" style="grid-column:1/-1">Steal supplies from a rival stash · free</button>
+          <button type="button" id="btnBuy">Spawn bag · $60</button>
+          <button type="button" id="btnBuy5">5 spawn bags · $270</button>
+          <button type="button" id="btnLab">Set up tent</button>
+          <button type="button" id="btnCollect">Pick</button>
+          <button type="button" class="ghost" id="btnSteal" style="grid-column:1/-1">Steal spawn bags from a rival stash · free</button>
         </div>
       </div>
     </div>
@@ -4908,7 +4908,7 @@ const relName=r=>r<1?'Hostile':r<2?'Unfriendly':r<3?'Neutral':r<4?'Friendly':'Lo
 const relCol=r=>r<1?'#e0574b':r<2?'#e08a4b':r<3?'#a6abb3':r<4?'#6cc28a':GANG.crew.color;
 // Products. New drugs (cocaine, etc.) slot in here with their own unlock.
 const DRUGS={weed:{name:'Weed',slang:'weed',fair:[0,10,14,19],add:[0,.25,.32,.4],maxQ:28,sample:1,qn:['','Mids','Loud','Exotic'],per:'gram',more:'Harvest your plants at the stash.'},
-  chrome:{name:'Meth',slang:'meth',fair:[0,20,35,55],add:[0,.45,.6,.8],maxQ:12,sample:1,qn:['','Grade 1','Grade 2','Grade 3'],per:'bag',more:'Cook a batch at the stash.'},
+  shrooms:{name:'Shrooms',slang:'shrooms',fair:[0,20,35,55],add:[0,.35,.45,.55],maxQ:12,sample:1,qn:['','Cubes','Golden Teacher','Blue Meanies'],per:'bag',more:'Grow a flush in the tent at the stash.'},
   coke:{name:'Cocaine',slang:'coke',fair:[0,60,80,100],add:[0,.5,.6,.7],maxQ:7,sample:1,qn:['','Stepped on','Clean','Fish scale'],per:'gram',more:"Buy an ounce from Uncle Rell's tire shop."}};
 const PRODS=Object.keys(DRUGS);
 const GROW={pot:200,seed:50,soil:0,yield:28,time:6*60,dry:200};
@@ -4916,13 +4916,13 @@ const prodOn=p=>p==='weed'||!!S[p+'On'];
 const qOf=p=>(S.q&&S.q[p])||1;
 const inv=p=>(S.inv&&S.inv[p])||0;
 const stored=p=>(S.store&&S.store[p])||0;
-const UNITW={weed:1,chrome:4,coke:1};
+const UNITW={weed:1,shrooms:4,coke:1};
 const BAGS={'':['Pockets',14],back:['Backpack',60],gym:['Gym bag',150]};
 const bagCap=()=>BAGS[S.bag||''][1];const bagName=()=>BAGS[S.bag||''][0];
 const load=()=>PRODS.reduce((n,p)=>n+inv(p)*UNITW[p],0);
 let carryMsg='';
 function takeOut(p,n){const nm=DRUGS[p].slang;const room=Math.max(0,Math.floor((bagCap()-load())/UNITW[p]));const q=Math.max(0,Math.min(n,stored(p),room));
-  if(q<=0){carryMsg=stored(p)<=0?`No ${nm} left in the stash. ${DRUGS[p].more}`:`Your ${bagName().toLowerCase()} ${S.bag?'is':'are'} full (${Math.round(load())}/${bagCap()}). ${inv('chrome')>0&&p==='weed'?`Meth takes 4 spaces a bag. `:''}${S.bag==='gym'?'':'A backpack or gym bag from Avenue Threads or House Depo holds more.'}`;return 0;}
+  if(q<=0){carryMsg=stored(p)<=0?`No ${nm} left in the stash. ${DRUGS[p].more}`:`Your ${bagName().toLowerCase()} ${S.bag?'is':'are'} full (${Math.round(load())}/${bagCap()}). ${inv('shrooms')>0&&p==='weed'?`Shrooms take 4 spaces a bag. `:''}${S.bag==='gym'?'':'A backpack or gym bag from Avenue Threads or House Depo holds more.'}`;return 0;}
   S.store[p]-=q;S.inv[p]+=q;goalHit('grab');carryMsg=q<n&&n<999?`Only room for ${fmtQ(p,q)} more. Took ${fmtQ(p,q)}.`:`Took ${fmtQ(p,q)}. ${fmtQ(p,inv(p))} on you now.`;return q;}
 function dealNeeds(){const need={};for(const p of PRODS)need[p]=0;for(const d of S.deals)need[d.p||'weed']+=d.qty;return need;}
 function stashIn(p){const q=inv(p);if(q>0){S.inv[p]=0;S.store[p]+=q;}return q;}
@@ -4945,8 +4945,8 @@ function genRoster(){
   const names=NAMES.slice().sort(()=>R()-.5);const ro=[];
   const stdPool=i=>HOMEP[i]===0?[2,2,3]:DECAY[i]>=0.45?[1,1,1,2]:[1,1,2];
   for(let k=0;k<60;k++){const home=k%NH;const std=pick(stdPool(home));
-    ro.push({id:k,name:names[k],home,std,budget:Math.round([0,45,95,170][std]*(0.75+R()*0.6)),fmin:1+((R()*2)|0),fmax:4+((R()*4)|0),rel:2,add:0,known:false,contact:false,conns:[],look:makeLook('cust'),lastDeal:0,nextOrder:0,deals:0,fav:R()<0.35?'chrome':'weed'});}
-  for(const c of ro)c.likes=(c.fav==='chrome'||R()<0.3)?['weed','chrome']:['weed'];
+    ro.push({id:k,name:names[k],home,std,budget:Math.round([0,45,95,170][std]*(0.75+R()*0.6)),fmin:1+((R()*2)|0),fmax:4+((R()*4)|0),rel:2,add:0,known:false,contact:false,conns:[],look:makeLook('cust'),lastDeal:0,nextOrder:0,deals:0,fav:R()<0.35?'shrooms':'weed'});}
+  for(const c of ro)c.likes=(c.fav==='shrooms'||R()<0.3)?['weed','shrooms']:['weed'];
   const link=(a,b)=>{if(!b||a===b)return;if(!a.conns.includes(b.id))a.conns.push(b.id);if(!b.conns.includes(a.id))b.conns.push(a.id);};
   for(const c of ro){link(c,pick(ro.filter(o=>o.home===c.home&&o!==c)));const nb=ro.filter(o=>hoodNb(c.home).includes(o.home));link(c,pick(nb));if(R()<.4)link(c,pick(nb));}
   const st=ro.filter(c=>c.home===H_MID).slice(0,3);
@@ -5211,7 +5211,7 @@ const pitchChance=(c,p)=>{p=p||sampleP(c);let k=0.42+repLvl()*0.09+(qOf(p)-c.std
 function pitch(e){const c=CL(e.cid);const p=sampleP(c);
   if(inv(p)<DRUGS[p].sample){log(p==='weed'?'You need at least 1 g to hand out a sample.':'You need a bag to hand out as a sample.','#f2a33a');return;}
   S.inv[p]-=DRUGS[p].sample;rivalsSawDeal();const w=witness(e.x,e.y);if(w.cop){addHeat(0.8);log('A cop watched you hand that over.','#e0574b');}
-  const what=p==='weed'?DRUGS.weed.qn[qOf('weed')]:'meth';
+  const what=p==='weed'?DRUGS.weed.qn[qOf('weed')]:'shrooms';
   if(R()<pitchChance(c,p)){c.known=true;c.contact=false;c.rel=2;c.nextOrder=nowM()+40+R()*60;gainRep(10);floatText(e.x,e.y-20,'NEW CLIENT','#f2a33a');setTimeout(save,0);log(`${c.name} liked the ${what}. They saved your number.`,'#f2a33a');addMsg(c.id,'them',p==='weed'?"That's some decent smoke. I'll hit you up.":"That was decent. I'll hit you up.");}
   else{e.pitchCD=90;floatText(e.x,e.y-20,'not interested','#8a8f98');
     if(R()<0.15){addHeat(1.2);log(`${c.name} didn't like it and called the cops.`,'#e0574b');}else log(`${c.name} took the sample and walked off. Try again later.`,'#8a8f98');}}
@@ -5257,7 +5257,7 @@ const REPN=['Nobody','Corner Kid','Known','Respected','Connected','Kingpin'];
 const REPX=[0,60,180,420,850,1600];
 const repLvl=()=>{let l=0;for(let i=0;i<REPX.length;i++)if((S.rep||0)>=REPX[i])l=i;return l;};
 function gainRep(v){const before=repLvl();S.rep+=v;const after=repLvl();if(after>before){AU.chime();card(REPN[after],repUnlockText(after),'#f2a33a');log(`Rep up: ${REPN[after]}.`,'#f2a33a');}}
-function repUnlockText(l){return ['','Drip irrigation, LED grow lights, the Glok 17 and body armor are unlocked. Client budgets grow with your rep.','The gangs know your name now. Some rivals carry pistols. Lab setups at Uncle Rell\'s, a basement grow room, the lawyer, the extended mag and the sawed-off are unlocked.',"Clients spend more. Exotic genetics and meth purity grade 2 are unlocked. The Drako is in Uncle Rell's back room.",'Word travels fast. Meth purity grade 3 unlocked.','Every corner in the city knows who you are.'][l]||'';}
+function repUnlockText(l){return ['','Drip irrigation, LED grow lights, the Glok 17 and body armor are unlocked. Client budgets grow with your rep.','The gangs know your name now. Some rivals carry pistols. Grow tents at House Depo, a basement grow room, the lawyer, the extended mag and the sawed-off are unlocked.',"Clients spend more. Exotic genetics and Golden Teacher shrooms are unlocked. The Drako is in Uncle Rell's back room.",'Word travels fast. Blue Meanies shrooms unlocked.','Every corner in the city knows who you are.'][l]||'';}
 
 // ================= npcs =================
 function pickDir(e){const D=[[1,0],[-1,0],[0,1],[0,-1]];for(let k=0;k<6;k++){const d=D[(R()*4)|0];if(!hit(e.x+d[0]*26,e.y+d[1]*26,e.r)){e.dx=d[0];e.dy=d[1];e.t=1.5+R()*3.5;return;}}e.dx=0;e.dy=0;e.t=0.4;}
@@ -5487,13 +5487,13 @@ const ITEMS={
   sand:{name:'Gas station sandwich',desc:'Restores 30 health. Probably.',cost:6,act:()=>{heal(30);eat(3);return "+30 health. Don't check the date.";}},
   energy:{name:'Energy drink',desc:'Full stamina and a faster sprint for 30 seconds.',cost:5,act:()=>{P.stam=100;P.boost=30;return 'Wired for 30 seconds.';}},
   scratch:{name:'Scratch-off ticket',desc:'Long odds. Top prize $1,000. Five a day per store.',cost:5,get label(){const n=scratchLeft();return n>0?`$5 · ${n} left`:'Sold out';},can:()=>scratchLeft()>0,act:scratch},
-  bp:{name:'Backpack',desc:'Carry 60 units of product instead of 14. Weed is 1 per gram, meth is 4 per bag.',cost:150,has:()=>(S.closet||[]).includes('back'),act:()=>{(S.closet||(S.closet=[])).push('back');if(!S.bag||S.bag==='')S.bag='back';P.look=playerLook();return 'Backpack on. You can carry 60 now.';}},
+  bp:{name:'Backpack',desc:'Carry 60 units of product instead of 14. Weed is 1 per gram, shrooms are 4 per bag.',cost:150,has:()=>(S.closet||[]).includes('back'),act:()=>{(S.closet||(S.closet=[])).push('back');if(!S.bag||S.bag==='')S.bag='back';P.look=playerLook();return 'Backpack on. You can carry 60 now.';}},
   gb:{name:'Gym bag',desc:'Carry 150 units. Big enough for real weight.',cost:400,has:()=>(S.closet||[]).includes('gym'),act:()=>{(S.closet||(S.closet=[])).push('gym');S.bag='gym';P.look=playerLook();return 'Gym bag on your shoulder. You can carry 150 now.';}},
   rkit:{name:'Repair kit',desc:'Fix any car on the spot. Press X in or next to a car. Carry up to 5.',cost:25,can:()=>(S.kitsR||0)<5,act:()=>{S.kitsR=(S.kitsR||0)+1;return `Repair kit bagged. You have ${S.kitsR}/5. Press X to use one.`;}},
   fix:{name:'Duct tape & Fix-a-Flat',desc:'Fully repairs the car you last drove, if it is parked close by.',cost:80,can:()=>P.lastCar&&P.lastCar.mode==='parked'&&dist(P.lastCar,P)<220&&carHurt(P.lastCar),act:()=>{fixCar(P.lastCar);return `The ${P.lastCar.model} is running right again.`;}},
   deliver:{name:'Delivery run',desc:'Legit work. Get a coney order across town before it gets cold.',cost:0,label:'Take job',can:()=>!S.job,act:startJob},
   kit:{name:'Grow kit',desc:'5-gallon pot, LED grow light and potting soil. Take it to the stash and set it up for one more plant.',cost:200,can:()=>S.slots+(S.kits||0)<S.space,act:()=>{S.kits=(S.kits||0)+1;return `Grow kit loaded up. You have ${S.kits}. Set it up at the stash.`;}},
-  labkit:{name:'Lab setup',desc:'Burner, glassware and a vent fan. Set it up at the stash for one more meth station (max 4).',cost:1000,lvl:2,can:()=>(S.labs||0)+(S.labKits||0)<COOK.max,act:()=>{S.labKits=(S.labKits||0)+1;return `Lab setup in the trunk. You have ${S.labKits}. Set it up at the stash.`;}},
+  labkit:{name:'Shroom grow tent',desc:'Tent, humidifier and a fan. Set it up at the stash for one more shroom tent (max 4).',cost:1000,lvl:2,can:()=>(S.labs||0)+(S.labKits||0)<COOK.max,act:()=>{S.labKits=(S.labKits||0)+1;return `Grow tent in the trunk. You have ${S.labKits}. Set it up at the stash.`;}},
   coke:{name:'Cocaine · an ounce',desc:'28 g from Rell\'s plug, dropped at your stash. Big spenders pay $60 to $100 a gram.',cost:1200,lvl:2,act:()=>{S.store.coke=stored('coke')+28;if(!S.cokeOn)cokeUnlock();return 'An ounce is waiting at your stash.';}},
   slim:{name:'Slim jim',desc:'Pops the lock on older locked cars. Newer cars need a key cloner.',cost:40,has:()=>(S.closet||[]).includes('slim'),act:()=>{(S.closet||(S.closet=[])).push('slim');return 'Slim jim in your back pocket.';}},
   cloner:{name:'Key cloner',desc:'Opens secure cars: sports cars, Escapades, anything over $900. Watch for trackers.',cost:1500,lvl:2,has:()=>(S.closet||[]).includes('cloner'),act:()=>{(S.closet||(S.closet=[])).push('cloner');return 'Key cloner. Every nice car in Detroit is yours now.';}},
@@ -5515,7 +5515,7 @@ const ITEMS={
   draco:{weapon:'draco',name:'Drako',desc:'30-round AK pistol. Full auto. Hold to fire.',cost:2400,lvl:3},
   ammo762:{name:'7.62 · 60 rounds',desc:'For the Drako.',cost:120,can:()=>S.weapons.includes('draco'),act:()=>{S.ammo['7.62']+=60;return '+60 rounds of 7.62.';}},
 };
-const STOCK={hardware_:[],hospital:['heal','heal50'],kustom:[],clothes:[],hardware:['kit','rkit','bp','gb','bat','slim'],liquor:['pop','energy','scratch'],gas:['sand','energy','scratch','rkit','mp3'],coney:['dog','pop','deliver'],gun:['knife','bat','glock','ammo9','armor','shells'],black:['coke','cloner','charge','glockD','glockC','sw','labkit','ext','sawed','draco','ammo762','shells','ammo9'],chop:[]};
+const STOCK={hardware_:[],hospital:['heal','heal50'],kustom:[],clothes:[],hardware:['kit','labkit','rkit','bp','gb','bat','slim'],liquor:['pop','energy','scratch'],gas:['sand','energy','scratch','rkit','mp3'],coney:['dog','pop','deliver'],gun:['knife','bat','glock','ammo9','armor','shells'],black:['coke','cloner','charge','glockD','glockC','sw','ext','sawed','draco','ammo762','shells','ammo9'],chop:[]};
 function scratchLeft(){const k=curShop?curShop.name:'';if(!S.scratch||S.scratch.day!==S.day)S.scratch={day:S.day,n:{}};return 5-(S.scratch.n[k]||0);}
 function scratch(){scratchLeft();const k=curShop?curShop.name:'';S.scratch.n[k]=(S.scratch.n[k]||0)+1;const r=R();let win=0;if(r<.005)win=1000;else if(r<.04)win=100;else if(r<.14)win=20;else if(r<.3)win=5;if(win){S.cash+=win;log(`Scratch-off hit for $${win}.`,'#6cc28a');return `Winner: $${win}.`;}return 'Nothing. Try again?';}
 const elShop=document.getElementById('shop');let curShop=null;
@@ -5579,10 +5579,10 @@ const UPG=[
   {id:'base',name:'Basement grow room',desc:'Room for 8 pots instead of 4.',cost:1000,lvl:2,has:()=>S.space>=8,buy:()=>S.space=8},
   {id:'gym',name:'Home gym',desc:'Bench and bag in the back. Work out from here to hit harder and run faster.',cost:300,lvl:0,has:()=>S.gym,buy:()=>S.gym=true},
   {id:'law',name:'Lawyer on retainer',desc:'Getting busted never costs clean cash, and you get half the dirty cash back.',cost:1200,lvl:2,has:()=>S.lawyer,buy:()=>S.lawyer=true},
-  {id:'burn',name:'Pro burners',desc:'Meth batches cook twice as fast.',cost:600,lvl:2,has:()=>S.fastCook,buy:()=>S.fastCook=true,need:()=>S.labs>0},
+  {id:'burn',name:'Pro humidifier',desc:'Shroom flushes grow twice as fast.',cost:600,lvl:2,has:()=>S.fastCook,buy:()=>S.fastCook=true,need:()=>S.labs>0},
   {id:'gen',name:'Exotic genetics',desc:'Grow Exotic. Market value $19 a gram.',cost:1800,lvl:3,has:()=>qOf('weed')>=3,buy:()=>{S.q.weed=3;if(S.prices.weed<19)S.prices.weed=19;},need:()=>qOf('weed')>=2},
-  {id:'q2',name:'Meth purity grade 2',desc:'Market value $35 a bag.',cost:900,lvl:3,has:()=>qOf('chrome')>=2,buy:()=>{S.q.chrome=2;if(S.prices.chrome<35)S.prices.chrome=35;},need:()=>S.chromeOn},
-  {id:'q3',name:'Meth purity grade 3',desc:'Market value $55 a bag.',cost:2200,lvl:4,has:()=>qOf('chrome')>=3,buy:()=>{S.q.chrome=3;if(S.prices.chrome<55)S.prices.chrome=55;},need:()=>qOf('chrome')>=2},
+  {id:'q2',name:'Golden Teacher spores',desc:'Shrooms worth $35 a bag.',cost:900,lvl:3,has:()=>qOf('shrooms')>=2,buy:()=>{S.q.shrooms=2;if(S.prices.shrooms<35)S.prices.shrooms=35;},need:()=>S.shroomsOn},
+  {id:'q3',name:'Blue Meanies spores',desc:'Shrooms worth $55 a bag.',cost:2200,lvl:4,has:()=>qOf('shrooms')>=3,buy:()=>{S.q.shrooms=3;if(S.prices.shrooms<55)S.prices.shrooms=55;},need:()=>qOf('shrooms')>=2},
   {id:'cq3',name:'Fish scale connect',desc:'Uncle Rell\'s plug sends the uncut stuff. Market value $100 a gram.',cost:3000,lvl:4,has:()=>qOf('coke')>=3,buy:()=>{S.q.coke=3;if(S.prices.coke<100)S.prices.coke=100;},need:()=>S.cokeOn},
   {id:'banner',name:'Crew banner',desc:'Hang your colors and tag on the stash.',cost:250,lvl:0,has:()=>!!S.banner,buy:()=>S.banner=true},
   {id:'porch',name:'Porch crew',desc:'2 armed homies guard the stash around the clock.',cost:800,lvl:1,has:()=>(S.guards||0)>=2,buy:()=>{S.guards=2;ensureGuards(true);}},
@@ -5600,10 +5600,11 @@ function renderStash(){sleepBtn(document.getElementById('btnSleep'));{const g=do
 function plantSvg(g,dry){const h=6+g*26,col=dry?'#b9a24a':g>=1?'#5fbf5a':'#3f9a4a';let l='';const n=1+Math.round(g*4);
   for(let k=0;k<n;k++){const y=38-k*(h/n)-4,w=5+g*7*(1-k/(n+1));l+=`<path d="M20 ${y} q${-w} -3 ${-w-2} -7 q${w*0.6} 1 ${w+2} 7z M20 ${y} q${w} -3 ${w+2} -7 q${-w*0.6} 1 ${-w-2} 7z" fill="${col}"/>`;}
   return `<svg width="40" height="46" viewBox="0 0 40 46" aria-hidden="true"><line x1="20" y1="38" x2="20" y2="${38-h}" stroke="${col}" stroke-width="2"/>${g>0?l:''}<path d="M10 38h20l-2 8h-16z" fill="#8a5a3a"/><rect x="9" y="36" width="22" height="3" fill="#6e4630"/></svg>`;}
-function labSvg(st){const glow=st==='cook'?'#f28a3a':st==='ready'?'#cfe6f2':'#3a3d42';return `<svg width="40" height="46" viewBox="0 0 40 46" aria-hidden="true"><rect x="6" y="30" width="28" height="12" fill="#4a4d52"/><rect x="9" y="26" width="22" height="5" fill="${glow}"/><path d="M15 6h10v6l6 14H9l6-14z" fill="${st==='ready'?'#b9d4e0':'#2a3f4a'}" stroke="#7a8c96"/></svg>`;}
+function labSvg(st){const cap=st==='cook'?'#b0784a':st==='ready'?'#d9a066':'#4a4d52',n=st==='ready'?3:st==='cook'?2:0;let m='';for(let k=0;k<n;k++){const x=11+k*9,h=st==='ready'?10:6;m+=`<rect x="${x-1}" y="${36-h}" width="2.4" height="${h}" fill="#e9e1d0"/><ellipse cx="${x+0.2}" cy="${36-h}" rx="${st==='ready'?5:3.5}" ry="${st==='ready'?3.2:2.4}" fill="${cap}"/>`;}
+  return `<svg width="40" height="46" viewBox="0 0 40 46" aria-hidden="true"><path d="M4 42 L20 4 L36 42 Z" fill="#2a2d33" stroke="#5a5d63" stroke-width="1.5"/><rect x="7" y="36" width="26" height="6" fill="#5b4632"/>${m}</svg>`;}
 const setHTML=(el,h)=>{if(el._h!==h){el._h=h;el.innerHTML=h;}};
 function renderStashLive(){if(!renderStashLive.open){carryMsg='';}renderStashLive.open=true;{const d=Math.round(dirtyNow());$('sCash').innerHTML='$'+S.cash.toLocaleString()+`<span style="display:block;font-size:12px;opacity:.75">${fmt$(cleanNow())} clean · ${fmt$(d)} dirty</span>`;}$('sWeed').textContent=fmtQ('weed',stored('weed'));
-  {const nd=dealNeeds(),short=PRODS.filter(p=>nd[p]>inv(p)&&stored(p)>0);let ch=`<div class="cmsg">${esc(carryMsg||`Room for ${Math.max(0,bagCap()-Math.round(load()))} more. Weed takes 1 space a gram, meth 4 a bag.`)}</div>`;
+  {const nd=dealNeeds(),short=PRODS.filter(p=>nd[p]>inv(p)&&stored(p)>0);let ch=`<div class="cmsg">${esc(carryMsg||`Room for ${Math.max(0,bagCap()-Math.round(load()))} more. Weed takes 1 space a gram, shrooms 4 a bag.`)}</div>`;
     if(short.length)ch+=`<button type="button" data-deal="1">Grab what my deals need · ${short.map(p=>fmtQ(p,nd[p]-inv(p))+' '+DRUGS[p].slang).join(' + ')}</button>`;
     for(const p of PRODS){if(!prodOn(p)&&!inv(p)&&!stored(p))continue;const nm=DRUGS[p].name,steps=p==='weed'?[1,3,7,14,28]:p==='coke'?[1,3,7]:[1,3,6];
     ch+=`<div class="crow2"><div><b>${nm}</b><span>${fmtQ(p,inv(p))} on you · ${fmtQ(p,stored(p))} in the stash</span></div><div class="bt">${steps.map(n=>`<button type="button" class="ghost" data-tk="${p}" data-n="${n}" ${stored(p)<=0?'disabled':''}>+${DRUGS[p].per==='gram'?n+'g':n}</button>`).join('')}<button type="button" data-tk="${p}" data-n="999" ${stored(p)<=0?'disabled':''}>Take max</button><button type="button" class="ghost" data-si="${p}" ${inv(p)<=0?'disabled':''}>Stash</button></div></div>`;}
@@ -5623,15 +5624,15 @@ function renderStashLive(){if(!renderStashLive.open){carryMsg='';}renderStashLiv
   $('btnHarvest').disabled=!nReady;$('btnHarvest').textContent=nReady?`Harvest · trim ${nReady} plant${nReady>1?'s':''}`:'Nothing ready';
   $('btnRush').disabled=!nReady;$('btnRush').textContent=nReady?`Rush harvest all · ${S.plants.filter(p=>p.g>=1).reduce((a,p)=>a+Math.round((p.yl||28)*0.78),0)} g (skip trimming)`:'Rush harvest · nothing ready';
   if(S.labs>0||S.labKits>0){let lh='';for(let i=0;i<S.labs;i++){const c=S.cooks[i];
-      if(!c)lh+=`<div class="pl click" data-lab="${i}" title="Start a cook">${labSvg('idle')}<b>Idle</b><span>${S.supplies>0?'Start a cook':'Needs supplies'}</span></div>`;
+      if(!c)lh+=`<div class="pl click" data-lab="${i}" title="Start a flush">${labSvg('idle')}<b>Idle</b><span>${S.supplies>0?'Start a flush':'Needs a spawn bag'}</span></div>`;
       else if(c.g>=1)lh+=`<div class="pl ready click" data-lab="${i}">${labSvg('ready')}<b>Ready</b><span>${c.bags} bags</span></div>`;
       else lh+=`<div class="pl">${labSvg('cook')}<b>${Math.floor(c.g*100)}%</b><span>${c.bags} bags · ~${Math.ceil((1-c.g)*COOK.time/(S.fastCook?2:1)/60)}h</span><span class="bar"><i style="width:${c.g*100}%;background:#f28a3a"></i></span></div>`;}
-    for(let i=S.labs;i<COOK.max;i++)lh+=`<div class="pl empty">${labSvg('none')}<b>Open spot</b><span>Lab setup from Uncle Rell's</span></div>`;
-    $('labGrid').innerHTML=lh;$('lLbl').textContent=`Meth lab · ${S.labs} station${S.labs===1?'':'s'} · room for ${COOK.max}`;
-    $('sSup').textContent=S.supplies;$('sProd').textContent=fmtQ('chrome',stored('chrome'))+' stored';
-    $('btnSteal').disabled=!!S.supRun;$('btnSteal').textContent=S.supRun?(S.supRun.got?'Supplies in hand · bring them here':'Supply run in progress'):'Steal supplies from a rival stash · free';$('btnBuy').disabled=S.cash<60;$('btnBuy5').disabled=S.cash<270;
-    $('btnLab').disabled=!(S.labKits>0)||S.labs>=COOK.max;$('btnLab').textContent=S.labs>=COOK.max?'Lab is full':S.labKits>0?`Set up lab · ${S.labKits} kit${S.labKits>1?'s':''}`:'Need a lab setup';
-    const rdy=S.cooks.filter(c=>c&&c.g>=1).length;$('btnCollect').disabled=!rdy;$('btnCollect').textContent=rdy?`Collect ${S.cooks.filter(c=>c&&c.g>=1).reduce((a,c)=>a+c.bags,0)} bags`:'Nothing to collect';}}
+    for(let i=S.labs;i<COOK.max;i++)lh+=`<div class="pl empty">${labSvg('none')}<b>Open spot</b><span>Grow tent from House Depo</span></div>`;
+    $('labGrid').innerHTML=lh;$('lLbl').textContent=`Shroom tents · ${S.labs} tent${S.labs===1?'':'s'} · room for ${COOK.max}`;
+    $('sSup').textContent=S.supplies;$('sProd').textContent=fmtQ('shrooms',stored('shrooms'))+' stored';
+    $('btnSteal').disabled=!!S.supRun;$('btnSteal').textContent=S.supRun?(S.supRun.got?'Spawn bags in hand · bring them here':'Spawn run in progress'):'Steal spawn bags from a rival stash · free';$('btnBuy').disabled=S.cash<60;$('btnBuy5').disabled=S.cash<270;
+    $('btnLab').disabled=!(S.labKits>0)||S.labs>=COOK.max;$('btnLab').textContent=S.labs>=COOK.max?'Room is full':S.labKits>0?`Set up tent · ${S.labKits} tent${S.labKits>1?'s':''}`:'Need a grow tent';
+    const rdy=S.cooks.filter(c=>c&&c.g>=1).length;$('btnCollect').disabled=!rdy;$('btnCollect').textContent=rdy?`Pick ${S.cooks.filter(c=>c&&c.g>=1).reduce((a,c)=>a+c.bags,0)} bags`:'Nothing to pick';}}
 const canPot=()=>S.plants.length<S.slots||(S.kits>0&&S.slots<S.space);
 function plantOne(){if(!canPot()||S.seeds<1||S.cash<GROW.soil)return;if(S.plants.length>=S.slots){S.kits--;S.slots++;AU.dirt();log('Set up one of your grow kits.','#6cc28a');}S.seeds--;S.cash-=GROW.soil;
   mgOpen('plant','Plant a seed',r=>{goalHit('plant');S.plants.push({g:0,w:r.w,boost:r.boost,yl:r.yl});log(`Planted. ${r.big} plant${r.boost>1.05?', and it grows faster':''}.`,r.yl===28?'#6cc28a':r.yl===20?'#f2a33a':'#e0574b');},()=>{S.seeds++;S.cash+=GROW.soil;});}
@@ -5639,8 +5640,8 @@ document.getElementById('btnRush').addEventListener('click',()=>goalHit('harvest
 function harvestOne(i){const pl=S.plants[i];if(!pl||pl.g<1)return;
   MG.yl=pl.yl||28;mgOpen('trim','Trim the harvest',r=>{goalHit('harvest');S.plants=S.plants.filter(x=>x!==pl);S.store.weed+=pl.yl||28;S.readyWarn=false;log(`Harvested +${pl.yl||28} g of ${DRUGS.weed.qn[qOf('weed')]}.`,'#6cc28a');});MG.yl=pl.yl||28;}
 function labStart(i){if(S.cooks[i]||S.supplies<1)return;S.supplies--;
-  mgOpen('cook','Cook a batch',r=>{S.cooks[i]={g:0,bags:r.bags};S.cookWarn=false;log(`Batch in the oven: ${r.bags} bags of meth in about ${S.fastCook?'1.5':'3'} hours.`,'#f2a33a');},()=>{S.supplies++;});}
-function labCollect(i){const list=i==null?S.cooks.map((c,k)=>k):[i];let n=0;for(const k of list){const c=S.cooks[k];if(c&&c.g>=1){n+=c.bags;S.cooks[k]=null;}}if(n){S.store.chrome+=n;S.cookWarn=false;AU.ping(P.x,P.y);log(`Collected ${n} bags of meth.`,'#6cc28a');}renderStash();}
+  mgOpen('cook','Start a flush',r=>{S.cooks[i]={g:0,bags:r.bags};S.cookWarn=false;log(`Flush is growing: ${r.bags} bags of shrooms in about ${S.fastCook?'30 minutes':'an hour'}.`,'#f2a33a');},()=>{S.supplies++;});}
+function labCollect(i){const list=i==null?S.cooks.map((c,k)=>k):[i];let n=0;for(const k of list){const c=S.cooks[k];if(c&&c.g>=1){n+=c.bags;S.cooks[k]=null;}}if(n){S.store.shrooms+=n;S.cookWarn=false;AU.ping(P.x,P.y);log(`Picked ${n} bags of shrooms.`,'#6cc28a');}renderStash();}
 document.getElementById('btnWard').onclick=()=>openWard('crib');
 document.getElementById('carryBox').onclick=ev=>{const t=ev.target.closest('button');if(!t||t.disabled)return;if(t.dataset.tk){const q=takeOut(t.dataset.tk,+t.dataset.n);if(q)AU.door();}else if(t.dataset.si){const q=stashIn(t.dataset.si);carryMsg=`Stashed ${fmtQ(t.dataset.si,q)}.`;AU.door();}else if(t.dataset.deal){const nd=dealNeeds();let got=0;for(const p of PRODS)if(nd[p]>inv(p))got+=takeOut(p,nd[p]-inv(p));if(got)AU.door();}renderStash();};
 document.getElementById('btnSeed').onclick=()=>{if(S.cash>=GROW.seed){S.cash-=GROW.seed;S.seeds++;renderStash();}};
@@ -5656,7 +5657,7 @@ document.getElementById('btnGym').onclick=()=>workout();
 document.getElementById('btnSteal').onclick=()=>{startSupply();};
 document.getElementById('btnBuy').onclick=()=>{if(S.cash>=60){S.cash-=60;S.supplies++;renderStash();}};
 document.getElementById('btnBuy5').onclick=()=>{if(S.cash>=270){S.cash-=270;S.supplies+=5;renderStash();}};
-document.getElementById('btnLab').onclick=()=>{if(S.labKits>0&&S.labs<COOK.max){S.labKits--;S.labs++;S.chromeOn=true;AU.door();log(S.labs===1?'Meth lab is set up. Clients who want meth will start asking for it.':'Another lab station is up.','#f2a33a');renderStash();}};
+document.getElementById('btnLab').onclick=()=>{if(S.labKits>0&&S.labs<COOK.max){S.labKits--;S.labs++;S.shroomsOn=true;AU.door();log(S.labs===1?'Grow tent is up. Clients who want shrooms will start asking for them.':'Another grow tent is up.','#f2a33a');renderStash();}};
 document.getElementById('btnCollect').onclick=()=>labCollect(null);
 document.getElementById('btnClose').onclick=closeStash;
 document.getElementById('upgList').onclick=ev=>{const id=ev.target.dataset&&ev.target.dataset.u;if(!id)return;const u=UPG.find(x=>x.id===id);if(u&&!u.has()&&repLvl()>=u.lvl&&(!u.need||u.need())){const pc=payClean(u.cost);if(pc!==true){log(pc,'#f2a33a');return;}u.buy();log(`Bought ${u.name}.`,'#f2a33a');renderStash();phoneDirty=true;}};
@@ -5723,14 +5724,14 @@ function renderPhone(stick){
     h='<h3>Products</h3>'+X;
     const kn=S.roster.filter(c=>c.known);b='';
     for(const pp of PRODS){if(!prodOn(pp))continue;const D=DRUGS[pp],q=qOf(pp),pr=S.prices[pp];const fans=kn.filter(c=>favOf(c)===pp||pp==='weed'),ok=fans.filter(c=>uw(c,pp)>=pr).length;
-      b+=`<div class="crow" style="cursor:default"><span class="top">${D.name} · ${D.qn[q]}<span class="r">${fmtQ(pp,inv(pp))} on hand</span></span><span class="note">Market value $${D.fair[q]} a ${D.per}. ${pp==='weed'?'One plant costs $50 and yields 28 g.':pp==='coke'?'Uncle Rell sells it by the ounce.':'$60 of supplies cooks 3 to 7 bags.'}</span></div>
+      b+=`<div class="crow" style="cursor:default"><span class="top">${D.name} · ${D.qn[q]}<span class="r">${fmtQ(pp,inv(pp))} on hand</span></span><span class="note">Market value $${D.fair[q]} a ${D.per}. ${pp==='weed'?'One plant costs $50 and yields 28 g.':pp==='coke'?'Uncle Rell sells it by the ounce.':'A $60 spawn bag grows 3 to 7 bags.'}</span></div>
       <div class="sec" style="margin-top:6px">Your price per ${D.per}</div><div class="bigprice">$${pr}</div>
       <div class="stp" style="justify-content:center"><button type="button" class="ghost" data-a="price" data-v="${pp}:-5">−5</button><button type="button" class="ghost" data-a="price" data-v="${pp}:-1">−1</button><button type="button" class="ghost" data-a="price" data-v="${pp}:1">+1</button><button type="button" class="ghost" data-a="price" data-v="${pp}:5">+5</button></div>
       <div class="note" style="text-align:center;margin-bottom:10px">${ok} of ${fans.length} clients will pay this without haggling.</div>`;}
     {const L=S.led||{in:0,out:0,sold:0},Y=S.ledPrev;const net=Math.round(L.in-L.out);
       b=`<div class="crow" style="cursor:default"><span class="top">Today's books<span class="r" style="color:${net>=0?'#6cc28a':'#e0574b'}">${net>=0?'+':'−'}$${Math.abs(net).toLocaleString()}</span></span><span class="kv"><span>Made <b>$${Math.round(L.in).toLocaleString()}</b></span><span>Spent <b>$${Math.round(L.out).toLocaleString()}</b></span><span>Weed moved <b>${L.sold} g</b></span>${Y?`<span>Day ${Y.day} <b style="color:${Y.in-Y.out>=0?'#6cc28a':'#e0574b'}">${Y.in-Y.out>=0?'+':'−'}$${Math.abs(Math.round(Y.in-Y.out)).toLocaleString()}</b></span>`:''}</span></div>`+b;}
     b+=`<button type="button" class="${S.listed?'ghost':''}" data-a="list">${S.listed?'Unlist (stop phone orders)':'List for sale'}</button>
-    <div class="note">Clients text orders sized to their budget at your list price. Price above what someone will pay and they ask for less. Addiction and a good relationship raise what they will pay. A client whose standards are above your quality pays less and warms up slower.${S.chromeOn?'':' Meth unlocks later: buy a lab setup at Uncle Rell\'s and set it up at the stash.'}${S.cokeOn?'':' Cocaine unlocks at Rep 2: Uncle Rell has a plug.'}</div>`;
+    <div class="note">Clients text orders sized to their budget at your list price. Price above what someone will pay and they ask for less. Addiction and a good relationship raise what they will pay. A client whose standards are above your quality pays less and warms up slower.${S.shroomsOn?'':' Shrooms unlock later: buy a grow tent at House Depo and set it up at the stash.'}${S.cokeOn?'':' Cocaine unlocks at Rep 2: Uncle Rell has a plug.'}</div>`;
   }
   if(PH.app==='jobs'){h='<h3>Jobs</h3>'+X;b=jobsHtml();}
   head.innerHTML=h;body.innerHTML=b;
@@ -5914,7 +5915,7 @@ function mgOpen(type,title,onDone,onCancel){Object.assign(MG,{on:true,type,phase
 function mgClose(cancelled){MG.on=false;mgEl.hidden=true;if(cancelled&&MG.cancel)MG.cancel();renderStash();}
 function mgHint(){const tap=coarse?'Hold the screen':'Hold the mouse or Space',clk=coarse?'Tap':'Click';
   const H={plant:[`${tap} to pour soil. Let go inside the band.`,`${clk} when the seed is over the hole.`,`${tap} to water. Let go inside the band.`],
-    trim:[`${clk} each bud to snip it off.`],cook:[`${tap} to raise the heat. Keep the needle in the green.`,`${clk} the cracks to break up the batch.`]};
+    trim:[`${clk} each bud to snip it off.`],cook:[`${tap} to mist the tent. Keep the humidity in the green.`,`${clk} each mushroom to pick it.`]};
   $('mgS').textContent=(H[MG.type]||[''])[Math.min(MG.phase,(H[MG.type]||['']).length-1)];}
 function mgPos(ev){const r=mgC.getBoundingClientRect();return [(ev.clientX-r.left)*mgC.width/r.width,(ev.clientY-r.top)*mgC.height/r.height];}
 mgC.addEventListener('pointerdown',ev=>{ev.preventDefault();MG.hold=true;mgClick(...mgPos(ev));});
@@ -5929,7 +5930,7 @@ function mgClick(x,y){
   if(MG.phase===99)return;
   if(MG.type==='plant'&&MG.phase===1&&!MG.dropped){MG.dropped=true;MG.dropX=MG.seedX;const s=clamp(1-Math.abs(MG.seedX-210)/70,0,1);MG.score.push(s);MG.pt=0;AU.dirt();}
   if(MG.type==='trim'&&x!=null){for(const b of MG.buds){if(b.cut)continue;if(Math.hypot(b.x-x,b.y-y)<20){b.cut=true;AU.rustle();for(let k=0;k<6;k++)MG.parts.push({x:b.x,y:b.y,vx:(R()-.5)*160,vy:-R()*120,t:.6,c:'#5fbf5a'});break;}}}
-  if(MG.type==='cook'&&MG.phase===1&&x!=null){for(const c of MG.cracks){if(c.hit)continue;if(Math.hypot(c.x-x,c.y-y)<22){c.hit=true;AU.ping(P.x,P.y);for(let k=0;k<7;k++)MG.parts.push({x:c.x,y:c.y,vx:(R()-.5)*200,vy:(R()-.5)*200,t:.5,c:'#cfe6f2'});break;}}}
+  if(MG.type==='cook'&&MG.phase===1&&x!=null){for(const c of MG.cracks){if(c.hit)continue;if(Math.hypot(c.x-x,c.y-y)<22){c.hit=true;AU.ping(P.x,P.y);for(let k=0;k<7;k++)MG.parts.push({x:c.x,y:c.y,vx:(R()-.5)*200,vy:(R()-.5)*200,t:.5,c:'#b0784a'});break;}}}
 }
 function mgLoop(now){if(!MG.on)return;const dt=Math.min(0.05,(now-MG.last)/1000);MG.last=now;MG.t+=dt;MG.pt+=dt;
   const g=mgX,W=mgC.width,H=mgC.height;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,W,H);g.fillStyle='#101114';g.fillRect(0,0,W,H);
@@ -5974,20 +5975,21 @@ function mgCook(g,dt,W,H){const cx=W/2;
     g.strokeStyle='#e0574b';g.beginPath();g.arc(ax,ay,R0,Math.PI+Math.PI*0.82,0);g.stroke();
     g.strokeStyle='#6cc28a';g.beginPath();g.arc(ax,ay,R0,Math.PI+Math.PI*(c-w),Math.PI+Math.PI*(c+w));g.stroke();
     const na=Math.PI+Math.PI*MG.v;g.strokeStyle='#f1efe9';g.lineWidth=4;g.beginPath();g.moveTo(ax,ay);g.lineTo(ax+Math.cos(na)*(R0+6),ay+Math.sin(na)*(R0+6));g.stroke();g.fillStyle='#f1efe9';g.beginPath();g.arc(ax,ay,8,0,7);g.fill();
-    const inz=Math.abs(MG.v-c)<w;g.fillStyle=inz?'#6cc28a':'#8a8f98';g.font=`900 20px ${FD}`;g.fillText(inz?'IN THE ZONE':MG.v>c?'TOO HOT':'TOO COLD',cx,ay-40);
+    const inz=Math.abs(MG.v-c)<w;g.fillStyle=inz?'#6cc28a':'#8a8f98';g.font=`900 20px ${FD}`;g.fillText(inz?'IN THE ZONE':MG.v>c?'TOO WET':'TOO DRY',cx,ay-40);
     g.fillStyle='rgba(255,255,255,.08)';g.fillRect(40,20,W-80,8);g.fillStyle='#f2a33a';g.fillRect(40,20,(W-80)*Math.min(1,Math.max(0,MG.pt-0.8)/D),8);
-    if(MG.hold)for(let k=0;k<2;k++)MG.parts.push({x:ax+(R()-.5)*40,y:ay+20,vx:(R()-.5)*30,vy:-60,t:.4,c:'#f28a3a'});
+    if(MG.hold)for(let k=0;k<2;k++)MG.parts.push({x:ax+(R()-.5)*60,y:ay-10,vx:(R()-.5)*50,vy:-50,t:.5,c:'#cfe6f2'});
     if(MG.pt>0.8+D){const s=clamp(MG.inZone/(D*0.8),0,1);MG.score.push(s);MG.flash=grade(s);mgNext();MG.cracks=[];for(let k=0;k<6;k++)MG.cracks.push({x:cx-120+R()*240,y:90+R()*130,hit:false});}}
-  else if(MG.phase===1){const D=4.5;g.fillStyle='#b9d4e0';g.fillRect(cx-150,70,300,170);g.fillStyle='rgba(255,255,255,.25)';for(let k=0;k<14;k++)g.fillRect(cx-150+((k*53)%290),70+((k*37)%160),18,6);
-    g.strokeStyle='#7a8c96';g.lineWidth=2;g.strokeRect(cx-150,70,300,170);
-    for(const c of MG.cracks){if(c.hit){g.strokeStyle='#4d5c63';g.lineWidth=2;for(let k=0;k<4;k++){g.beginPath();g.moveTo(c.x,c.y);g.lineTo(c.x+Math.cos(k*1.7)*24,c.y+Math.sin(k*1.7)*24);g.stroke();}continue;}
-      const p=0.6+0.4*Math.sin(MG.t*8+c.x);g.strokeStyle=`rgba(242,163,58,${p})`;g.lineWidth=3;g.beginPath();g.arc(c.x,c.y,14,0,7);g.stroke();}
+  else if(MG.phase===1){const D=4.5;g.fillStyle='#5b4632';g.fillRect(cx-150,70,300,170);g.fillStyle='rgba(240,236,226,.55)';for(let k=0;k<22;k++){g.beginPath();g.ellipse(cx-140+((k*53)%280),80+((k*37)%150),14,5,(k%5)*0.6,0,7);g.fill();}
+    g.strokeStyle='#3a2c20';g.lineWidth=3;g.strokeRect(cx-150,70,300,170);
+    for(const c of MG.cracks){if(c.hit){g.fillStyle='#e9e1d0';g.fillRect(c.x-3,c.y+4,6,4);continue;}
+      g.fillStyle='#e9e1d0';g.fillRect(c.x-3,c.y-2,6,14);g.fillStyle='#b0784a';g.beginPath();g.ellipse(c.x,c.y-3,13,8,0,Math.PI,0);g.fill();g.fillStyle='#8a5a36';g.fillRect(c.x-13,c.y-3,26,2);
+      const p=0.5+0.5*Math.sin(MG.t*8+c.x);g.strokeStyle=`rgba(242,163,58,${p})`;g.lineWidth=2;g.beginPath();g.arc(c.x,c.y,17,0,7);g.stroke();}
     g.fillStyle='rgba(255,255,255,.08)';g.fillRect(40,20,W-80,8);g.fillStyle='#e0574b';g.fillRect(40,20,(W-80)*(1-Math.min(1,MG.pt/D)),8);
     const hits=MG.cracks.filter(c=>c.hit).length;
     if(hits===MG.cracks.length||MG.pt>D){const s2=hits/MG.cracks.length,s=MG.score[0]*0.7+s2*0.3;const bags=3+Math.round(s*4);const [t,col]=grade(s);
-      mgFinish({big:`${t} batch`,sub:`${bags} bags going in the oven.`,col,bags});}}
+      mgFinish({big:`${t} flush`,sub:`${bags} bags growing in the tent.`,col,bags});}}
   if(MG.flash&&MG.pt<1){g.fillStyle=MG.flash[1];g.font=`900 22px ${FD}`;g.fillText(MG.flash[0],W-70,46);}
-  const lab=['1 · Heat','2 · Break it up'];g.font=`700 13px ${FB}`;lab.forEach((l,i)=>{g.fillStyle=i===Math.min(1,MG.phase)?'#f2a33a':'#5a5d63';g.textAlign='left';g.fillText(l,12+i*80,46);});g.textAlign='center';}
+  const lab=['1 · Mist','2 · Pick'];g.font=`700 13px ${FB}`;lab.forEach((l,i)=>{g.fillStyle=i===Math.min(1,MG.phase)?'#f2a33a':'#5a5d63';g.textAlign='left';g.fillText(l,12+i*80,46);});g.textAlign='center';}
 
 // ================= crew identity + wardrobe (Saints Row style) =================
 const CREW_COLS=['#4caf50','#e0393e','#3f6fe0','#8e5bd9','#39b8c9','#e3b341','#f28a3a','#e05fa8','#a6d64b','#5ec4f2','#a8323e','#a0703c','#e9e6df','#6b6f78'];
@@ -6662,7 +6664,7 @@ function rapport(name,n){const D=S.dancers[name]||(S.dancers[name]={spent:0,intr
   return null;}
 function rain(n,x){for(let k=0;k<n;k++)CLUB.bills.push({x:x+(R()-.5)*90,y:-10-R()*80,vx:(R()-.5)*30,vy:60+R()*60,r:R()*6,vr:(R()-.5)*6,t:3+R()});}
 function clubPitch(id){const C=S.club,c=CL(id);if(C.pitched.includes(id))return;const p=sampleP(c);
-  if(inv(p)<DRUGS[p].sample){clubSay(p==='weed'?'You need at least 1 g on you to hand out a sample. Grab some from the stash.':'You need a bag of meth on you.','#f2a33a');return;}
+  if(inv(p)<DRUGS[p].sample){clubSay(p==='weed'?'You need at least 1 g on you to hand out a sample. Grab some from the stash.':'You need a bag of shrooms on you.','#f2a33a');return;}
   S.inv[p]-=DRUGS[p].sample;C.pitched.push(id);
   if(id===C.vice){C.viceHit=true;clubSay(`${c.name} took it, smiled, and wrote something down. Something feels off.`,'#f2a33a');renderClub();return;}
   const ch=clamp(pitchChance(c,p)+0.1+(C.vip?0.15:0),0.1,0.95);
@@ -6677,7 +6679,7 @@ function renderClub(){const C=clubState();let b='';
   b+=`<div class="sec" style="margin-top:12px">Patrons · hand out free samples</div>`;
   if(!C.pats.length)b+='<div class="note">Dead in here right now. Come back at night.</div>';
   for(const id of C.pats){const c=CL(id),p=sampleP(c),done=C.pitched.includes(id),ch=Math.round(clamp(pitchChance(c,p)+0.1+(C.vip?0.15:0),0.1,0.95)*100);
-    b+=`<div class="crow2"><div><b>${esc(c.name)}${c.known?' · client':''}</b><span>From ${HN[c.home]} · wants ${p==='weed'?DRUGS.weed.qn[Math.max(1,c.std)]:'meth'} · budget ~$${Math.round(budgetNow(c))}</span></div><div class="bt"><button type="button" ${done||c.known?'disabled class="ghost"':''} data-cl="pitch" data-n="${id}">${c.known?'Your client':done?'Already tried':`Free sample · ${ch}%`}</button></div></div>`;}
+    b+=`<div class="crow2"><div><b>${esc(c.name)}${c.known?' · client':''}</b><span>From ${HN[c.home]} · wants ${p==='weed'?DRUGS.weed.qn[Math.max(1,c.std)]:'shrooms'} · budget ~$${Math.round(budgetNow(c))}</span></div><div class="bt"><button type="button" ${done||c.known?'disabled class="ghost"':''} data-cl="pitch" data-n="${id}">${c.known?'Your client':done?'Already tried':`Free sample · ${ch}%`}</button></div></div>`;}
   b+=`<div class="note" style="margin-top:8px">Carrying ${lossTxt(Object.fromEntries(PRODS.map(p=>[p,inv(p)])))}. Spend $300 on one dancer and she will introduce you to a big spender.</div>`;
   $('clBody').innerHTML=b+clubOwnHtml();$('clSub').textContent=`XXX · ${isNight()?'Packed tonight':'Day shift, half empty'} · Cash $${S.cash.toLocaleString()}`;}
 document.getElementById('club').addEventListener('click',ev=>{const t=ev.target.closest('[data-cl]');if(!t||t.disabled)return;const a=t.dataset.cl,n=t.dataset.n;const C=S.club;const i=C.ds.indexOf(n);const x=i<0?280:110+i*170;
@@ -7064,7 +7066,7 @@ function update(dt){
   const prevDay=S.day;
   S.clock+=DEV.on.freeze?0:dt*CLOCK_RATE;if(S.clock>=24*60){S.clock-=24*60;S.day++;}LAWT+=dt;tShotG-=dt;waypointTick();goalsTick(dt);trapTick();weatherTick();wordTick();magicTick();profTick();trackerTick(dt);sceneTick();launderTick();jobTick();bizTick(dt);heistTick(dt);bodyTick();cashTick(dt);campTick(dt);if(running)towTick(dt);crewTick();if(running){packTick(dt);mcParkTick(dt);}
   if(S.day!==prevDay){dayRecap(prevDay);for(const g of rivalGangs())addBeef(g,-0.6);for(const c of S.roster)if(c.known&&nowM()-c.lastDeal>1440)c.add=Math.max(0,c.add-0.07);}
-  if(S.cooks)for(const c of S.cooks){if(!c||c.g>=1)continue;c.g=Math.min(1,c.g+dt*CLOCK_RATE/COOK.time*(S.fastCook?2:1));if(c.g>=1&&!S.cookWarn){S.cookWarn=true;log('A meth batch is done. Collect it at the stash.','#f2a33a');}}
+  if(S.cooks)for(const c of S.cooks){if(!c||c.g>=1)continue;c.g=Math.min(1,c.g+dt*CLOCK_RATE/COOK.time*(S.fastCook?2:1));if(c.g>=1&&!S.cookWarn){S.cookWarn=true;log('A shroom flush is ready. Pick it at the stash.','#f2a33a');}}
   {const gm=dt*CLOCK_RATE*bonusMul('grow');for(const p of S.plants){if(S.drip)p.w=1;if(p.g>=1)continue;if(p.w>0){p.g=Math.min(1,p.g+gm/GROW.time*(p.boost||1));p.w=Math.max(0,p.w-gm/GROW.dry);}}
    if(S.plants.some(p=>p.g>=1)&&!S.readyWarn){S.readyWarn=true;log('Your plants are ready. Harvest them at the stash.','#6cc28a');}
    if(!S.drip&&S.plants.some(p=>p.g<1&&p.w<=0)&&!S.dryWarn){S.dryWarn=true;log('Your plants are thirsty. Water them at the stash.','#f2a33a');}}
@@ -7918,7 +7920,7 @@ function drawMini(){const k=mini.width/(W*T);mctx.setTransform(1,0,0,1,0,0);mctx
 // ================= HUD =================
 const $=id=>document.getElementById(id);
 function updHud(){document.body.classList.toggle('crouch',!!P.crouch);updStreet();
-  $('hCrew').textContent=S.crew;$('hCash').textContent='$'+S.cash.toLocaleString();{const d=Math.round(dirtyNow());$('hDirty').textContent='$'+d.toLocaleString();$('hDirty').hidden=$('hDirtyL').hidden=!d;}$('hProd').textContent=PRODS.filter(p=>p==='weed'||prodOn(p)||inv(p)>0).map(p=>fmtQ(p,inv(p))+(p==='weed'?'':' '+DRUGS[p].slang)).join(' · ')+` · ${Math.round(load())}/${bagCap()}`;{const rd=S.plants.filter(p=>p.g>=1).length,dr=S.plants.some(p=>p.g<1&&p.w<=0);$('hSup').textContent=`${S.plants.length}/${S.slots}`+(rd?` · ${rd} ready`:dr?' · thirsty':'')+(S.cooks&&S.cooks.some(c=>c&&c.g<1)?` · cooking`:S.cooks&&S.cooks.some(c=>c&&c.g>=1)?' · meth ready':'');}
+  $('hCrew').textContent=S.crew;$('hCash').textContent='$'+S.cash.toLocaleString();{const d=Math.round(dirtyNow());$('hDirty').textContent='$'+d.toLocaleString();$('hDirty').hidden=$('hDirtyL').hidden=!d;}$('hProd').textContent=PRODS.filter(p=>p==='weed'||prodOn(p)||inv(p)>0).map(p=>fmtQ(p,inv(p))+(p==='weed'?'':' '+DRUGS[p].slang)).join(' · ')+` · ${Math.round(load())}/${bagCap()}`;{const rd=S.plants.filter(p=>p.g>=1).length,dr=S.plants.some(p=>p.g<1&&p.w<=0);$('hSup').textContent=`${S.plants.length}/${S.slots}`+(rd?` · ${rd} ready`:dr?' · thirsty':'')+(S.cooks&&S.cooks.some(c=>c&&c.g<1)?` · shrooms growing`:S.cooks&&S.cooks.some(c=>c&&c.g>=1)?' · shrooms ready':'');}
   $('hTurf').textContent=S.hoods.filter(h=>h.owner==='crew').length+' / '+NH;$('hCli').textContent=knownCount();
   {const t=profTier();$('hProf').textContent=t[1];$('hProf').style.color=t[2];}{const l=repLvl();$('hRep').textContent=REPN[l];$('hRepBar').style.width=(l>=REPX.length-1?100:(S.rep-REPX[l])/(REPX[l+1]-REPX[l])*100)+'%';}
   $('hHp').style.width=Math.min(100,Math.max(0,P.hp/maxHP()*100))+'%';$('hHp').style.background=P.hp<maxHP()*0.35?'#e0574b':'';$('hSt').style.width=P.stam+'%';
@@ -7934,7 +7936,7 @@ function updHud(){document.body.classList.toggle('crouch',!!P.crouch);updStreet(
     if(P.car){if(inGarage(P.car.x,P.car.y))txt=`<kbd>${kE}</kbd>Open the stash`;else if(P.car.hp<60&&S.kitsR>0)txt=`<kbd>${kX}</kbd>Use a repair kit · ${S.kitsR} left`;if(nearestStore(130,'kustom'))txt=`<kbd>${kE}</kbd>Mod the ${esc(P.car.model)} at Junction Kustoms`;else if(nearestStore(130,'chop'))txt=P.car.owned?"Dequindre won't chop your own ride":chopWait()>0?'Dequindre already bought one today':`<kbd>${kE}</kbd>Sell the ${esc(P.car.model)} · $${fenceVal(P.car)}`;}
     else if(nearTrunk()&&!nearestStore(62))txt=`<kbd>${kE}</kbd>Change outfit from the trunk`;
     else if(nearBank())txt=`<kbd>${kE}</kbd>Crack the vault quietly · <kbd>${kH}</kbd>Blow it loud`;
-    else if(nearSupply())txt=`<kbd>${kE}</kbd>Take the lab supplies`;
+    else if(nearSupply())txt=`<kbd>${kE}</kbd>Take the spawn bags`;
     else if(canCuff())txt=`<kbd>${kE}</kbd>Cuff ${esc(canCuff().jobName)}`;
     else if(canRob())txt=`<kbd>${kE}</kbd>Run their pockets${VOICE.on?' · or say it':''}`;
     else if(!coarse&&stickTarget()&&!cw().melee)txt=`<kbd>${kH}</kbd>${STICK[stickNext()].cmd}${VOICE.on?' · or say it':''}`;
@@ -8073,21 +8075,25 @@ $('paFile').onclick=()=>{save();exportSlot(S.slot||1);};
 $('paSave').onclick=()=>{const ok=save();$('paSave').textContent=ok?'Saved ✓':'Could not save';};
 $('paQuit').onclick=()=>{save();running=false;location.reload();};
 $('menuBtn').onclick=()=>{$('menuBtn').blur();openPause();};
-function defaults(){return {crew:'Woodward Boys',cash:200,supplies:0,kitsR:1,radio:1,store:{weed:0,chrome:0,coke:0},bag:'',followers:0,newGangs:[],goneGangs:[],war:null,garage:[],crewStance:'defend',closet:['chain'],outfit:{head:'band',bandCol:'crew'},crewFit:{},crewColor:'#4caf50',colV2:1,crewTag:'',led:{in:0,out:0,sold:0},ledPrev:null,inv:{weed:7,chrome:0,coke:0},q:{weed:1,chrome:1,coke:2},prices:{weed:10,chrome:40,coke:80},seeds:1,kits:0,slots:1,space:4,plants:[{g:.62,w:.55,yl:20}],drip:false,chromeOn:false,labs:0,labKits:0,cooks:[],fastCook:false,lawyer:false,cookQ:0,cookP:0,clock:18*60,day:1,won:false,hoods:freshHoods(),rep:0,
+function methToShrooms(s){const mv=(o,add)=>{if(!o||!('chrome' in o))return;o.shrooms=add?(o.shrooms||0)+(o.chrome||0):o.chrome;delete o.chrome;};
+  for(const k of ['inv','store','ware'])mv(s[k],true);for(const k of ['q','prices'])mv(s[k],false);for(const t of Object.values(s.traps||{}))mv(t.stock,true);
+  if('chromeOn' in s){s.shroomsOn=s.chromeOn;delete s.chromeOn;}const fix=p=>p==='chrome'?'shrooms':p;
+  for(const o of Object.values(s.offers||{}))o.p=fix(o.p);for(const d of s.deals||[])d.p=fix(d.p);for(const c of s.roster||[]){c.fav=fix(c.fav);if(c.likes)c.likes=c.likes.map(fix);}}
+function defaults(){return {crew:'Woodward Boys',cash:200,supplies:0,kitsR:1,radio:1,store:{weed:0,shrooms:0,coke:0},bag:'',followers:0,newGangs:[],goneGangs:[],war:null,garage:[],crewStance:'defend',closet:['chain'],outfit:{head:'band',bandCol:'crew'},crewFit:{},crewColor:'#4caf50',colV2:1,crewTag:'',led:{in:0,out:0,sold:0},ledPrev:null,inv:{weed:7,shrooms:0,coke:0},q:{weed:1,shrooms:1,coke:2},prices:{weed:10,shrooms:40,coke:80},seeds:1,kits:0,slots:1,space:4,plants:[{g:.62,w:.55,yl:20}],drip:false,shroomsOn:false,labs:0,labKits:0,cooks:[],fastCook:false,lawyer:false,cookQ:0,cookP:0,clock:18*60,day:1,won:false,hoods:freshHoods(),rep:0,
   weapons:['fists'],cur:'fists',ammo:{'9mm':0,shells:0,'7.62':0},clip:{glock:0,sawed:0,draco:0},extMag:false,armor:0,job:null,price:20,listed:true,offers:{},deals:[],track:null,roster:null,vipHint:false};}
 function begin(fromSave){gcHit(fromSave?'/continue':'/new-game',fromSave?'Continue':'New game',true);
   for(const k in S)delete S[k];
   Object.assign(S,defaults());
-  if(fromSave){Object.assign(S,fromSave.S);if(!fromSave.S.inv){S.inv={weed:0,chrome:fromSave.S.product||0};S.q={weed:1,chrome:fromSave.S.quality||1};S.prices={weed:10,chrome:fromSave.S.price||40};S.chromeOn=true;S.seeds=2;S.slots=1;S.space=4;S.plants=[];S.supplies=fromSave.S.supplies||0;for(const c of S.roster)if(!c.fav){c.fav='chrome';c.likes=['weed','chrome'];}}
-    if(S.cookQ>0){S.inv.chrome+=S.cookQ*6;S.cookQ=0;}if(!S.store)S.store={weed:0,chrome:0};if(S.chromeOn&&!S.labs)S.labs=1;S.cooks=S.cooks||[];S.labKits=S.labKits||0;
-    S.space=Math.max(S.space||4,S.slots||1,4);for(const o of Object.values(S.offers||{}))if(!o.p)o.p=S.chromeOn?'chrome':'weed';for(const d of S.deals||[])if(!d.p)d.p=S.chromeOn?'chrome':'weed';S.ammo=Object.assign(defaults().ammo,fromSave.S.ammo||{});S.clip=Object.assign(defaults().clip,fromSave.S.clip||{});if(!S.weapons.includes(S.cur))S.cur='fists';S.job=null;dealSeq=1+Math.max(0,...S.deals.map(d=>d.id));}
+  if(fromSave){Object.assign(S,fromSave.S);methToShrooms(S);if(!fromSave.S.inv){S.inv={weed:0,shrooms:fromSave.S.product||0};S.q={weed:1,shrooms:fromSave.S.quality||1};S.prices={weed:10,shrooms:fromSave.S.price||40};S.shroomsOn=true;S.seeds=2;S.slots=1;S.space=4;S.plants=[];S.supplies=fromSave.S.supplies||0;for(const c of S.roster)if(!c.fav){c.fav='shrooms';c.likes=['weed','shrooms'];}}
+    if(S.cookQ>0){S.inv.shrooms+=S.cookQ*6;S.cookQ=0;}if(!S.store)S.store={weed:0,shrooms:0};if(S.shroomsOn&&!S.labs)S.labs=1;S.cooks=S.cooks||[];S.labKits=S.labKits||0;
+    S.space=Math.max(S.space||4,S.slots||1,4);for(const o of Object.values(S.offers||{}))if(!o.p)o.p=S.shroomsOn?'shrooms':'weed';for(const d of S.deals||[])if(!d.p)d.p=S.shroomsOn?'shrooms':'weed';S.ammo=Object.assign(defaults().ammo,fromSave.S.ammo||{});S.clip=Object.assign(defaults().clip,fromSave.S.clip||{});if(!S.weapons.includes(S.cur))S.cur='fists';S.job=null;dealSeq=1+Math.max(0,...S.deals.map(d=>d.id));}
   else{S.crew=$('crewName').value.trim().slice(0,20)||'Woodward Boys';S.roster=genRoster();S.gangN=+$('gangN').value||4;}
   if(fromSave&&!S.goalsDone&&S.roster.filter(c=>c.known).length>=3)S.goalsOff=true;
   {const FIX={'Fjord F-160':'Horde F-160','Fjord Crown Victory':'Horde Crown Victory','Dodge Viper':'Dodgy Venom','Chevy Impala':'Chevalier Imperial','Ford F-150':'Horde F-160','Dodge Charger':'Dodgy Charjer','Cadillac Escalade':'Cadavac Escapade','Jeep Grand Cherokee':'Jeap Grand Chieftain','Chrysler 300':'Chryslur 3000','Buick LeSabre':'Buik LeSaber','Ford Crown Vic':'Horde Crown Victory','Dodge Challenger':'Dodgy Challenjer','Chevy Malibu':'Chevalier Maliboo','Lincoln Town Car':'Lincon Towne Car','Ram 1500':'Ramm 1600','Kawasucky Ninja':'Kawasucky Shinobi','Yamahaha R1':'Yamahaha R-Won','Hardly Davidson Fat Boy':'Hardly Davidsun Big Boy','Indigo Chief':'Indigo Big Chief','Hardly Davidson Road King':'Hardly Davidsun Road Queen'};
     for(const g of S.garage||[])if(FIX[g.model])g.model=FIX[g.model];if(S.jobs&&S.jobs.export)S.jobs.export=S.jobs.export.map(m=>FIX[m]||m);if(S.heist&&FIX[S.heist.getaway])S.heist.getaway=FIX[S.heist.getaway];}
   {const D=defaults();for(const p of PRODS){S.inv[p]=inv(p);S.store[p]=stored(p);S.q[p]=S.q[p]||D.q[p];S.prices[p]=S.prices[p]||D.prices[p];}}
   if(!S.colV2){if(!S.crewColor||S.crewColor==='#39b8c9')S.crewColor='#4caf50';S.colV2=1;}if(!fromSave)S.crewColor=startCol;else if(menuPicked&&(fromSave.S.closet||[]).includes('crewCol:'+startCol))S.crewColor=startCol;
-  GANG.crew.name=S.crew;S.closet=S.closet||['chain'];wardMigrate();if(!S.store)S.store={weed:0,chrome:0};if(S.bag==null)S.bag='';for(const g in GANG)if(!['crew','kings','ghosts'].includes(g))delete GANG[g];restoreGangs();ensureMCs();if(!fromSave)seedGangs();S.war=null;if(!S.garage)S.garage=[];S.outfit=S.outfit||{};S.crewFit=S.crewFit||{};applyCrew();msgs={};unread={};
+  GANG.crew.name=S.crew;S.closet=S.closet||['chain'];wardMigrate();if(!S.store)S.store={weed:0,shrooms:0};if(S.bag==null)S.bag='';for(const g in GANG)if(!['crew','kings','ghosts'].includes(g))delete GANG[g];restoreGangs();ensureMCs();if(!fromSave)seedGangs();S.war=null;if(!S.garage)S.garage=[];S.outfit=S.outfit||{};S.crewFit=S.crewFit||{};applyCrew();msgs={};unread={};
   P.x=STASH.x;P.y=STASH.y;P.hp=maxHP();P.heat=0;P.hood=-1;P.car=null;P.lastCar=null;rob=null;logs=[];fx=[];
   STORES.forEach(s=>s.cd=0);
   S.slot=pickSlot;populate();$('start').hidden=true;$('phoneBtn').hidden=false;$('menuBtn').hidden=false;$('zoomCtl').hidden=false;running=true;paused=false;save();
@@ -8206,7 +8212,7 @@ function drawMapLabels(g,k,ox,oy,lw,lh){ox=ox||0;oy=oy||0;g.save();g.translate(-
   txt('DETROIT RIVER',30*T*k,84.5*T*k,'rgba(140,180,220,.8)',`800 14px ${FB}`,'left');txt('BELLE ISLE',118*T*k,88.5*T*k,'rgba(160,220,150,.9)',`800 12px ${FB}`,'center');
   g.restore();return pins;}
 // ================= trap houses =================
-const TRAP={cap:120,rate:{weed:3,chrome:1,coke:1},cut:0.85,cashCap:6000};
+const TRAP={cap:120,rate:{weed:3,shrooms:1,coke:1},cut:0.85,cashCap:6000};
 const TRAPS=(()=>{const out=[];
   for(let h=0;h<NH;h++){const pool=buildings.filter(b=>b.hood===h&&b.kind==='house').sort((a,b)=>(b.cond||0)-(a.cond||0)||a.s-b.s);
     const alt=buildings.filter(b=>b.hood===h&&(b.kind==='walkup'||b.kind==='b')).sort((a,b)=>a.s-b.s);const b=pool[0]||alt[0];if(!b)continue;
@@ -8413,7 +8419,7 @@ const CHEATS=[
   ['boom','BOOM','Blow up cars nearby',()=>{let n=0;for(const c of cars){if(c.mode==='player'||c.mode==='wreck'||c.dead||dist(c,P)>600)continue;c.hp=0;c.mode='wreck';c.t=60;c.burn=6;c.v=0;fx.push({k:'boom',x:c.x,y:c.y,t:.7});n++;}if(n){AU.explode(P.x,P.y);shake=8;}return `${n} cars went up.`;}],
   ['homies','HOMIES','Two homies roll with you',()=>{S.followers=2;ensureFollowers();return 'Your homies pulled up.';}],
   ['grow','GREENTHUMB','All plants ready',()=>{for(const p of S.plants){p.g=1;p.w=1;}return 'Every plant is ready to harvest.';}],
-  ['plug','RESTOCK','Stash full of product',()=>{S.store.weed+=112;S.store.chrome+=40;S.store.coke=stored('coke')+56;if(!S.cokeOn)cokeUnlock();return 'Stash restocked.';}],
+  ['plug','RESTOCK','Stash full of product',()=>{S.store.weed+=112;S.store.shrooms+=40;S.store.coke=stored('coke')+56;if(!S.cokeOn)cokeUnlock();return 'Stash restocked.';}],
   ['rep','MOTORCITY','Max rep and unlocks',()=>{S.rep=Math.max(S.rep,99999);S.space=Math.max(S.space,8);S.kits=(S.kits||0)+4;S.labKits=(S.labKits||0)+1;return 'Max rep. Everything unlocked.';}],
   ['freeze','STOPCLOCK','Freeze time','freeze'],
   ['time','TIMEWARP','Skip 6 hours',()=>{S.clock+=360;if(S.clock>=1440){S.clock-=1440;S.day++;}return 'Six hours later.';}],
@@ -8472,12 +8478,12 @@ function jobsHtml(){const J=jobsDay(),bn=bonusNow(),gvH=HN[gunVan.hood];
 function jobAction(a,v){if(a==='job')jobTake(v);else if(a==='hgear'){const h=heist();if(!h.gear&&S.cash>=HEIST.gear){S.cash-=HEIST.gear;h.gear=true;AU.cash();log('Drill, bags and masks. Gear is ready.','#ff4fd8');}}
   else if(a==='jobtrack'){const t=v==='gunvan'?gunVan:v==='bank'?BANK:S.jobs&&S.jobs[v];if(t){S.wp={x:t.cap?HQ.x:t.x,y:t.cap?HQ.y:t.y};log('Waypoint set.','#ff4fd8');}}}
 // ================= own the club (takings + warehouse), supply runs, sell missions =================
-const BIZ={clubCost:40000,clubRep:3,take:[600,1400],cap:{weed:200,chrome:60,coke:80},move:{weed:4,chrome:1,coke:1},sellTime:240,supply:5};
+const BIZ={clubCost:40000,clubRep:3,take:[600,1400],cap:{weed:200,shrooms:60,coke:80},move:{weed:4,shrooms:1,coke:1},sellTime:240,supply:5};
 FRONTS.push({id:'club',name:'Motor City Titties',cost:BIZ.clubCost,rate:400,fee:0.1,desc:'Your club. Washes $400 an hour for a 10% cut.',club:true});
 const clubOwned=()=>!!(S.fronts||{}).club;
 let bizHr=-1;
 function bizTick(dt){if(!running)return;const hr=S.day*24+Math.floor(S.clock/60);
-  if(hr!==bizHr){const first=bizHr<0;bizHr=hr;if(!first&&clubOwned()){const W=S.ware||(S.ware={weed:0,chrome:0,coke:0});
+  if(hr!==bizHr){const first=bizHr<0;bizHr=hr;if(!first&&clubOwned()){const W=S.ware||(S.ware={weed:0,shrooms:0,coke:0});
       for(const p of PRODS){const n=Math.min(BIZ.move[p]||1,stored(p),(BIZ.cap[p]||60)-(W[p]||0));if(n>0){S.store[p]-=n;W[p]=(W[p]||0)+n;}}
       if(S.clock>=6*60&&S.clock<7*60&&S.clubPaid!==S.day){S.clubPaid=S.day;const t=Math.round((BIZ.take[0]+R()*(BIZ.take[1]-BIZ.take[0]))*(1+repLvl()*0.1)/10)*10;S.cash+=t;log(`Last night's takings at the club: $${t}, clean.`,'#ff7fc8');}}}
   sellTick(dt);supplyTick();}
@@ -8486,25 +8492,25 @@ const wareVal=()=>{const W=S.ware||{};return PRODS.reduce((a,p)=>a+(W[p]||0)*S.p
 let SELL=null;
 function startSell(){const v=wareVal();if(SELL||v<=0||!CLUB.st)return;closeClub();let drop=null;for(let k=0;k<20&&!drop;k++){const s=spotNear(P.x,P.y,1600,2600,true);if(s)drop=s;}if(!drop)drop=spotNear(P.x,P.y,900,1600,true);
   const s=spotNear(CLUB.st.x,CLUB.st.y,40,200,true)||{x:CLUB.st.x+60,y:CLUB.st.y};const van=baseCar({x:s.x,y:s.y,a:0,mode:'parked',type:'truck',model:'Club Van',value:0,owned:true,color:'#3a1530',sellVan:true});cars.push(van);
-  SELL={stock:Object.assign({},S.ware),val:Math.round(v),drop,van,t:BIZ.sellTime,hit:0};S.ware={weed:0,chrome:0,coke:0};S.wp={x:drop.x,y:drop.y};
+  SELL={stock:Object.assign({},S.ware),val:Math.round(v),drop,van,t:BIZ.sellTime,hit:0};S.ware={weed:0,shrooms:0,coke:0};S.wp={x:drop.x,y:drop.y};
   log(`Sell run: get the club van to the buyer in ${HN[hoodOf(drop.x,drop.y)]} in ${BIZ.sellTime/60} minutes. $${SELL.val.toLocaleString()} if it gets there. Rivals know it's coming.`,'#ff4fd8');}
 function sellTick(dt){if(!SELL)return;const v=SELL.van;SELL.t-=dt;
   if(v.dead||v.hp<=0||SELL.t<=0){log(v.hp<=0||v.dead?'The club van got wrecked. The product is gone.':'Took too long. The buyer walked.','#e0574b');if(!v.dead)v.sellVan=false;SELL=null;return;}
   if(P.car===v){SELL.hit-=dt;if(SELL.hit<=0){SELL.hit=22+R()*12;const g=rivalGangs();if(g.length&&R()<0.55){spawnDriveBy(pick(g),'P');log('A rival car is on the van!','#e0574b');}}
     if(dist(v,SELL.drop)<110){const pay=Math.round(SELL.val*clamp(v.hp/100,0.5,1));earnDirty(pay);gainRep(25);AU.cash();log(`Delivered. The buyer paid $${pay.toLocaleString()}${v.hp<100?' (took a cut for the damage)':''}.`,'#6cc28a');v.sellVan=false;SELL=null;S.wp=null;}}}
-// ---- supply runs (steal meth supplies instead of buying) ----
+// ---- supply runs (steal shroom spawn bags instead of buying) ----
 function startSupply(){if(S.supRun)return;const g=rivalGangs()[0];let s=null;for(let k=0;k<20&&!s;k++){const t=spotNear(P.x,P.y,1200,2200,false);if(t)s=t;}if(!s)return;
-  S.supRun={x:s.x,y:s.y,got:false,g,up:false};S.wp={x:s.x,y:s.y};log(`Supply run: a ${g&&GANG[g]?GANG[g].name:'rival'} stash in ${HN[hoodOf(s.x,s.y)]} has lab supplies. Take them, bring them home. Free, if you live.`,'#ff4fd8');renderStash();}
+  S.supRun={x:s.x,y:s.y,got:false,g,up:false};S.wp={x:s.x,y:s.y};log(`Supply run: a ${g&&GANG[g]?GANG[g].name:'rival'} stash in ${HN[hoodOf(s.x,s.y)]} has shroom spawn bags. Take them, bring them home. Free, if you live.`,'#ff4fd8');renderStash();}
 function supplyTick(){const R0=S.supRun;if(!R0)return;
   if(!R0.got){if(!R0.up&&dist(P,R0)<900){R0.up=true;for(let k=0;k<3;k++){const p=spotNear(R0.x,R0.y,30,110,false);if(p&&R0.g&&GANG[R0.g])mkNPC('rival',p.x,p.y,{gang:R0.g,home:hoodOf(p.x,p.y),hp:40,armed:true,guard:true,post:{x:p.x,y:p.y}});}}}
-  else if(dist(P,STASH)<100||inGarage(P.x,P.y)){S.supplies+=BIZ.supply;S.supRun=null;log(`Unloaded ${BIZ.supply} lab supplies at the stash.`,'#6cc28a');gainRep(6);}}
+  else if(dist(P,STASH)<100||inGarage(P.x,P.y)){S.supplies+=BIZ.supply;S.supRun=null;log(`Unloaded ${BIZ.supply} spawn bags at the stash.`,'#6cc28a');gainRep(6);}}
 const nearSupply=()=>S.supRun&&!S.supRun.got&&dist(P,S.supRun)<60;
-function grabSupply(){S.supRun.got=true;S.wp={x:STASH.x,y:STASH.y};AU.door&&AU.door();addHeat(0.3);log('Got the supplies. Get them back to the stash.','#6cc28a');}
+function grabSupply(){S.supRun.got=true;S.wp={x:STASH.x,y:STASH.y};AU.door&&AU.door();addHeat(0.3);log('Got the spawn bags. Get them back to the stash.','#6cc28a');}
 // ---- club panel ----
 function clubOwnHtml(){if(!clubOwned())return `<div class="sec">Buy the club</div><div class="upg"><div class="row"><div><b>Make Motor City Titties yours · $${BIZ.clubCost.toLocaleString()}</b><span>Nightly takings, washes dirty money, and a warehouse that pulls product from your stash for one big sale. Needs rep: ${REPN[BIZ.clubRep]}.</span></div><button type="button" data-own="buy" ${S.cash<BIZ.clubCost||repLvl()<BIZ.clubRep?'disabled':''}>Buy</button></div></div>`;
   const W=S.ware||{},v=wareVal();return `<div class="sec">Your club · warehouse</div><div class="upg"><div class="row"><div><b>${PRODS.filter(p=>W[p]).map(p=>fmtQ(p,W[p])+' '+DRUGS[p].slang).join(' · ')||'Empty'}</b><span>Staff pull product from your stash every hour. Sell it all in one van run: worth about $${Math.round(v).toLocaleString()}.</span></div><button type="button" data-own="sell" ${v<=0||SELL?'disabled':''}>${SELL?'Run in progress':'Start sell run'}</button></div></div>`;}
 document.getElementById('club').addEventListener('click',ev=>{const b=ev.target.closest('[data-own]');if(!b||b.disabled)return;
-  if(b.dataset.own==='buy'){if(repLvl()<BIZ.clubRep)return;const pc=payClean(BIZ.clubCost);if(pc!==true){clubSay(pc,'#e0574b');return;}(S.fronts||(S.fronts={})).club=true;S.ware={weed:0,chrome:0,coke:0};AU.cash();gainRep(30);clubSay('The club is yours. The girls still want their tips.','#ff7fc8');renderClub();}
+  if(b.dataset.own==='buy'){if(repLvl()<BIZ.clubRep)return;const pc=payClean(BIZ.clubCost);if(pc!==true){clubSay(pc,'#e0574b');return;}(S.fronts||(S.fronts={})).club=true;S.ware={weed:0,shrooms:0,coke:0};AU.cash();gainRep(30);clubSay('The club is yours. The girls still want their tips.','#ff7fc8');renderClub();}
   else if(b.dataset.own==='sell')startSell();});
 // ================= the Penobscot job: preps, then a loud or quiet finale =================
 const HEIST={name:'First Penobscot Bank',rep:3,gear:2500,quiet:[25000,40000],loud:[18000,30000],fail:8000,cool:3,scoutT:10};
