@@ -523,6 +523,19 @@ body.wpnwheel #goals,body.wpnwheel #card{visibility:hidden}
 .crow3 .bt{display:flex;flex-wrap:wrap;gap:6px}.crow3 .bt button{flex:1 1 56px;padding:10px 8px;font-size:16px;text-transform:none}.crow3 .bt button[data-n='999']{flex:2 1 120px;text-transform:uppercase}
 .crow3 .cback{width:100%;margin-top:6px;font-size:14px}
 @media (max-width:900px){.stashm{display:flex;flex-direction:column}.st-side{display:contents}.st-head{order:0}#carrySec{order:1}.st-main{order:2}.st-side>*:not(#carrySec){order:3}.crow3 .bt button{flex:1 1 30%;padding:12px 6px}}
+
+.hbag{cursor:pointer}#hBagL{text-decoration:underline dotted;text-underline-offset:3px}
+.invm{max-width:420px;text-align:center}.invm h2{margin-bottom:12px}
+.igrid{display:grid;gap:6px;justify-content:center;grid-auto-flow:row dense;grid-auto-rows:64px}
+.igrid.sm{grid-auto-rows:52px;justify-content:start}
+.isq{position:relative;display:flex;align-items:center;justify-content:center;padding:4px;background:#16181c!important;border:2px solid #3a3d44!important;border-radius:5px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.45),0 3px 0 #0b0c0e!important;color:#fff;margin:0!important;transform:none!important;filter:none!important}
+.isq.w2{grid-column:span 2}.isq svg{width:100%;height:100%;max-height:44px}.isq.w2 svg{max-height:40px}
+.isq b{position:absolute;right:4px;bottom:2px;font-size:13px;color:#fff;text-shadow:0 1px 2px #000;text-transform:none}
+button.isq:hover{border-color:var(--sodium)!important}.isq.over{border-color:var(--bad)!important}
+.isq.empty{background:rgba(255,255,255,.03)!important;border:2px dashed #2c2f35!important;box-shadow:none!important}
+.idet{margin-top:12px;min-height:64px}.idet b{font-size:20px}.idet .iact{display:flex;gap:8px;justify-content:center;margin-top:8px}
+.lkcols{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:6px}.lkh{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#8a8f98;margin-bottom:6px}
+#lockerBox{margin-bottom:16px}
 </style>
 
 <canvas id="game"></canvas>
@@ -534,7 +547,7 @@ body.wpnwheel #goals,body.wpnwheel #card{visibility:hidden}
     <span class="lbl">Cash</span><span class="val" id="hCash">$0</span>
     <span class="lbl" id="hCleanL" title="Clean money. Spend it on stash upgrades, fronts, cars and Kustoms.">Clean</span><span class="val" id="hClean" style="color:#6cc28a">$0</span>
     <span class="lbl" id="hDirtyL" title="Dirty money. A bust seizes it, and big buys need clean cash. Wash it at a gas station ATM ($1,000 a week), the laundromat or the car wash.">Dirty</span><span class="val" id="hDirty" style="color:#e0574b">$0</span>
-    <span class="lbl">On you</span><span class="val" id="hProd">0 g</span>
+    <span class="lbl hbag" id="hBagL" title="Open your bag (I)">Bag · I</span><span class="val hbag" id="hProd">0 g</span>
     <span class="lbl">Plants</span><span class="val" id="hSup">0</span>
     <span class="lbl">Clients</span><span class="val" id="hCli">0</span>
     <span class="lbl">Turf</span><span class="val" id="hTurf">0 / 20</span>
@@ -685,6 +698,8 @@ body.wpnwheel #goals,body.wpnwheel #card{visibility:hidden}
     <div class="st-side">
       <div id="carrySec"><div class="sec" id="cLbl">Carrying</div>
       <div class="carry" id="carryBox"></div></div>
+      <div class="sec">Stash locker · guns, ammo, kits, food</div>
+      <div id="lockerBox"></div>
       <div class="sec" id="frLbl">Fronts · wash dirty money</div>
       <div class="upg" id="frontList"></div>
       <div class="sec">Upgrades</div>
@@ -916,6 +931,14 @@ body.wpnwheel #goals,body.wpnwheel #card{visibility:hidden}
     <div style="display:flex;gap:8px;margin:12px 0"><input id="shareLink" readonly style="flex:1;min-width:0" aria-label="Game link"><button type="button" id="shareCopy">Copy</button></div>
     <div class="sub" id="shareMsg" style="color:#6cc28a;min-height:1.2em"></div>
     <div style="display:flex;gap:8px"><button type="button" id="shareGo" style="flex:1">Share</button><button type="button" class="ghost" id="shareLater" style="flex:1">Not now</button></div>
+  </div>
+</div>
+<div class="overlay" id="invUI" hidden>
+  <div class="modal invm" role="dialog" aria-labelledby="invTitle">
+    <h2 id="invTitle">Pockets</h2>
+    <div class="igrid" id="invGrid"></div>
+    <div class="idet" id="invDet"></div>
+    <button type="button" class="ghost" id="invClose" style="width:100%;margin-top:12px">Close (I or Esc)</button>
   </div>
 </div>
 <div class="overlay" id="bugRep" hidden>
@@ -4992,12 +5015,12 @@ const qOf=p=>(S.q&&S.q[p])||1;
 const inv=p=>(S.inv&&S.inv[p])||0;
 const stored=p=>(S.store&&S.store[p])||0;
 const UNITW={weed:1,shrooms:4,coke:1};
-const BAGS={'':['Pockets',14],back:['Backpack',60],gym:['Gym bag',150]};
+const BAGS={'':['Pockets',4],back:['Backpack',12],gym:['Gym bag',20]};
 const bagCap=()=>BAGS[S.bag||''][1];const bagName=()=>BAGS[S.bag||''][0];
-const load=()=>PRODS.reduce((n,p)=>n+inv(p)*UNITW[p],0);
+const load=()=>slotsUsed();
 let carryMsg='';
-function takeOut(p,n){const nm=DRUGS[p].slang;const room=Math.max(0,Math.floor((bagCap()-load())/UNITW[p]));const q=Math.max(0,Math.min(n,stored(p),room));
-  if(q<=0){carryMsg=stored(p)<=0?`No ${nm} left in the stash. ${DRUGS[p].more}`:`Your ${bagName().toLowerCase()} ${S.bag?'is':'are'} full (${Math.round(load())}/${bagCap()}). ${inv('shrooms')>0&&p==='weed'?`Shrooms take 4 spaces a bag. `:''}${S.bag==='gym'?'':'A backpack or gym bag from Avenue Threads or House Depo holds more.'}`;return 0;}
+function takeOut(p,n){const nm=DRUGS[p].slang;const room=roomProd(p);const q=Math.max(0,Math.min(n,stored(p),room));
+  if(q<=0){carryMsg=stored(p)<=0?`No ${nm} left in the stash. ${DRUGS[p].more}`:`Your ${bagName().toLowerCase()} ${S.bag?'is':'are'} full (${Math.round(load())}/${bagCap()}). ${S.bag==='gym'?'Leave guns or ammo in the stash locker to make room.':'Leave guns or ammo in the stash locker, or get a backpack or gym bag from Avenue Threads or House Depo.'}`;return 0;}
   S.store[p]-=q;S.inv[p]+=q;goalHit('grab');carryMsg=q<n&&n<999?`Only room for ${fmtQ(p,q)} more. Took ${fmtQ(p,q)}.`:`Took ${fmtQ(p,q)}. ${fmtQ(p,inv(p))} on you now.`;return q;}
 function dealNeeds(){const need={};for(const p of PRODS)need[p]=0;for(const d of S.deals)need[d.p||'weed']+=d.qty;return need;}
 function stashIn(p){const q=inv(p);if(q>0){S.inv[p]=0;S.store[p]+=q;}return q;}
@@ -5224,7 +5247,7 @@ function addMsg(cid,from,text){(msgs[cid]||(msgs[cid]=[])).push({from,text});if(
 function makeOffer(c){
   const p=sellP(c),pr=S.prices[p],bn=budgetNow(c),u=uw(c,p),mq=DRUGS[p].maxQ;let per=pr,qty,steep=false;
   if(pr<=u)qty=clamp(Math.floor(bn/pr),1,mq);else{per=Math.max(p==='weed'?3:5,Math.round(u));qty=clamp(Math.floor(bn/per),1,mq);steep=true;}
-  qty=Math.max(1,Math.min(qty,Math.floor(bagCap()/UNITW[p])));if(p==='weed')qty=snapW(qty);
+  qty=Math.max(1,Math.min(qty,bagCap()*STK[p]));if(p==='weed')qty=snapW(qty);
   const total=Math.round(qty*per),w=talkQ(p,qty)+(p==='weed'?'':' of '+DRUGS[p].slang);
   S.offers[c.id]={cid:c.id,p,qty,total,created:nowM(),stage:'open'};
   if(p==='weed'){const nk=weedNick(),W=w[0].toUpperCase()+w.slice(1);addMsg(c.id,'them',steep?pick([`$${pr} a gram is crazy. ${W} for $${total}?`,`Can you do ${w} for $${total}? That's all I got.`,`Bro your prices high. ${W}, $${total}?`]):pick([`You got some ${nk}? Need ${w}. $${total}.`,`Lemme get ${w} of that ${nk}. Got $${total}.`,`Aye, you still got that ${nk}? ${W} for $${total}.`,`What up doe. Need ${w}, $${total} cool?`,`You around? Tryna get ${w}. $${total}.`]));return;}
@@ -5430,7 +5453,7 @@ function batHit(e,dmg,dx,dy){const n=Math.hypot(dx,dy)||1;e.kx=dx/n*420;e.ky=dy/
 function batAfter(e,dx,dy){if(e.dead){if(e.inj)floatText(e.x,e.y-44,'KNOCKED OUT','#f2a33a');return;}e.stun=Math.max(e.stun,1.4);e.down=1.4;e.da=Math.atan2(dy,dx)+(R()-.5);}
 function knifeFlip(){if(S.cur==='bat'&&!P.car&&!(P.swingT>0)){P.batPracAt=clockT;AU.swing('bat');return;}if(S.cur!=='knife'||P.car)return;if(!P.knifeOpen){P.knifeOpen=true;P.knifeAt=clockT;P.atkCD=Math.max(P.atkCD,0.28);AU.reload&&AU.reload(0.2);}else P.inspectAt=clockT;}
 const GLOCK_HEAT={dirty:1.4,clean:0.7};
-function giveGlok(tag){if(!S.weapons.includes('glock')){S.weapons.push('glock');S.clip.glock=magOf('glock');S.ammo['9mm']+=magOf('glock');}S.cur='glock';S.glockTag=tag;
+function giveGlok(tag){if(!S.weapons.includes('glock')){if(S.locker&&S.locker.guns.includes('glock'))S.locker.guns.splice(S.locker.guns.indexOf('glock'),1);S.weapons.push('glock');S.clip.glock=magOf('glock');S.ammo['9mm']+=magOf('glock');}S.cur='glock';S.glockTag=tag;
   return tag==='dirty'?"Rell slides it over in a paper bag. Don't ask what it's been through.":'Clean Glok. No serial, no history. It is in your hand.';}
 const magOf=id=>id==='glock'&&S.extMag?33:WD[id].mag;
 function hurtPlayer(d){if(DEV.on.god)return;if(P.car&&!isBike(P.car))d*=0.5;if(S.armor>0){const a=Math.min(S.armor*2,d*0.75);S.armor-=a/2;d-=a;}P.hp-=d;P.hurtT=4;if(!P.car)bleed(P.x,P.y,R()-.5,R()-.5,2);shake=Math.max(shake,3.5);floatText(P.x,P.y-24,'-'+Math.round(d),'#e0574b');AU.hurt();}
@@ -5572,8 +5595,8 @@ const ITEMS={
   sand:{name:'Gas station sandwich',desc:'Restores 30 health. Probably.',cost:6,act:()=>{heal(30);eat(3);return "+30 health. Don't check the date.";}},
   energy:{name:'Energy drink',desc:'Full stamina and a faster sprint for 30 seconds.',cost:5,act:()=>{P.stam=100;P.boost=30;return 'Wired for 30 seconds.';}},
   scratch:{name:'Scratch-off ticket',desc:'Long odds. Top prize $1,000. Five a day per store.',cost:5,get label(){const n=scratchLeft();return n>0?`$5 · ${n} left`:'Sold out';},can:()=>scratchLeft()>0,act:scratch},
-  bp:{name:'Backpack',desc:'Carry 60 units of product instead of 14. Weed is 1 per gram, shrooms are 4 per bag.',cost:150,has:()=>(S.closet||[]).includes('back'),act:()=>{(S.closet||(S.closet=[])).push('back');if(!S.bag||S.bag==='')S.bag='back';P.look=playerLook();return 'Backpack on. You can carry 60 now.';}},
-  gb:{name:'Gym bag',desc:'Carry 150 units. Big enough for real weight.',cost:400,has:()=>(S.closet||[]).includes('gym'),act:()=>{(S.closet||(S.closet=[])).push('gym');S.bag='gym';P.look=playerLook();return 'Gym bag on your shoulder. You can carry 150 now.';}},
+  bp:{name:'Backpack',desc:'12 squares to carry stuff instead of 4 pocket squares. A square holds 7 g of weed or coke, 2 bags of shrooms, a box of ammo or a pistol.',cost:150,has:()=>(S.closet||[]).includes('back'),act:()=>{(S.closet||(S.closet=[])).push('back');if(!S.bag||S.bag==='')S.bag='back';P.look=playerLook();return 'Backpack on. You can carry 60 now.';}},
+  gb:{name:'Gym bag',desc:'20 squares. Big enough for real weight and long guns.',cost:400,has:()=>(S.closet||[]).includes('gym'),act:()=>{(S.closet||(S.closet=[])).push('gym');S.bag='gym';P.look=playerLook();return 'Gym bag on your shoulder. You can carry 150 now.';}},
   rkit:{name:'Repair kit',desc:'Fix any car on the spot. Press X in or next to a car. Carry up to 5.',cost:25,can:()=>(S.kitsR||0)<5,act:()=>{S.kitsR=(S.kitsR||0)+1;return `Repair kit bagged. You have ${S.kitsR}/5. Press X to use one.`;}},
   fix:{name:'Duct tape & Fix-a-Flat',desc:'Fully repairs the car you last drove, if it is parked close by.',cost:80,can:()=>P.lastCar&&P.lastCar.mode==='parked'&&dist(P.lastCar,P)<220&&carHurt(P.lastCar),act:()=>{fixCar(P.lastCar);return `The ${P.lastCar.model} is running right again.`;}},
   deliver:{name:'Delivery run',desc:'Legit work. Get a coney order across town before it gets cold.',cost:0,label:'Take job',can:()=>!S.job,act:startJob},
@@ -5620,6 +5643,8 @@ function renderShop(){const st=curShop;if(!st)return;if(st.front){renderFront(st
 }
 document.getElementById('shList').onclick=ev=>{if(fuelClick(ev))return;const id=ev.target.dataset&&ev.target.dataset.i;if(!id)return;const it=ITEMS[id];
   if(S.cash<it.cost||(it.lvl&&repLvl()<it.lvl)||(it.can&&!it.can()))return;
+  {const full=it.weapon?GSIZE[it.weapon]&&!roomGun(it.weapon):id==='rkit'?roomKit()<1:AMMO_ITEM[id]?roomAmmo(AMMO_ITEM[id][0])<AMMO_ITEM[id][1]:false;if(full){document.getElementById('shopMsg').textContent=fullMsg();return;}}
+  if(FOODS.includes(id)){S.cash-=it.cost;invEnsure();let msg;if(roomFood(id)>0){S.food[id]=(S.food[id]||0)+1;msg=`${it.name} in your ${bagName().toLowerCase()}. Open the bag (I) to use it.`;}else msg=(it.act()||'')+' No room to carry it, so you had it now.';document.getElementById('shopMsg').textContent=msg;renderShop();return;}
   S.cash-=it.cost;let msg='';
   if(it.weapon){S.weapons.push(it.weapon);S.cur=it.weapon;if(it.weapon==='glock')S.glockTag='legal';const w=WD[it.weapon];if(!w.melee){S.clip[it.weapon]=magOf(it.weapon);S.ammo[w.ammo]+=magOf(it.weapon);}msg=`Bought the ${it.name}. It's in your hand.`;log(msg,'#f2a33a');}
   else msg=it.act()||'';
@@ -5693,7 +5718,7 @@ function renderStashLive(){if(!renderStashLive.open){carryMsg='';}renderStashLiv
     if(short.length)ch+=`<button type="button" data-deal="1">Grab what my deals need · ${short.map(p=>fmtQ(p,nd[p]-inv(p))+' '+DRUGS[p].slang).join(' + ')}</button>`;
     for(const p of PRODS){if(!prodOn(p)&&!inv(p)&&!stored(p))continue;const nm=DRUGS[p].name,steps=p==='weed'?[1,3,7,14,28]:p==='coke'?[1,3,7]:[1,3,6];
     ch+=`<div class="crow3"><b class="cnm">${nm}</b><div class="cboxes"><div class="cbox"><span>In the stash</span><i>${fmtQ(p,stored(p))}</i></div><div class="carr" aria-hidden="true">→</div><div class="cbox me"><span>In your ${bagName().toLowerCase()}</span><i>${fmtQ(p,inv(p))}</i></div></div><div class="bt">${steps.map(n=>`<button type="button" data-tk="${p}" data-n="${n}" ${stored(p)<=0?'disabled':''}>+${DRUGS[p].per==='gram'?n+'g':n}</button>`).join('')}<button type="button" data-tk="${p}" data-n="999" ${stored(p)<=0?'disabled':''}>All I can carry</button></div><button type="button" class="cback" data-si="${p}" ${inv(p)<=0?'disabled':''}>Put ${fmtQ(p,inv(p))} back in the stash</button></div>`;}
-   setHTML($('carryBox'),ch);$('cLbl').textContent=`Take product for the street · ${bagName()} ${Math.round(load())}/${bagCap()} full${S.bag?'':' · a backpack or gym bag carries more'}`;}$('sSeeds').textContent=S.seeds;
+   setHTML($('carryBox'),ch);setHTML($('lockerBox'),lockerHtml());$('cLbl').textContent=`Take product for the street · ${bagName()} ${Math.round(load())}/${bagCap()} full${S.bag?'':' · a backpack or gym bag carries more'}`;}$('sSeeds').textContent=S.seeds;
   let gh='';for(let i=0;i<S.slots;i++){const p=S.plants[i];
     if(!p){gh+=`<div class="pl"><i class="pa art-weed-pot-soil"></i><b>Empty</b><span>Plant a seed</span></div>`;continue;}
     const ready=p.g>=1,dry=!ready&&p.w<=0;const left=Math.ceil((1-p.g)*GROW.time/60/(p.boost||1));
@@ -6155,7 +6180,7 @@ document.getElementById('ward').addEventListener('click',ev=>{const t=ev.target.
   if(a==='tab'){W8.tab=v;W8.hl=null;W8.hl2=null;}
   else if(a==='style'){const it=CLOSET.style.find(x=>x[0]===v);if(!buy(v,it[2]))return;o.style=v;if(v!=='hoodie'&&o.head==='hood')o.head='none';}
   else if(a==='head'){const it=CLOSET.head.find(x=>x[0]===v);if(!buy(v,it[2]))return;o.head=v;}
-  else if(a==='extra'&&(v==='back'||v==='gym')){const it=CLOSET.extra.find(x=>x[0]===v);if(!owns(v)&&!buy(v,it[2]))return;if(S.bag===v){if(load()>14){$('wCash').textContent='Empty the bag at the stash before you take it off.';return;}S.bag='';}else{if(S.bag&&load()>BAGS[v][1]){$('wCash').textContent='Too much on you for that bag.';return;}S.bag=v;}}
+  else if(a==='extra'&&(v==='back'||v==='gym')){const it=CLOSET.extra.find(x=>x[0]===v);if(!owns(v)&&!buy(v,it[2]))return;if(S.bag===v){if(load()>BAGS[''][1]){$('wCash').textContent='Empty the bag at the stash before you take it off.';return;}S.bag='';}else{if(S.bag&&load()>BAGS[v][1]){$('wCash').textContent='Too much on you for that bag.';return;}S.bag=v;}}
   else if(a==='extra'){const it=CLOSET.extra.find(x=>x[0]===v);if(!owns(v)){if(!buy(v,it[2]))return;o[v]=true;}else{if(v==='chain')o.chain=o.chain===false;else o[v]=!o[v];}}
   else if(a==='crewCol'){S.crewColor=v;applyCrew();W8.hl=null;W8.hl2=null;}
   else if(a==='fit'){S.crewFit.style=v;W8.hl=null;W8.hl2=null;for(const e of npcs)if(e.type==='homie')e.look=homieLook();}
@@ -6404,7 +6429,7 @@ function crewGive(e,g){if(!e||!e.follow||!S.weapons.includes(g)||WD[g].melee)ret
   const amt=takeAmmo(g,magOf(g)*2);S.weapons=S.weapons.filter(w=>w!==g);if(S.cur===g){S.cur='fists';P.reloadT=0;}
   e.gun=g;e.ammo=amt;e.outSaid=0;crewArm(e);AU.reload&&AU.reload(0.4);say(e,pick(['Good looking.',"Now we're talking.",'I got it from here.']),2);
   log(`Gave ${nickOf(e)} your ${WD[g].name} with ${amt} rounds.`,GANG.crew.color);crewCardDirty=true;}
-function crewTake(e,quiet){if(!e||!e.gun)return;const g=e.gun;if(!S.weapons.includes(g))S.weapons.push(g);S.ammo[WD[g].ammo]=(S.ammo[WD[g].ammo]||0)+(e.ammo||0);
+function crewTake(e,quiet){if(!e||!e.gun)return;const g=e.gun;gainGun(g,'from your homie');S.ammo[WD[g].ammo]=(S.ammo[WD[g].ammo]||0)+(e.ammo||0);
   if(!quiet)log(`Took the ${WD[g].name} back from ${nickOf(e)}${e.ammo?` with ${e.ammo} rounds`:''}.`,GANG.crew.color);e.gun=null;e.ammo=0;crewArm(e);crewCardDirty=true;}
 function crewAmmo(e){if(!e||!e.gun)return;const t=WD[e.gun].ammo;const n=Math.min(S.ammo[t]||0,magOf(e.gun));if(n<=0){log(`You have no spare ${t} to give.`,'#8a8f98');return;}
   S.ammo[t]-=n;e.ammo=(e.ammo||0)+n;e.outSaid=0;crewArm(e);say(e,'Reloaded.',1.4);crewCardDirty=true;}
@@ -6413,8 +6438,8 @@ function crewGunTick(){for(const e of npcs){if(!e.dead||!e.gun||e.dropped)contin
     if(e.follow||e.wasFollower)log(`${nickOf(e)} dropped the ${WD[e.gun].name}. Walk over and press E to pick it up.`,GANG.crew.color);}
   for(let i=PICKUPS.length-1;i>=0;i--){PICKUPS[i].t-=1/60;if(PICKUPS[i].t<=0)PICKUPS.splice(i,1);}}
 const nearPickup=()=>{let b=null,bd=48;for(const p of PICKUPS){const d=Math.hypot(p.x-P.x,p.y-P.y);if(d<bd){bd=d;b=p;}}return b;};
-function pickUp(p){const i=PICKUPS.indexOf(p);if(i<0)return;PICKUPS.splice(i,1);const w=WD[p.gun];
-  const had=S.weapons.includes(p.gun);if(!had)S.weapons.push(p.gun);S.ammo[w.ammo]=(S.ammo[w.ammo]||0)+p.ammo;AU.reload&&AU.reload(0.4);
+function pickUp(p){const i=PICKUPS.indexOf(p);if(i<0)return;const w=WD[p.gun];const had=S.weapons.includes(p.gun);if(!had&&!roomGun(p.gun)){log(fullMsg(),'#f2a33a');return;}PICKUPS.splice(i,1);
+  if(!had)S.weapons.push(p.gun);S.ammo[w.ammo]=(S.ammo[w.ammo]||0)+Math.min(p.ammo||0,roomAmmo(w.ammo));AU.reload&&AU.reload(0.4);
   log(had?`Picked up ${p.ammo} rounds of ${w.ammo}.`:`Picked up the ${w.name}${p.ammo?` with ${p.ammo} rounds`:''}. Hand it to a homie from the crew card.`,'#6cc28a');}
 function drawPickups(){for(const p of PICKUPS){const x=p.x-camX,y=p.y-camY;if(x<-40||y<-40||x>vw+40||y>vh+40)continue;const pulse=0.5+0.5*Math.sin(clockT*5);
   ctx.save();ctx.translate(x,y);ctx.globalAlpha=0.35+0.3*pulse;ctx.fillStyle=GANG.crew.color;ctx.beginPath();ctx.arc(0,0,13,0,7);ctx.fill();ctx.globalAlpha=1;ctx.rotate(0.4);
@@ -8192,6 +8217,7 @@ function begin(fromSave){gcHit(fromSave?'/continue':'/new-game',fromSave?'Contin
     if(S.cookQ>0){S.inv.shrooms+=S.cookQ*6;S.cookQ=0;}if(!S.store)S.store={weed:0,shrooms:0};if(S.shroomsOn&&!S.labs)S.labs=1;S.cooks=S.cooks||[];S.labKits=S.labKits||0;
     S.space=Math.max(S.space||4,S.slots||1,4);for(const o of Object.values(S.offers||{}))if(!o.p)o.p=S.shroomsOn?'shrooms':'weed';for(const d of S.deals||[])if(!d.p)d.p=S.shroomsOn?'shrooms':'weed';S.ammo=Object.assign(defaults().ammo,fromSave.S.ammo||{});S.clip=Object.assign(defaults().clip,fromSave.S.clip||{});if(!S.weapons.includes(S.cur))S.cur='fists';S.job=null;dealSeq=1+Math.max(0,...S.deals.map(d=>d.id));}
   else{S.crew=$('crewName').value.trim().slice(0,20)||'Woodward Boys';S.roster=genRoster();S.gangN=+$('gangN').value||4;}
+  invEnsure();if(fromSave)invFit();
   if(fromSave&&!S.goalsDone&&S.roster.filter(c=>c.known).length>=3)S.goalsOff=true;
   {const FIX={'Fjord F-160':'Horde F-160','Fjord Crown Victory':'Horde Crown Victory','Dodge Viper':'Dodgy Venom','Chevy Impala':'Chevalier Imperial','Ford F-150':'Horde F-160','Dodge Charger':'Dodgy Charjer','Cadillac Escalade':'Cadavac Escapade','Jeep Grand Cherokee':'Jeap Grand Chieftain','Chrysler 300':'Chryslur 3000','Buick LeSabre':'Buik LeSaber','Ford Crown Vic':'Horde Crown Victory','Dodge Challenger':'Dodgy Challenjer','Chevy Malibu':'Chevalier Maliboo','Lincoln Town Car':'Lincon Towne Car','Ram 1500':'Ramm 1600','Kawasucky Ninja':'Kawasucky Shinobi','Yamahaha R1':'Yamahaha R-Won','Hardly Davidson Fat Boy':'Hardly Davidsun Big Boy','Indigo Chief':'Indigo Big Chief','Hardly Davidson Road King':'Hardly Davidsun Road Queen'};
     for(const g of S.garage||[])if(FIX[g.model])g.model=FIX[g.model];if(S.jobs&&S.jobs.export)S.jobs.export=S.jobs.export.map(m=>FIX[m]||m);if(S.heist&&FIX[S.heist.getaway])S.heist.getaway=FIX[S.heist.getaway];}
@@ -9660,7 +9686,7 @@ function pumpUse(){const p=pumpHere();if(!p)return false;if(FUEL.active)return t
 function fuelTick(dt){const a=FUEL.active;if(!a)return;
   const left=a.paid-a.gal*FUEL.ppg,room=tankOf(a.c)-fuelOf(a.c),moved=Math.hypot(a.c.x-a.cx,a.c.y-a.cy)>6||a.c.dead||P.car||Math.hypot(P.x-a.p.x,P.y-a.p.y)>70;
   const g=Math.min(FUEL.flow*dt,left/FUEL.ppg,room);if(g>0&&!moved){a.gal+=g;setFuel(a.c,fuelOf(a.c)+g);}
-  if(moved||left/FUEL.ppg-g<=0.001||room-g<=0.001){FUEL.active=null;const spent=Math.min(a.paid,Math.ceil(a.gal*FUEL.ppg*100)/100),back=Math.floor(a.paid-spent);if(back>0)S.cash+=back;
+  if(moved||left/FUEL.ppg-g<=0.001||room-g<=0.001){FUEL.active=null;const spent=Math.min(a.paid,Math.ceil(a.gal*FUEL.ppg*100)/100),back=Math.floor(a.paid-spent);FUEL.lastBack=back;if(back>0)S.cash+=back;
     log(`Pumped ${a.gal.toFixed(1)} gal into the ${a.c.model} for $${spent.toFixed(2)}${back>0?`. $${back} change back from the counter`:''}. Tank ${fuelPct(a.c)}%.`,'#6cc28a');save();}}
 function fuelCarFor(){return P.car||P.lastCar||cars.find(c=>c.owned&&!c.dead);}
 function fuelHtml(){const c=fuelCarFor(),need=c?Math.max(5,Math.ceil((tankOf(c)-fuelOf(c))*FUEL.ppg/5)*5):40;
@@ -9792,6 +9818,97 @@ function grafWall(b,D,C,D2,C2,z,rw){if(b.graf)grafOnFace(D,C,D2,C2,rw,z,b.graf);
 function drawGrafFlat(b){if(!b.graf)return;const W=b.w*T,by=(b.y+b.h)*T-camY,bx=b.x*T-camX;if(bx>vw+20||by<-20||bx+W<-20||by-b.h*T>vh+20)return;
   for(const {p,u} of b.graf){const h=Math.min(p.h,b.h*T*0.5),w=p.w*h/p.h;ctx.globalAlpha=0.9;ctx.drawImage(grafImg(p),bx+u*W-w/2,by-h-4,w,h);}ctx.globalAlpha=1;}
 function grafFreeway(){const F=FWY;if(!TILT.on||vh/2<=F.y1-camY)return;const P0=[F.r0-camX,F.y1-camY],P1=[F.r1-camX,F.y1-camY],Q0=propLift(F.r0,F.y1,F.Z),Q1=propLift(F.r1,F.y1,F.Z);grafOnFace(P0,P1,Q0,Q1,F.r1-F.r0,F.Z,FWY_GRAF);}
+// ================= bag inventory: square grid for pockets (4), backpack (12), gym bag (20); stash locker for the rest =================
+const STK={weed:7,shrooms:2,coke:7,kit:5,'9mm':34,shells:16,'7.62':60,food:4};
+const GSIZE={knife:1,bat:2,glock:1,sawed:2,draco:2};
+const FOODS=['pop','dog','sand','energy'];
+const AMMOS=['9mm','shells','7.62'];
+const AMMO_ITEM={ammo9:['9mm',34],shells:['shells',10],ammo762:['7.62',60]};
+const AMMO_NM={'9mm':'9mm rounds',shells:'12 gauge shells','7.62':'7.62 rounds'};
+function invEnsure(){if(!S.food)S.food={};if(!S.locker)S.locker={guns:[],ammo:{},kit:0,food:{}};}
+const ceilSt=(n,s)=>n>0?Math.ceil(n/s):0;
+function bagStacks(){invEnsure();const L=[];
+  for(const g of S.weapons)if(GSIZE[g])L.push({id:'gun:'+g,k:'gun',g,size:GSIZE[g],n:1});
+  for(const p of PRODS){let n=inv(p);while(n>0){const q=Math.min(n,STK[p]);L.push({id:p,k:'prod',p,size:1,n:q});n-=q;}}
+  for(const a of AMMOS){let n=S.ammo[a]||0;while(n>0){const q=Math.min(n,STK[a]);L.push({id:'ammo:'+a,k:'ammo',a,size:1,n:q});n-=q;}}
+  {let n=S.kitsR||0;while(n>0){const q=Math.min(n,STK.kit);L.push({id:'kit',k:'kit',size:1,n:q});n-=q;}}
+  for(const f of FOODS){let n=S.food[f]||0;while(n>0){const q=Math.min(n,STK.food);L.push({id:'food:'+f,k:'food',f,size:1,n:q});n-=q;}}
+  return L;}
+function slotsUsed(){invEnsure();let n=0;for(const g of S.weapons)n+=GSIZE[g]||0;for(const p of PRODS)n+=ceilSt(inv(p),STK[p]);for(const a of AMMOS)n+=ceilSt(S.ammo[a]||0,STK[a]);n+=ceilSt(S.kitsR||0,STK.kit);for(const f of FOODS)n+=ceilSt(S.food[f]||0,STK.food);return n;}
+const slotsFree=()=>Math.max(0,bagCap()-slotsUsed());
+function roomFor(have,stack){const part=have%stack?stack-have%stack:0;return part+slotsFree()*stack;}
+const roomProd=p=>roomFor(inv(p),STK[p]);
+const roomAmmo=a=>roomFor(S.ammo[a]||0,STK[a]);
+const roomKit=()=>Math.min(5-(S.kitsR||0),roomFor(S.kitsR||0,STK.kit));
+const roomFood=f=>{invEnsure();return roomFor(S.food[f]||0,STK.food);};
+const roomGun=g=>slotsFree()>=(GSIZE[g]||1);
+const fullMsg=()=>`No room in your ${bagName().toLowerCase()} (${slotsUsed()}/${bagCap()} squares). Leave stuff in the stash locker${S.bag==='gym'?'':' or get a bigger bag'}.`;
+function lockGun(g){invEnsure();const i=S.weapons.indexOf(g);if(i>=0)S.weapons.splice(i,1);if(!S.locker.guns.includes(g))S.locker.guns.push(g);if(S.cur===g)S.cur='fists';}
+function invFit(){invEnsure();let moved=[];
+  const drop=()=>{for(const g of S.weapons.filter(g=>GSIZE[g]&&g!==S.cur).sort((a,b)=>GSIZE[b]-GSIZE[a])){lockGun(g);moved.push(WD[g].name);return true;}
+    for(const a of AMMOS){const n=S.ammo[a]||0;const keep=Math.min(n,STK[a]);if(n>keep){S.locker.ammo[a]=(S.locker.ammo[a]||0)+n-keep;S.ammo[a]=keep;moved.push('extra '+AMMO_NM[a]);return true;}}
+    for(const f of FOODS)if(S.food[f]>0){S.locker.food[f]=(S.locker.food[f]||0)+S.food[f];S.food[f]=0;moved.push(ITEMS[f].name);return true;}
+    if(S.kitsR>0){S.locker.kit+=S.kitsR;S.kitsR=0;moved.push('repair kits');return true;}
+    for(const a of AMMOS)if(S.ammo[a]>0){S.locker.ammo[a]=(S.locker.ammo[a]||0)+S.ammo[a];S.ammo[a]=0;moved.push(AMMO_NM[a]);return true;}
+    for(const g of S.weapons.filter(g=>GSIZE[g])){lockGun(g);moved.push(WD[g].name);return true;}
+    for(const p of PRODS)if(inv(p)>0){const over=Math.min(inv(p),Math.max(1,(slotsUsed()-bagCap())*STK[p]));S.inv[p]-=over;S.store[p]=(S.store[p]||0)+over;moved.push(fmtQ(p,over)+' '+DRUGS[p].slang);return true;}
+    return false;};
+  let n=0;while(slotsUsed()>bagCap()&&n++<60&&drop());
+  if(moved.length)log(`Your ${bagName().toLowerCase()} only holds ${bagCap()} squares now. Left in the stash locker: ${moved.join(', ')}.`,'#f2a33a');}
+function gainGun(g,why){if(S.weapons.includes(g)||(S.locker&&S.locker.guns.includes(g)))return true;if(roomGun(g)){S.weapons.push(g);return true;}invEnsure();S.locker.guns.push(g);log(`No room for the ${WD[g].name}${why?' '+why:''}. It went to the stash locker.`,'#f2a33a');return false;}
+const GICON={
+  weed:'<path d="M20 6c2 6 2 10 0 16-2-6-2-10 0-16zM20 22c-5-3-10-3-13-1 4 3 8 3 13 1zM20 22c5-3 10-3 13-1-4 3-8 3-13 1zM20 22c-3-4-7-6-11-6 2 4 6 6 11 6zM20 22c3-4 7-6 11-6-2 4-6 6-11 6z" fill="#6cc24a"/><rect x="11" y="24" width="18" height="11" rx="2" fill="#d8dbe0" opacity=".85"/><path d="M11 27h18" stroke="#9aa3ad"/>',
+  shrooms:'<path d="M8 20c0-8 24-8 24 0z" fill="#c9884a"/><circle cx="15" cy="16" r="1.6" fill="#f1e2c8"/><circle cx="23" cy="15" r="1.4" fill="#f1e2c8"/><path d="M17 20h6l1 12h-8z" fill="#efe6d4"/>',
+  coke:'<rect x="7" y="12" width="26" height="17" rx="3" fill="#ece9e1"/><path d="M7 18h26M7 23h26" stroke="#c9c4b5"/><rect x="16" y="15" width="8" height="11" fill="#b9472f" opacity=".75"/>',
+  kit:'<rect x="6" y="14" width="28" height="18" rx="2" fill="#c0392b"/><rect x="15" y="10" width="10" height="5" rx="1" fill="none" stroke="#8e2a20" stroke-width="2"/><path d="M20 18v10M15 23h10" stroke="#fff" stroke-width="3"/>',
+  '9mm':'<rect x="6" y="18" width="28" height="14" rx="1.5" fill="#4a5a3c"/><g fill="#d4a94a">' + [9,14,19,24,29].map(x=>`<rect x="${x-1.5}" y="9" width="3.5" height="10" rx="1.6"/>`).join('') + '</g>',
+  shells:'<g>' + [10,17,24,31].map(x=>`<rect x="${x-3}" y="9" width="6" height="18" rx="2" fill="#b3261e"/><rect x="${x-3}" y="25" width="6" height="6" fill="#d4a94a"/>`).join('') + '</g>',
+  '7.62':'<g fill="#d4a94a">' + [10,16,22,28].map(x=>`<path d="M${x-2} 32V16l2-7 2 7v16z"/>`).join('') + '</g><rect x="6" y="30" width="28" height="4" fill="#4a5a3c"/>',
+  glock:'<path d="M5 13h28v6H18l-2 13h-6l2-13H5z" fill="#9aa1ab"/><path d="M5 13h28v2H5z" fill="#c7ccd3"/>',
+  sawed:'<path d="M3 16h50v5H25l-6 3-4 9H8l3-9H3z" fill="#9aa1ab"/><path d="M19 21h6l-2 3z" fill="#7a5131"/><path d="M8 33l3-9h4l-4 9z" fill="#7a5131"/>',
+  draco:'<path d="M2 15h48v5H34l-3 2 2 11h-5l-3-11h-5l-3 8h-5l2-8H2z" fill="#9aa1ab"/><path d="M24 20h7l-1 4h-5z" fill="#7a5131"/><path d="M28 22c3 3 4 7 2 11" stroke="#9aa1ab" stroke-width="4" fill="none"/>',
+  knife:'<path d="M6 22l20-6 8 2-8 4z" fill="#c7d0da"/><rect x="2" y="21" width="9" height="5" rx="2" transform="rotate(-16 6 23)" fill="#9aa1ab"/>',
+  bat:'<path d="M4 22l40-8c4-1 6 3 2 5L6 26z" fill="#b8874f"/><path d="M4 22l6-1 1 5-5 0z" fill="#3a2a1a"/>',
+  pop:'<path d="M17 6h6v5l3 5v18H14V16l3-5z" fill="#8e3b2a"/><rect x="14" y="19" width="12" height="8" fill="#f2a33a"/>',
+  dog:'<rect x="5" y="18" width="30" height="9" rx="4.5" fill="#d9a35b"/><rect x="7" y="16" width="26" height="7" rx="3.5" fill="#a8442c"/><path d="M8 19c3-2 5 2 8 0s5 2 8 0 5 2 8 0" stroke="#f2d33a" stroke-width="1.6" fill="none"/>',
+  sand:'<path d="M6 28L20 10l14 18z" fill="#e8c88a"/><path d="M9 25h22" stroke="#7ac251" stroke-width="2.5"/><path d="M10 22h20" stroke="#d24b3c" stroke-width="2"/>',
+  energy:'<rect x="13" y="7" width="14" height="27" rx="3" fill="#2d7fd3"/><path d="M22 11l-5 10h4l-2 9 6-12h-4z" fill="#f2d33a"/>'};
+function stackIcon(s){const key=s.k==='gun'?s.g:s.k==='prod'?s.p:s.k==='ammo'?s.a:s.k==='food'?s.f:'kit';const w=s.size===2?56:40;return `<svg viewBox="0 0 ${w} 40" aria-hidden="true">${GICON[key]||''}</svg>`;}
+function stackName(s){return s.k==='gun'?WD[s.g].name:s.k==='prod'?DRUGS[s.p].name:s.k==='ammo'?AMMO_NM[s.a]:s.k==='food'?ITEMS[s.f].name:'Repair kit';}
+function stackCount(s){return s.k==='gun'?'':s.k==='prod'?fmtQ(s.p,s.n):'×'+s.n;}
+function gridHtml(L,cap,data){let h='',used=0;L.forEach((s,i)=>{used+=s.size;h+=`<button type="button" class="isq${s.size===2?' w2':''}${used>cap?' over':''}" data-${data}="${i}" title="${esc(stackName(s))}">${stackIcon(s)}<b>${stackCount(s)}</b></button>`;});for(let k=used;k<cap;k++)h+='<div class="isq empty"></div>';return h;}
+const elInv=$('invUI');let invSel=-1;
+function invOpen(){if(!running)return;invEnsure();invSel=-1;elInv.hidden=false;paused=true;invRender();}
+function invClose(){elInv.hidden=true;if(elPause.hidden&&!document.querySelector('.overlay:not([hidden]):not(#invUI)'))paused=false;}
+function invRender(){const L=bagStacks(),cap=bagCap();$('invTitle').textContent=`${bagName()} · ${slotsUsed()}/${cap} squares`;
+  $('invGrid').style.gridTemplateColumns=`repeat(${cap<=4?2:cap<=12?4:5},64px)`;$('invGrid').innerHTML=gridHtml(L,cap,'is');
+  const s=L[invSel],d=$('invDet');if(!s){d.innerHTML=`<div class="sub">Tap a square to use or equip it. Guns and ammo you can't fit can wait in the stash locker.</div>`;return;}
+  let act='';if(s.k==='food')act=`<button type="button" data-ia="eat">${s.f==='pop'||s.f==='energy'?'Drink it':'Eat it'}</button>`;else if(s.k==='kit')act=`<button type="button" data-ia="kit">Fix a car</button>`;else if(s.k==='gun')act=`<button type="button" data-ia="eq" ${S.cur===s.g?'disabled':''}>${S.cur===s.g?'In your hand':'Hold it'}</button>`;
+  d.innerHTML=`<b>${esc(stackName(s))}</b><div class="sub">${s.k==='prod'?`${fmtQ(s.p,s.n)} in this square · up to ${fmtQ(s.p,STK[s.p])}`:s.k==='gun'?`Takes ${s.size} square${s.size>1?'s':''}`:s.k==='food'?esc(ITEMS[s.f].desc):s.k==='ammo'?`${s.n} rounds · up to ${STK[s.a]} a square`:'Press X in or next to a car to use one.'}</div><div class="iact">${act}</div>`;}
+$('invGrid').onclick=ev=>{const b=ev.target.closest('[data-is]');if(!b)return;invSel=+b.dataset.is;invRender();};
+$('invDet').onclick=ev=>{const b=ev.target.closest('[data-ia]');if(!b||b.disabled)return;const s=bagStacks()[invSel];if(!s)return;const a=b.dataset.ia;
+  if(a==='eat'){S.food[s.f]--;const m=ITEMS[s.f].act();log(m||ITEMS[s.f].name,'#6cc28a');}else if(a==='kit'){invClose();useKit();return;}else if(a==='eq'){S.cur=s.g;}
+  invSel=-1;invRender();};
+$('invClose').onclick=invClose;
+addEventListener('keydown',e=>{if(!elInv.hidden){if(e.key==='Escape'||e.key==='i'||e.key==='I'){e.stopImmediatePropagation();e.preventDefault();invClose();}return;}
+  if((e.key==='i'||e.key==='I')&&running&&!paused&&!e.repeat&&!(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'))){e.preventDefault();invOpen();}},true);
+for(const id of ['hBagL','hProd'])$(id).onclick=invOpen;
+function lockerStacks(){invEnsure();const K=S.locker,L=[];for(const g of K.guns)L.push({id:'gun:'+g,k:'gun',g,size:GSIZE[g]||1,n:1});
+  for(const a of AMMOS)if(K.ammo[a]>0)L.push({id:'ammo:'+a,k:'ammo',a,size:1,n:K.ammo[a]});if(K.kit>0)L.push({id:'kit',k:'kit',size:1,n:K.kit});for(const f of FOODS)if(K.food[f]>0)L.push({id:'food:'+f,k:'food',f,size:1,n:K.food[f]});return L;}
+function lockerHtml(){const L=bagStacks(),K=lockerStacks();
+  return `<div class="lkcols"><div><div class="lkh">Your ${bagName().toLowerCase()} · ${slotsUsed()}/${bagCap()}</div><div class="igrid sm" style="grid-template-columns:repeat(${bagCap()<=4?2:4},52px)">${gridHtml(L,bagCap(),'lb')}</div></div>
+   <div><div class="lkh">Stash locker</div><div class="igrid sm lk" style="grid-template-columns:repeat(4,52px)">${K.length?K.map((s,i)=>`<button type="button" class="isq${s.size===2?' w2':''}" data-lk="${i}" title="${esc(stackName(s))}">${stackIcon(s)}<b>${s.k==='gun'?'':'×'+s.n}</b></button>`).join(''):'<div class="sub" style="grid-column:1/-1">Empty. Tap something in your bag to leave it here.</div>'}</div></div></div>
+   <div class="sub" id="lkMsg">Tap a square to move it. Product moves with the buttons above.</div>`;}
+function lockerClick(ev){const lb=ev.target.closest('[data-lb]'),lk=ev.target.closest('[data-lk]');let msg='';invEnsure();const K=S.locker;
+  if(lb){const s=bagStacks()[+lb.dataset.lb];if(!s)return;if(s.k==='prod'){S.inv[s.p]-=s.n;S.store[s.p]=(S.store[s.p]||0)+s.n;msg=`Stashed ${fmtQ(s.p,s.n)}.`;}
+    else if(s.k==='gun')lockGun(s.g);else if(s.k==='ammo'){S.ammo[s.a]-=s.n;K.ammo[s.a]=(K.ammo[s.a]||0)+s.n;}else if(s.k==='kit'){S.kitsR-=s.n;K.kit+=s.n;}else{S.food[s.f]-=s.n;K.food[s.f]=(K.food[s.f]||0)+s.n;}}
+  else if(lk){const s=lockerStacks()[+lk.dataset.lk];if(!s)return;
+    if(s.k==='gun'){if(!roomGun(s.g)){msg=fullMsg();}else{K.guns.splice(K.guns.indexOf(s.g),1);S.weapons.push(s.g);}}
+    else{const room=s.k==='ammo'?roomAmmo(s.a):s.k==='kit'?roomKit():roomFood(s.f),q=Math.min(s.n,s.k==='ammo'?STK[s.a]:s.k==='kit'?STK.kit:STK.food,room);
+      if(q<=0)msg=fullMsg();else if(s.k==='ammo'){K.ammo[s.a]-=q;S.ammo[s.a]=(S.ammo[s.a]||0)+q;}else if(s.k==='kit'){K.kit-=q;S.kitsR=(S.kitsR||0)+q;}else{K.food[s.f]-=q;S.food[s.f]=(S.food[s.f]||0)+q;}}}
+  else return;
+  AU.door&&AU.door();renderStash();if(msg){const m=$('lkMsg');if(m)m.textContent=msg;}}
+$('lockerBox').onclick=lockerClick;
 })();
 </script>
 </html>
