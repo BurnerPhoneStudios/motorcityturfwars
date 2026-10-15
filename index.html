@@ -5283,7 +5283,7 @@ function walk(e,dt,sp){if(e.idle>0){e.idle-=dt;return;}if(e.look&&e.look.old)sp*
   if(onRoad)moveEnt(e,e.dx*sp*dt,e.dy*sp*dt);else moveP(e,e.dx*sp*dt,e.dy*sp*dt);
   if(e.dx||e.dy){e.fx=e.dx;e.fy=e.dy;}
   if(e.t<=0||Math.hypot(e.x-ox,e.y-oy)<sp*dt*0.3){if(onRoad)toSidewalk(e);else pickDirP(e);}}
-function goHome(e,dt,sp,home){if(!e.ht||e.htH!==home||(e.htT=(e.htT||0)+dt)>30){e.ht=null;for(let k=0;k<6&&!e.ht;k++){const q=spotIn(home);if(q&&!(e.type==='rival'&&atPD(q.x,q.y)))e.ht=q;}if(!e.ht)e.ht={x:e.x,y:e.y};e.htH=home;e.htT=0;}seek(e,e.ht.x,e.ht.y,sp,dt);if(Math.hypot(e.x-e.ht.x,e.y-e.ht.y)<40){e.ht=null;e.homing=false;}}
+function goHome(e,dt,sp,home){e.hwT=(e.hwT||0)+dt;if(e.hwT>3){const dd=e.ht?Math.hypot(e.x-e.ht.x,e.y-e.ht.y):0;if(e.hwd!=null&&e.ht&&dd>e.hwd-20){e.ht=null;e.detour=0;}e.hwT=0;e.hwd=e.ht?dd:null;}if(!e.ht||e.htH!==home||(e.htT=(e.htT||0)+dt)>30){e.ht=null;for(let k=0;k<6&&!e.ht;k++){const q=spotIn(home);if(q&&!(e.type==='rival'&&atPD(q.x,q.y)))e.ht=q;}if(!e.ht)e.ht={x:e.x,y:e.y};e.htH=home;e.htT=0;}seek(e,e.ht.x,e.ht.y,sp,dt);if(Math.hypot(e.x-e.ht.x,e.y-e.ht.y)<40){e.ht=null;e.homing=false;}}
 function wander(e,dt,sp){e.t-=dt;const ox=e.x,oy=e.y;moveEnt(e,e.dx*sp*dt,e.dy*sp*dt);if(e.dx||e.dy){e.fx=e.dx;e.fy=e.dy;}if(e.t<=0||Math.hypot(e.x-ox,e.y-oy)<sp*dt*0.3)pickDir(e);}
 function seek(e,tx,ty,sp,dt,away){let dx=tx-e.x,dy=ty-e.y;const d=Math.hypot(dx,dy)||1;dx/=d;dy/=d;if(away){dx=-dx;dy=-dy;}
   if(e.detour>0){e.detour-=dt;e.dTot=(e.dTot||0)+dt;const ax=Math.abs(dx)>=Math.abs(dy);
@@ -5294,7 +5294,11 @@ function seek(e,tx,ty,sp,dt,away){let dx=tx-e.x,dy=ty-e.y;const d=Math.hypot(dx,
     const opts=Math.abs(dx)>Math.abs(dy)?[[0,Math.sign(dy)||1],[0,-(Math.sign(dy)||1)]]:[[Math.sign(dx)||1,0],[-(Math.sign(dx)||1),0]];
     for(const o of opts)if(!hit(e.x+o[0]*26,e.y+o[1]*26,e.r)){e.ddx=o[0];e.ddy=o[1];e.detour=0.55;e.dFlip=false;break;}}}
 function spawnClient(c,minD){const s=spotIn(c.home,minD);if(!s)return null;return mkNPC('cust',s.x,s.y,{cid:c.id,look:c.look,want:false,rs:0,pitchCD:0,walkCD:30+R()*60});}
-function spawnRival(g,own,minD){const home=own.length?own[(R()*own.length)|0]:(g==='kings'?H_GT:11);const s=spotIn(home,minD);if(!s)return;
+const GANG_NEAR=7;
+const rivalsNear=(x,y,r)=>{let n=0;for(const e of npcs)if(e.type==='rival'&&!e.dead&&Math.abs(e.x-x)<r&&Math.abs(e.y-y)<r&&Math.hypot(e.x-x,e.y-y)<r)n++;return n;};
+function gangThin(){const near=npcs.filter(e=>e.type==='rival'&&!e.dead&&!e.war&&e.aggro<=0&&!e.tgt&&!e.gDeal&&!e.party&&Math.hypot(e.x-P.x,e.y-P.y)<700);const all=rivalsNear(P.x,P.y,700);if(all<=10)return;
+  near.sort((a,b)=>Math.hypot(b.x-P.x,b.y-P.y)-Math.hypot(a.x-P.x,a.y-P.y));for(const e of near.slice(0,all-10))if(!onScreen(e,60))e.dead=true;}
+function spawnRival(g,own,minD){const home=own.length?own[(R()*own.length)|0]:(g==='kings'?H_GT:11);const s=spotIn(home,minD);if(!s||rivalsNear(s.x,s.y,700)>=GANG_NEAR)return;
   const lv=repLvl();const armed=lv>=2&&R()<(lv>=4?0.6:0.35);mkNPC('rival',s.x,s.y,{gang:g,home,aggro:0,hp:armed?48:40,armed});}
 function mkCop(x,y,chase){return mkNPC('cop',x,y,{chase:!!chase,hp:70,dirty:R()<0.18});}
 
@@ -5816,7 +5820,8 @@ function cfBuild(){const fee=tollFee(),dis=pick(['"Mind yo business."',"\"Who yo
 function cfEnd(){CF=null;$('cf').hidden=true;document.body.classList.remove('cf');P.cfCD=6;}
 function cfFight(e,why){const g=e.gang;say(e,pick(["It's up then!",'Bro nem! Slide!','Run it then!','Oh, you want smoke?',"You done messed up, jit."]),3);
   e.aggro=12;if(!e.armed&&R()<0.35+repLvl()*0.08)e.armed=true;let n=0;
-  for(const o of npcs){if(o===e||o.dead||o.type!=='rival'||o.gang!==g||dist(o,e)>340)continue;o.aggro=12;n++;if(!o.armed&&R()<0.25+repLvl()*0.07)o.armed=true;if(R()<.5)say(o,pick(['On my mama!','Get him!',"It's up!",'Slide!']),2.2);}
+  const backup=npcs.filter(o=>o!==e&&!o.dead&&o.type==='rival'&&o.gang===g&&o.aggro<=0&&dist(o,e)<=340).sort((a,b)=>dist(a,e)-dist(b,e)).slice(0,3);
+  for(const o of backup){o.aggro=12;n++;if(!o.armed&&R()<0.25+repLvl()*0.07)o.armed=true;if(R()<.5)say(o,pick(['On my mama!','Get him!',"It's up!",'Slide!']),2.2);}
   addBeef(g,0.5);log(`${GANG[g].name} are coming at you${n?` with ${n} more`:''}.`,GANG[g].color);if(CF)cfEnd();}
 function cfChoose(i){if(!CF)return;if(CF.cop)return copChoose(i);const o=CF.opts[i];if(!o||o.off)return;const e=CF.e,g=CF.g,hi=hoodOf(P.x,P.y);
   say(P,o.t.replace(/"/g,''),2.4);
@@ -6289,7 +6294,7 @@ function clashTick(dt){tClash-=dt;if(tClash>0)return;tClash=1;
   tRaidSquad-=1;if(tRaidSquad<=0){tRaidSquad=50+R()*60;const gs=rivalGangs();if(gs.length<1)return;
     // a squad crosses into a neighbor's turf near the player
     const ph=hoodOf(P.x,P.y);const near=[ph,...hoodNb(ph)];const pairs=[];for(const a of near){const oa=S.hoods[a].owner;if(!isRG(oa))continue;for(const b of hoodNb(a)){const ob=S.hoods[b].owner;if(ob&&ob!==oa&&(isRG(ob)||ob==='crew'))pairs.push([a,b,oa]);}}
-    if(!pairs.length)return;const [a,b,g]=pick(pairs);const r=hoodRect(a);let made=0;for(let k=0;k<12&&made<3;k++){const s=spotIn(a,500);if(!s)continue;mkNPC('rival',s.x,s.y,{gang:g,home:b,homing:true,aggro:0,hp:44,armed:R()<0.7,amb:true,raid:true});made++;}
+    if(!pairs.length||rivalsNear(P.x,P.y,800)>=GANG_NEAR-1)return;const [a,b,g]=pick(pairs);const r=hoodRect(a);let made=0;for(let k=0;k<12&&made<3;k++){const s=spotIn(a,500);if(!s)continue;mkNPC('rival',s.x,s.y,{gang:g,home:b,homing:true,aggro:0,hp:44,armed:R()<0.7,amb:true,raid:true});made++;}
     if(made&&R()<0.45)spawnDriveBy(g,null);}}
 function rivalTgtTick(e,dt){const t=e.tgt;if(!t)return false;if(t.dead||t.down>0||Math.hypot(t.x-e.x,t.y-e.y)>560){e.tgt=null;return false;}
   const d=Math.hypot(t.x-e.x,t.y-e.y),a=Math.atan2(t.y-e.y,t.x-e.x);e.fx=Math.cos(a);e.fy=Math.sin(a);
@@ -6633,7 +6638,7 @@ function lawCop(e,dt,dP){
     else if(d>32){seek(e,t.x,t.y,140,dt);if(d>60)t.cuff=0;}
     else{t.cuff=(t.cuff||0)+dt;if(t.cuff>0.9){arrestNPC(e,t);return true;}}
     e.fx=Math.cos(a);e.fy=Math.sin(a);e.lookOff=0;return true;}
-  if(e.call&&!e.chase){const d=Math.hypot(e.call.x-e.x,e.call.y-e.y);if(d>60)seek(e,e.call.x,e.call.y,100,dt);else walk(e,dt,30);return true;}
+  if(e.call&&!e.chase){const d=Math.hypot(e.call.x-e.x,e.call.y-e.y);if(e.atCall!==e.call&&d<60)e.atCall=e.call;if(e.atCall===e.call&&d<150)walk(e,dt,30);else{e.atCall=null;seek(e,e.call.x,e.call.y,100,dt);}return true;}
   return false;}
 function lawRun(e,dt){const c=e.copOn;if(!c||c.dead||c.perp!==e||Math.hypot(c.x-e.x,c.y-e.y)>650){e.copOn=null;return false;}
   if(e.bold==null)e.bold=R();const d=Math.hypot(c.x-e.x,c.y-e.y);
@@ -6709,17 +6714,18 @@ function clubLoop(){if(!CLUB.open)return;CLUB.t+=1/60;const g=clx,W=clc.width,H=
 const PARTIES=[];
 function partyTick(dt){const night=nightAmt()>0.5;
   for(let i=PARTIES.length-1;i>=0;i--){const p=PARTIES[i];p.beat-=dt;
-    if(!night||!GANG[p.g]||GANG[p.g].gone||S.hoods[p.hood].owner!==p.g||dist(p,P)>1600){for(const e of npcs)if(e.party===p){e.party=null;e.dance=false;}for(const c of cars)if(c.party===p&&c.mode==='parked'&&!onScreen(c,80))c.dead=true;PARTIES.splice(i,1);continue;}
+    if(!night||!GANG[p.g]||GANG[p.g].gone||S.hoods[p.hood].owner!==p.g||dist(p,P)>1600||atPD(p.x,p.y)){for(const e of npcs)if(e.party===p){e.party=null;e.dance=false;}for(const c of cars)if(c.party===p&&c.mode==='parked'&&!onScreen(c,80))c.dead=true;PARTIES.splice(i,1);continue;}
     if(dist(p,P)<760&&p.beat<=0){p.beat=8;AU.music&&AU.music(p.x,p.y);}
     const m=npcs.filter(e=>e.party===p&&!e.dead);
     if(m.length&&R()<dt*0.12){const e=pick(m);if(e.armed&&!e.tgt&&e.aggro<=0&&!copsWatching(e.x,e.y)){e.fx=0;e.fy=-1;gangFired(e.x,e.y,null,true);for(let k=0;k<2;k++)setTimeout(()=>{if(e.dead)return;fx.push({k:'flash',x:e.x,y:e.y-20,a:-Math.PI/2,t:.06});AU.gun('glock',e.x,e.y,false);},k*260);gunNoise(e.x,e.y,false);say(e,pick(['Ayyy!','Detroit vs everybody!','Free the guys!']),1.8);}}}
   if(!night)return;
   for(const g of rivalGangs()){if(PARTIES.some(p=>p.g===g))continue;const own=S.hoods.map((h,i)=>h.owner===g?i:-1).filter(i=>i>=0&&Math.hypot(hoodRect(i).x+hoodRect(i).w/2-P.x,hoodRect(i).y+hoodRect(i).h/2-P.y)<1500);if(!own.length)continue;
-    const hood=pick(own);let s=null;for(let k=0;k<40&&!s;k++){const t=spotIn(hood,450);if(!t)continue;const tt=tileAt((t.x/T)|0,(t.y/T)|0);if((tt===LOT||tt===PARK||tt===VACANT)&&!onScreen(t,40))s=t;}if(!s)continue;
+    const hood=pick(own);let s=null;for(let k=0;k<40&&!s;k++){const t=spotIn(hood,450);if(!t)continue;const tt=tileAt((t.x/T)|0,(t.y/T)|0);if((tt===LOT||tt===PARK||tt===VACANT)&&!onScreen(t,40)&&!atPD(t.x,t.y)&&!atPD(t.x+90,t.y)&&!atPD(t.x-90,t.y)&&!atPD(t.x,t.y+90)&&!atPD(t.x,t.y-90))s=t;}if(!s||rivalsNear(s.x,s.y,700)>=5)continue;
     const p={g,hood,x:s.x,y:s.y,beat:0};PARTIES.push(p);
-    for(let k=0;k<6;k++){const a=k/6*Math.PI*2,r=34+R()*26;mkNPC('rival',s.x+Math.cos(a)*r,s.y+Math.sin(a)*r,{gang:g,home:hood,aggro:0,hp:42,armed:R()<0.5,amb:true,party:p,dance:R()<0.75,ph2:R()*6});}
+    for(let k=0;k<4;k++){const a=k/4*Math.PI*2,r=34+R()*26;mkNPC('rival',s.x+Math.cos(a)*r,s.y+Math.sin(a)*r,{gang:g,home:hood,aggro:0,hp:42,armed:R()<0.5,amb:true,party:p,dance:R()<0.75,ph2:R()*6});}
     if(!cars.some(c=>!c.dead&&c.glowC&&!c.owned&&Math.hypot(c.x-s.x,c.y-s.y)<500)){const car=baseCar({mode:'parked',x:s.x+70,y:s.y+10,a:R()*6,color:shade(GANG[g].color,-0.35),glowC:GANG[g].color,type:pick(['muscle','suv','sedan'])});car.party=p;car.tmp=true;cars.push(car);}}}
-function partyNpc(e,dt){const p=e.party;const d=Math.hypot(e.x-p.x,e.y-p.y);if(d>70)seek(e,p.x+(R()-.5)*40,p.y+(R()-.5)*40,40,dt);else{const a=Math.atan2(p.y-e.y,p.x-e.x)+(e.dance?Math.sin(clockT*6+(e.ph2||0))*0.5:0);e.fx=Math.cos(a);e.fy=Math.sin(a);}}
+function partyNpc(e,dt){const p=e.party;if(!e.pslot||e.pslot.p!==p){let sx=p.x,sy=p.y;for(let k=0;k<12;k++){const a=R()*6.28,r=28+R()*30,x=p.x+Math.cos(a)*r,y=p.y+Math.sin(a)*r;if(!hit(x,y,12)&&los(x,y,p.x,p.y)){sx=x;sy=y;break;}}e.pslot={p,x:sx,y:sy,tries:0};e.pT=0;e.pD=null;}
+  const d=Math.hypot(e.x-e.pslot.x,e.y-e.pslot.y);if(d>14){seek(e,e.pslot.x,e.pslot.y,40,dt);e.pT+=dt;if(e.pT>4){e.pT=0;if(e.pD!=null&&d>e.pD-10){if(!onScreen(e,40)&&!e.pslot.tries++&&!hit(e.pslot.x,e.pslot.y,12)){e.x=e.pslot.x;e.y=e.pslot.y;}else{e.party=null;e.dance=false;e.homing=false;}}e.pD=d;}}else{const a=Math.atan2(p.y-e.y,p.x-e.x)+(e.dance?Math.sin(clockT*6+(e.ph2||0))*0.5:0);e.fx=Math.cos(a);e.fy=Math.sin(a);}}
 function drawParties(){for(const p of PARTIES){const x=p.x-camX,y=p.y-camY;if(x<-80||y<-80||x>vw+80||y>vh+80)continue;
   ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(x+3,y+4,11,8,0,0,7);ctx.fill();ctx.fillStyle='#3a3d42';ctx.beginPath();ctx.arc(x,y,9,0,7);ctx.fill();ctx.strokeStyle='#5a5d63';ctx.lineWidth=2;ctx.stroke();
   for(let k=0;k<5;k++){const ph=(clockT*2.4+k*0.2)%1;ctx.fillStyle=`rgba(255,${(120+(1-ph)*100)|0},40,${0.85*(1-ph)})`;ctx.beginPath();ctx.arc(x+Math.sin(clockT*7+k)*3,y-ph*14,(5-ph*3)+(k%2),0,7);ctx.fill();}}}
@@ -7134,8 +7140,8 @@ function update(dt){
         if(!nerveOK(e)){holdUp(e,dt,dP);continue;}e.hold=false;
         if(e.armed&&e.drawT==null)e.drawT=e.war?0.2:0.6+R()*0.6;
         if(e.drawT>0){e.drawT-=dt;const a=Math.atan2(P.y-e.y,P.x-e.x);e.fx=Math.cos(a);e.fy=Math.sin(a);if(dP<150&&!e.drawSaid){e.drawSaid=true;say(e,pick(['Run it!','What you on?!',"Oh you think it's a game?",'Wrong block, dawg.']),1.6);}continue;}
-        if(e.armed&&dP<380&&dP>70){if(e.cd<=0){e.cd=0.9+R()*.5;npcShoot(e,10);}if(dP>230)seek(e,P.x,P.y,78,dt);}
-        else if(dP>28){if(e.war&&dP<120&&npcs.filter(o=>o!==e&&o.war&&!o.dead&&Math.hypot(o.x-P.x,o.y-P.y)<44).length>=2){const a=Math.atan2(e.y-P.y,e.x-P.x);moveEnt(e,-Math.sin(a)*40*dt+(dP<90?Math.cos(a)*50*dt:0),Math.cos(a)*40*dt+(dP<90?Math.sin(a)*50*dt:0));e.fx=-Math.cos(a);e.fy=-Math.sin(a);}else seek(e,P.x,P.y,104,dt);}
+        if(e.armed&&dP<380&&dP>70){if(e.cd<=0){if(npcs.filter(o=>o!==e&&o.type==='rival'&&!o.dead&&LAWT-(o.shotT||-9)<1.3).length<2){e.cd=0.9+R()*.5;e.shotT=LAWT;npcShoot(e,10);}else e.cd=0.3;}if(dP>230)seek(e,P.x,P.y,78,dt);}
+        else if(dP>28){if(dP<120&&npcs.filter(o=>o!==e&&o.type==='rival'&&o.aggro>0&&!o.dead&&Math.hypot(o.x-P.x,o.y-P.y)<44).length>=2){const a=Math.atan2(e.y-P.y,e.x-P.x);moveEnt(e,-Math.sin(a)*40*dt+(dP<90?Math.cos(a)*50*dt:0),Math.cos(a)*40*dt+(dP<90?Math.sin(a)*50*dt:0));e.fx=-Math.cos(a);e.fy=-Math.sin(a);}else seek(e,P.x,P.y,104,dt);}
         else if(e.cd<=0&&!P.car){e.cd=e.war?1.3:0.9;hurtPlayer(e.war?7:8);e.punchT=0.18;}
         if(dP<200)e.aggro=Math.max(e.aggro,1);}
       else if(e.homing||hoodOf(e.x,e.y)!==e.home){e.homing=true;goHome(e,dt,52,e.home);}
@@ -7228,7 +7234,7 @@ function spawnTick(){cleanupCars();payoffTick();
       if(pc){pc.mode='cop';pc.v=pc.cur||pc.v;pc.lostT=0.01;pc.lkx=P.lkx;pc.lky=P.lky;S.copCD=Math.max(3,9-P.heat*1.2);log(resp?'Dispatch: backup unit en route.':`Dispatch: a DPD unit is responding${bd>900?' from across town':''}.`,'#e0574b');}}}
   else if(P.heat<0.05&&R()<0.03){const pc=cars.find(c=>!c.dead&&c.police&&c.mode==='traffic'&&!onScreen(c,100));const s=spotIn((R()*NH)|0,600);if(pc&&s&&!turfCovered(s.x,s.y)){Object.assign(pc,{mode:'resp',tx:s.x,ty:s.y,st:'go',lt:0,stk:0,rev:0});}}
   {const tr=cars.filter(c=>c.mode==='traffic');const cap=carCap();if(tr.length<cap)mkTraffic(true);else if(tr.length>cap+2){const f=tr.find(c=>!onScreen(c,120)&&dist(c,P)>800);if(f)f.dead=true;}}
-  ambientPop();
+  ambientPop();gangThin();
   for(const c of S.roster)if(!npcs.some(e=>e.cid===c.id)&&!c.hurt&&(!c.respawnAt||nowM()>c.respawnAt)){if(c.respawnAt){c.look=makeLook('cust');c.name=pick(NAMES);c.respawnAt=0;}spawnClient(c,600);break;}
   garageTick();
   npcs=npcs.filter(e=>!e.dead);
@@ -7241,7 +7247,7 @@ const pedCap=()=>{const hd=P.hood<0?hoodOf(P.x,P.y):P.hood;return Math.max(4,Mat
 const carCap=()=>{const h=hourNow();return h<5?10:h<7?14:h<10?22:h<19?24:h<23?18:12;};
 const onScreen=(e,m)=>e.x>camX-m&&e.x<camX+vw+m&&e.y>camY-m&&e.y<camY+vh+m;
 function pedSpot(minD,maxD,offscreen){for(let k=0;k<30;k++){const s=spotNear(P.x,P.y,minD,maxD,false);if(!s)continue;if(tileAt((s.x/T)|0,(s.y/T)|0)===ROAD)continue;if(offscreen&&onScreen(s,60))continue;const hd=hoodOf(s.x,s.y);if(R()>0.25+ZONE[hd]*timeMul(hourNow(),hd))continue;return s;}return null;}
-function spawnAmbient(s){const hd=hoodOf(s.x,s.y),own=S.hoods[hd].owner;const gangy=!atPD(s.x,s.y)&&isRG(own)&&R()<(isNight()?0.3:0.14)&&npcs.filter(e=>e.amb).length<5;
+function spawnAmbient(s){const hd=hoodOf(s.x,s.y),own=S.hoods[hd].owner;const gangy=!atPD(s.x,s.y)&&isRG(own)&&R()<(isNight()?0.3:0.14)&&npcs.filter(e=>e.amb).length<5&&rivalsNear(s.x,s.y,700)<GANG_NEAR-1;
   if(gangy)mkNPC('rival',s.x,s.y,{gang:own,home:hd,aggro:0,hp:40,armed:repLvl()>=2&&R()<0.25,amb:true});else if(own==='crew'&&R()<(isNight()?0.32:0.2)&&npcs.filter(e=>e.type==='homie').length<6)mkNPC('homie',s.x,s.y,{home:hd,hp:50,aggro:0,armed:R()<0.3+repLvl()*0.08,amb:true,look:homieLook()});else{const yd=tileAt((s.x/T)|0,(s.y/T)|0)===YARD&&R()<0.35;const e=mkNPC('civ',s.x,s.y,yd?{look:Object.assign(makeLook('civ'),oldLook('man')),lawn:true}:undefined);if(yd)e.idle=1e9;else if(R()<0.35)e.idle=R()*6;}}
 function ambientPop(){for(const e of npcs)if((e.type==='civ'||e.amb)&&!e.payCop&&dist(e,P)>1300&&e.flee<=0)e.dead=true;
   npcs=npcs.filter(e=>!e.dead);const n=npcs.filter(e=>e.type==='civ').length,cap=pedCap();
