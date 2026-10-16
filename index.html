@@ -7124,7 +7124,7 @@ addEventListener('keydown',e=>{if(MG.on){mgKey(e,true);return;}if(W8.open){if(e.
   if(!elStash.hidden||!elShop.hidden||!elTrap.hidden||!elCas.hidden||!elDev.hidden||!running)return;
   if(!elCall.hidden&&!keys[k]){if(k>='1'&&k<='6'){callout(+k-1);keys[k]=true;return;}if(k==='escape'||k==='t'){closeCallouts();keys[k]=true;return;}}
   if(!keys[k]){if(k==='t')openCallouts();if(k==='e')actE();if(k==='f')actF();if(k===' '&&!P.car)attack();if(k==='r')startReload();if(k==='p'||k==='tab')togglePhone();if(k==='k')AU.toggle();if(k==='m')openMap();if(k==='v')zoomCycle();if(k==='n')radioNext();if(k==='x')useKit();if(k==='c')toggleCrouch();if(k==='-'||k==='_')zoomStep(-1);if(k==='='||k==='+')zoomStep(1);if(k==='h'){if(P.car)honk();else stickCmd();};if(k==='z')focusTry();if(k==='b'&&nearBank())heistGo('loud');if(k==='g'){const f=followers();if(f.length){for(const e of f)dismiss(e);log(`Sent ${f.length>1?'your homies':nickOf(f[0])} home.`,GANG.crew.color);}}
-    if(k>='1'&&k<='6'){if(CF&&k<='4')cfChoose(+k-1);else switchWeapon(0,+k-1);}}
+    if(k>='1'&&k<='6'){if(CF&&+k<=CF.opts.length)cfChoose(+k-1);else switchWeapon(0,+k-1);}}
   keys[k]=true;});
 addEventListener('keyup',e=>{if(MG.on)mgKey(e,false);keys[e.key.toLowerCase()]=false;});
 addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.down=false;});
@@ -7234,14 +7234,15 @@ function updCruiser(c,dt){
   const sees=carSeesP(c);if(sees){c.lostT=0;c.lkx=P.x;c.lky=P.y;}else{c.lostT=(c.lostT||0)+dt;c.lkx=P.lkx;c.lky=P.lky;
     if(c.lostT>3&&!c.searched&&Math.hypot(c.x-P.lkx,c.y-P.lky)<160&&tileAt((c.x/T)|0,(c.y/T)|0)===ROAD){c.searched=true;c.mode='resp';c.st='scene';c.sceneT=0;c.v=0;c.police=true;for(let k=0;k<2;k++){const sd=k?1:-1;let ox=c.x-Math.sin(c.a)*sd*30,oy=c.y+Math.cos(c.a)*sd*30;if(hit(ox,oy,10)){ox=c.x-Math.cos(c.a)*40;oy=c.y-Math.sin(c.a)*40;}const o=mkCop(ox,oy,true);o.lostT=0.01;o.unit=c;}AU.door&&AU.door();if(dist(c,P)<700)log('Cops bailed out of their cruiser to search on foot. The car is sitting there empty.','#f2a33a');return;}
     if(Math.hypot(c.x-P.lkx,c.y-P.lky)<90){if(!c.wx||Math.hypot(c.x-c.wx,c.y-c.wy)<60){const sp=spotNear(P.lkx,P.lky,120,320,true);if(sp){c.wx=sp.x;c.wy=sp.y;}}}else c.wx=null;}
-  if(!c.bailed&&sees&&d<190&&(!P.car||Math.abs(P.car.v)<50)&&Math.abs(c.v)<170&&P.heat<4){c.bailed=true;c.mode='resp';c.st='scene';c.sceneT=0;c.v=0;c.police=true;for(let k=0;k<2;k++){const sd=k?1:-1;let ox=c.x-Math.sin(c.a)*sd*30,oy=c.y+Math.cos(c.a)*sd*30;if(hit(ox,oy,10)){ox=c.x-Math.cos(c.a)*40;oy=c.y-Math.sin(c.a)*40;}const o=mkCop(ox,oy,true);o.lostT=0;o.unit=c;}AU.door&&AU.door();return;}
+  if(!c.bailed&&sees&&d<240&&(!P.car||Math.abs(P.car.v)<50)&&Math.abs(c.v)<190&&LAWT-(P.firedT||-99)>4){c.bailed=true;c.mode='resp';c.st='scene';c.sceneT=0;c.v=0;c.police=true;const crew=[];for(let k=0;k<2;k++){const sd=k?1:-1;let ox=c.x-Math.sin(c.a)*sd*30,oy=c.y+Math.cos(c.a)*sd*30;if(hit(ox,oy,10)){ox=c.x-Math.cos(c.a)*40;oy=c.y-Math.sin(c.a)*40;}const o=mkCop(ox,oy,true);o.lostT=0;o.unit=c;crew.push(o);}AU.door&&AU.door();
+    if(!CF&&!(P.copCD>0)&&crew[0])copStopOpen(crew[0],true);return;}
   if(c.rev>0){c.rev-=dt;c.v=Math.max(c.v-520*dt,-150);c.a+=1.2*dt;}
   else{const g=cruiserGoal(c,c.lostT>0?(c.wx?c.wx:c.lkx):P.x,c.lostT>0?(c.wx?c.wy:c.lky):P.y,dt),gx=g.x-c.x,gy=g.y-c.y;const diff=angDiff(c.a,Math.atan2(gy,gx));c.a+=clamp(diff*2,-1,1)*2.9*dt*Math.min(1,Math.abs(c.v)/120+0.35);
     const target=(shootersNear(P.x,P.y,520)>2&&P.heat<4)?(d<340?0:120):c.lostT>0?140:d<80?70:Math.min(300,215+P.heat*14);c.v+=(target-c.v)*Math.min(1,dt*1.6);}
   const ox=c.x,oy=c.y;carMove(c,dt,false);
   if(c.rev<=0&&Math.hypot(c.x-ox,c.y-oy)<Math.abs(c.v)*dt*0.3&&Math.abs(c.v)>40){c.stk+=dt;if(c.stk>0.5){c.rev=0.8;c.stk=0;}}else c.stk=Math.max(0,c.stk-dt);
   if(d<44&&!hidIn()&&(!P.car||Math.abs(P.car.v)<60))c.box+=dt;else c.box=Math.max(0,c.box-dt);
-  if(c.box>2){c.box=0;busted();}
+  if(c.box>2){c.box=0;if(P.copCD>0||P.heat>=4)busted();}
 }
 function update(dt){
   const prevDay=S.day;
@@ -7339,13 +7340,15 @@ function update(dt){
       if(e.chase&&!sees)e.lostT=(e.lostT||0)+dt;
       if(e.chase&&P.heat<0.05){e.chase=false;e.grab=0;}
       if(e.chase){e.cd-=dt;
+        if(CF&&CF.cop&&dP<560){const k=dP||1;e.fx=(P.x-e.x)/k;e.fy=(P.y-e.y)/k;e.lookOff=0;if(dP>(e===CF.e?70:140))seek(e,P.x,P.y,55,dt);continue;}
+        if(sees&&!e.warned&&!CF&&!(P.copCD>0)&&dP<320&&LAWT-(P.firedT||-99)>4){e.warned=true;copStopOpen(e,dP>60);continue;}
         const armed=gunOut()&&!P.car&&sees&&dP<320;if(armed&&!e.yelled){e.yelled=true;say(e,pick(COPYELL),2);if(P.heat<3)addHeat(3-P.heat,P.x,P.y);}if(!gunOut())e.yelled=false;
-        if((P.heat>=4||armed)&&sees&&dP<380&&dP>60&&e.cd<=0){e.cd=1.4+R()*.8;npcShoot(e,7);}
+        if((P.heat>=4||armed)&&sees&&dP<380&&dP>60&&e.cd<=0&&(e.warned||LAWT-(P.firedT||-99)<4)){e.cd=1.4+R()*.8;npcShoot(e,7);}
         if(sees){e.lookOff=0;if(dP>22)seek(e,P.x,P.y,Math.min(150,104+P.heat*9),dt);else{e.fx=(P.x-e.x)/(dP||1);e.fy=(P.y-e.y)/(dP||1);}}
         else{const dl=Math.hypot(e.x-P.lkx,e.y-P.lky);
           if(dl>70&&!e.sweep)seek(e,P.lkx,P.lky,100,dt);
           else{e.sweep=true;e.sT=(e.sT||0)-dt;if(!e.sx||e.sT<=0||Math.hypot(e.x-e.sx,e.y-e.sy)<30){const sp=spotNear(P.lkx,P.lky,40,120+P.heat*40,false);if(sp){e.sx=sp.x;e.sy=sp.y;}e.sT=3+R()*3;}if(e.sx)seek(e,e.sx,e.sy,58,dt);}}
-        if(dP<30&&(!P.car||Math.abs(P.car.v)<40)){e.grab=(e.grab||0)+dt;if(e.grab>0.6){e.grab=0;if(P.car||P.heat>=4){busted();break;}else if(!(P.copCD>0))copStopOpen(e);}}else e.grab=Math.max(0,(e.grab||0)-dt*2);}
+        if(dP<30&&(!P.car||Math.abs(P.car.v)<40)){e.grab=(e.grab||0)+dt;if(e.grab>0.6){e.grab=0;if(CF){}else if(P.copCD>0&&(P.car||P.heat>=4)){busted();break;}else if(!(P.copCD>0))copStopOpen(e,false);}}else e.grab=Math.max(0,(e.grab||0)-dt*2);}
       else if(!sceneWalk(e,dt))walk(e,dt,42);
     }
   }
@@ -9173,13 +9176,18 @@ function sneakMul(e,dx,dy,w){if(!P.crouch||e.aggro>0||e.chase||e.flee>0||e.hands
   if(((e.fx||0)*dx+(e.fy||0)*dy)/d<0.2)return 1;floatText(e.x,e.y-24,'SNEAK HIT','#f2a33a');return w===WD.knife?4:w===WD.bat?2:2.5;}
 // ================= police stops: cops step out, you give up, pay off a dirty cop, or run =================
 const bribeCost=()=>Math.round(150+Math.max(1,P.heat)*120);
-function copStopOpen(e){if(CF)return;CF={e,cop:true,stage:1,t:7,max:7,line:gunOut()?'DROP THE WEAPON! Hands where I can see them!':pick(['Hands behind your back!','On the ground, now!',"Don't move! You're under arrest!",'Turn around. Hands on your head.'])};
-  say(e,CF.line,7);copBuild();AU.huh&&AU.huh();}
-function copBuild(){const fee=bribeCost();
-  CF.opts=[{k:'give',t:'"Aight, aight. I give up."',d:'Get booked: lose dirty cash, product on you and guns'},
+function copStopLine(far){return P.car?pick(['Step out of the vehicle! Hands where I can see them!','DPD! Shut it off and step out of the car!']):gunOut()?pick(['DROP THE WEAPON! Hands where I can see them!','DPD! Drop the gun, NOW!']):far?pick(['FREEZE! DPD!',"Police! Don't move!",'Freeze! Hands up, now!']):pick(['Hands behind your back!','On the ground, now!',"Don't move! You're under arrest!",'Turn around. Hands on your head.']);}
+function copStopOpen(e,far){if(CF||rob)return;const T0=far?6:7;CF={e,cop:true,far:!!far,inCar:!!P.car,px:P.x,py:P.y,t0:LAWT,stage:1,t:T0,max:T0,line:copStopLine(far)};
+  say(e,CF.line,7);for(const o of npcs)if(o.type==='cop'&&!o.dead&&dist(o,P)<560){o.chase=true;o.warned=true;}copBuild();AU.huh&&AU.huh();}
+function copFight(e,why){cfEnd();P.copCD=25;if(P.heat<4)addHeat(4-P.heat,P.x,P.y);
+  for(const o of npcs)if(o.type==='cop'&&!o.dead&&dist(o,P)<800){o.chase=true;o.warned=true;o.cd=Math.min(o.cd||0,0.4);}
+  if(e&&!e.dead)say(e,pick(['Suspect is resisting! Take him down!','Shots fired! Shots fired!',"He's not complying! Light him up!"]),2.5);if(why)log(why,'#e0574b');}
+function copBuild(){const fee=bribeCost(),car=!!P.car;
+  CF.opts=[{k:'give',t:car?'"Aight. I\'m stepping out."':'"Aight, aight. I give up."',d:'Surrender. Get booked: lose dirty cash, product on you and guns'},
     {k:'bribe',t:`"Here, $${fee}. You ain't see me."`,d:S.cash>=fee?'Some cops take it. Clean ones add a charge':'Not enough cash',off:S.cash<fee,fee},
-    {k:'run',t:'"Nah, I\'m out!"',d:'Break away and run'}];
-  if(gunOut())CF.opts.unshift({k:'drop',t:'"Okay! Okay! Putting it down."',d:'Holster your gun so they stop shooting'});
+    {k:'run',t:car?'"Nah!" (floor it)':'"Nah, I\'m out!"',d:car?'Drive off and try to lose them':'Break away and run'},
+    {k:'fight',t:'"Y\'all ain\'t taking me!"',d:gunOut()?'Shoot it out with DPD':'Swing on them. They will fight back'}];
+  if(gunOut()&&!car)CF.opts.unshift({k:'drop',t:'"Okay! Okay! Putting it down."',d:'Drop the gun so they hold fire'});
   $('cfWho').innerHTML=`<b style="color:#6f96e0">Officer ${esc(nickOf(CF.e))}</b> · Detroit Police`;$('cfLine').textContent=`"${CF.line}"`;
   $('cfOpts').innerHTML=CF.opts.map((o,i)=>`<button type="button" data-i="${i}"${o.off?' disabled':''}><kbd>${i+1}</kbd><span><b>${esc(o.t)}</b><i>${esc(o.d)}</i></span></button>`).join('');
   $('cf').hidden=false;$('cf').style.borderLeftColor='#6f96e0';document.body.classList.add('cf');}
@@ -9189,11 +9197,15 @@ function copChoose(i){const o=CF.opts[i];if(!o||o.off)return;const e=CF.e;say(P,
   if(o.k==='drop'){S.cur='fists';P._kc='fists';say(e,'Good. Now turn around.',3);CF.t=CF.max=6;copBuild();return;}
   if(o.k==='bribe'){S.cash-=o.fee;if(e.dirty){say(e,pick(["I ain't see nothin'. Get outta here.",'Pleasure doin\' business.','Go on. Before I change my mind.']),3);log(`Officer ${nickOf(e)} pocketed $${o.fee} and let you walk.`,'#6cc28a');copLetGo();cfEnd();P.copCD=30;}
     else{say(e,pick(['Bribing an officer? Now you got two charges.','You tryna pay me? Hands behind your back!']),3);addHeat(1,P.x,P.y);log(`Clean cop. He kept the $${o.fee} as evidence.`,'#e0574b');CF.opts=CF.opts.filter(x=>x.k!=='bribe');CF.t=CF.max=5;copBuild();}return;}
-  if(o.k==='run'){say(e,'Stop! Police!',2);e.grab=0;e.stun=0.8;addHeat(0.6,P.x,P.y);cfEnd();P.copCD=6;}}
-function copStopTick(dt){P.copCD=(P.copCD||0)-dt;if(!CF||!CF.cop)return false;const e=CF.e;if(e.dead||e.stun>0||P.car||rob){cfEnd();return true;}
+  if(o.k==='fight'){copFight(e,'You chose violence. DPD is shooting back.');return;}
+  if(o.k==='run'){say(e,'Stop! Police!',2);e.grab=0;if(!P.car)e.stun=0.8;addHeat(0.6,P.x,P.y);cfEnd();P.copCD=6;}}
+function copStopTick(dt){P.copCD=(P.copCD||0)-dt;if(!CF||!CF.cop)return false;const e=CF.e;if(e.dead||e.stun>0||rob){cfEnd();return true;}
   CF.t-=dt;$('cfBar').style.width=Math.max(0,CF.t/CF.max*100)+'%';e.fx=(P.x-e.x)/(dist(e,P)||1);e.fy=(P.y-e.y)/(dist(e,P)||1);
-  if(dist(e,P)>160){say(e,'Stop! Police!',2);cfEnd();P.copCD=4;return true;}
-  if(CF.t<=0){cfEnd();P.copCD=4;busted();}return true;}
+  if((P.firedT||-99)>CF.t0){copFight(e,'You opened fire on DPD.');return true;}
+  if(CF.inCar&&!P.car){CF.inCar=false;CF.px=P.x;CF.py=P.y;CF.line=gunOut()?'DROP THE WEAPON!':'Hands on your head! Walk toward me!';say(e,CF.line,5);CF.t=CF.max=6;copBuild();return true;}
+  const moved=Math.hypot(P.x-CF.px,P.y-CF.py);
+  if((!CF.inCar&&P.car)||(P.car&&Math.abs(P.car.v)>70)||dist(e,P)>(CF.far?480:180)||moved>(CF.far?120:70)){say(e,'Stop! Police!',2);addHeat(0.6,P.x,P.y);cfEnd();P.copCD=6;return true;}
+  if(CF.t<=0){if(gunOut()){copFight(e,"You didn't drop the gun. DPD opened fire.");}else{cfEnd();P.copCD=4;busted();}}return true;}
 // ================= tow trucks, parking officers and the DPD impound =================
 const IMPOUND={x:HQ.x+T*2.4,y:HQ.y};
 const impFee=en=>Math.min(600,100+Math.round((en.value||2000)*0.05));
