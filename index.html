@@ -5271,7 +5271,32 @@ const AU=(()=>{
     fire('beep',edgeNear()&&day>0.5?1:0,beep,12,26);
   }
   function setMute(m){muted=m;try{localStorage.setItem('mct-mute',m?'1':'0');}catch(e){}applyVol();const b=document.getElementById('sndBtn');if(b){b.classList.toggle('off',m);b.setAttribute('aria-label',m?'Sound off':'Sound on');}}
-  return {init,update,music,ping,explode,dirt,rustle,pour,gun,swing,hit,hurt,reload,shell,cash,buzz,chime,sting,door,crash,thud,chimeDoor,bell,carAlarm,dog,horn,toggle:()=>{init();setMute(!muted);},setMute:m=>{init();setMute(m);},get muted(){return muted;},setVol,vol:k=>VOL[k],get gains(){return ac?{master:master.gain.value,sfx:sfx.gain.value,amb:amb.gain.value}:null;}};
+    // ---------- stash minigames: lo-fi beat + hands-on sfx ----------
+  const MGA={bus:null,timer:null,step:0,next:0,holds:{}};
+  const MGCH=[[220,261.6,329.6,392],[146.8,174.6,220,261.6],[196,246.9,293.7,349.2],[130.8,164.8,196,246.9]],MGB=[55,73.4,49,65.4];
+  function mgBeat(){const sp=60/84/4,b=MGA.bus;while(MGA.next<ac.currentTime+0.25){const t=MGA.next,k=MGA.step%16,bar=(MGA.step>>4)%4;
+      if(k===0||k===10)tn(b,t,'sine',110,42,0.28,0.9,0.003);
+      if(k===4||k===12){nz(b,t,0.16,'bandpass',1800,0.9,0.35,0.004);nz(b,t,0.05,'highpass',5000,1,0.15);}
+      if(k%2===0)nz(b,t+(k%4===2?sp*0.18:0),0.035,'highpass',8000,1,k%4===2?0.12:0.07);
+      if(k===0||k===8||k===14){const f=MGB[bar];tn(b,t,'sine',f,f,sp*(k===14?1.8:5),0.5,0.02);}
+      if(k===0){for(const f of MGCH[bar]){tn(b,t,'triangle',f,f,sp*14,0.07,0.04);tn(b,t+0.012,'sine',f*2,f*2,sp*10,0.025,0.06);}}
+      if(k===7||k===13){const ch=MGCH[bar],f=ch[(MGA.step>>2)%4]*2;tn(b,t,'triangle',f,f,sp*2.5,0.05,0.01);}
+      if(Math.random()<0.5)nz(b,t+Math.random()*sp,0.01,'highpass',3000,1,0.05);
+      MGA.step++;MGA.next+=sp;}}
+  function mgMusic(on){if(!ok)return;if(on){if(MGA.bus)return;const g=ac.createGain();g.gain.value=0;g.connect(master);MGA.bus=g;g.gain.setTargetAtTime(0.55*VOL.music,ac.currentTime,0.4);
+      MGA.step=0;MGA.next=ac.currentTime+0.1;MGA.crackle=loop(noise,'highpass',6000,0.5,g);MGA.crackle.g.gain.value=0.02;mgBeat();MGA.timer=setInterval(mgBeat,60);}
+    else{if(!MGA.bus)return;const g=MGA.bus;MGA.bus=null;clearInterval(MGA.timer);g.gain.setTargetAtTime(0,ac.currentTime,0.25);setTimeout(()=>{try{g.disconnect();}catch(e){}},1500);for(const k in MGA.holds)mgHold(k,false);}}
+  function mgHold(kind,on){if(!ok)return;let h=MGA.holds[kind];
+    if(on&&!h){const spec={soil:[brown,'lowpass',520,0.8,0.55],water:[noise,'bandpass',2300,0.9,0.22],mist:[noise,'highpass',4200,0.7,0.16]}[kind];if(!spec)return;h=MGA.holds[kind]=loop(spec[0],spec[1],spec[2],spec[3],sfx);h.g.gain.setTargetAtTime(spec[4],ac.currentTime,0.04);
+      if(kind==='water'){h.lfo=ac.createOscillator();h.lfo.frequency.value=7;const lg=ac.createGain();lg.gain.value=500;h.lfo.connect(lg).connect(h.f.frequency);h.lfo.start();}}
+    else if(!on&&h){h.g.gain.setTargetAtTime(0,ac.currentTime,0.06);delete MGA.holds[kind];setTimeout(()=>{try{h.g.disconnect();h.lfo&&h.lfo.stop();}catch(e){}},600);}}
+  function mgSfx(kind,lvl){const d=near(0.5);if(!d)return;const t=now();
+    if(kind==='seed'){tn(d,t,'sine',1900,700,0.12,0.35);nz(d,t+0.18,0.1,'lowpass',420,1,0.6);}
+    else if(kind==='snip'){nz(d,t,0.03,'highpass',5200,2,0.7);tn(d,t,'square',3200,2400,0.03,0.12);nz(d,t+0.03,0.08,'bandpass',2800,1.5,0.25);}
+    else if(kind==='pick'){tn(d,t,'sine',520,980,0.09,0.4);nz(d,t,0.05,'bandpass',1400,2,0.3);}
+    else if(kind==='grade'){const f=lvl>0.9?[784,1175]:lvl>0.7?[659,988]:lvl>0.4?[523,587]:[311,220];tn(d,t,'triangle',f[0],f[0],0.12,0.35);tn(d,t+0.1,'triangle',f[1],f[1],0.22,0.35);}
+    else if(kind==='done'){const seq=lvl>0.7?[523,659,784,1046,1318]:lvl>0.4?[523,659,784]:[392,330,262];seq.forEach((f,i)=>{tn(d,t+i*0.09,'triangle',f,f,0.35,0.4);tn(d,t+i*0.09,'sine',f*2,f*2,0.2,0.1);});}}
+return {init,mgMusic,mgHold,mgSfx,update,music,ping,explode,dirt,rustle,pour,gun,swing,hit,hurt,reload,shell,cash,buzz,chime,sting,door,crash,thud,chimeDoor,bell,carAlarm,dog,horn,toggle:()=>{init();setMute(!muted);},setMute:m=>{init();setMute(m);},get muted(){return muted;},setVol,vol:k=>VOL[k],get gains(){return ac?{master:master.gain.value,sfx:sfx.gain.value,amb:amb.gain.value}:null;}};
 })();
 ['pointerdown','keydown','touchstart'].forEach(t=>addEventListener(t,()=>AU.init(),{capture:true,passive:true}));
 
@@ -6060,8 +6085,8 @@ const COOK={time:60,max:4};
 const MG={on:false};
 const mgEl=document.getElementById('mg'),mgC=document.getElementById('mgC'),mgX=mgC.getContext('2d');
 function mgOpen(type,title,onDone,onCancel){Object.assign(MG,{on:true,type,phase:0,t:0,pt:0,hold:false,started:false,v:0,score:[],done:onDone,cancel:onCancel,res:null,parts:[],buds:null,cracks:null,inZone:0,dropped:false,dropX:0,seedX:0,v0:0,flash:null});
-  $('mgT').textContent=title;mgEl.hidden=false;mgHint();MG.last=performance.now();requestAnimationFrame(mgLoop);}
-function mgClose(cancelled){MG.on=false;mgEl.hidden=true;if(cancelled&&MG.cancel)MG.cancel();renderStash();}
+  $('mgT').textContent=title;mgEl.hidden=false;mgHint();AU.mgMusic(true);MG.last=performance.now();requestAnimationFrame(mgLoop);}
+function mgClose(cancelled){MG.on=false;mgEl.hidden=true;AU.mgMusic(false);if(cancelled&&MG.cancel)MG.cancel();renderStash();}
 function mgHint(){const tap=coarse?'Hold the screen':'Hold the mouse or Space',clk=coarse?'Tap':'Click';
   const H={plant:[`${tap} to pour soil. Let go inside the band.`,`${clk} when the seed is over the hole.`,`${tap} to water. Let go inside the band.`],
     trim:[`${clk} each bud to snip it off.`],cook:[`${tap} to mist the tent. Keep the humidity in the green.`,`${clk} each mushroom to pick it.`]};
@@ -6073,21 +6098,22 @@ document.getElementById('mgCancel').onclick=()=>mgClose(true);
 function mgKey(e,down){const k=e.key.toLowerCase();if(k===' '||k==='e'){e.preventDefault();if(down&&!MG.hold){MG.hold=true;mgClick(null,null);}else if(!down)MG.hold=false;}if(down&&k==='escape')mgClose(true);}
 const plantYield=a=>a>=0.82?28:a>=0.45?20:10;
 const grade=s=>s>0.9?['Perfect','#6cc28a']:s>0.7?['Good','#9fd16b']:s>0.4?['Okay','#f2a33a']:['Sloppy','#e0574b'];
-function mgNext(){MG.phase++;MG.pt=0;MG.started=false;MG.v=0;mgHint();}
-function mgFinish(res){MG.res=res;MG.pt=0;MG.phase=99;}
+function mgNext(){if(MG.score.length)AU.mgSfx('grade',MG.score[MG.score.length-1]);MG.phase++;MG.pt=0;MG.started=false;MG.v=0;mgHint();}
+function mgFinish(res){MG.res=res;AU.mgSfx('done',MG.score.length?MG.score.reduce((a,b)=>a+b,0)/MG.score.length:1);MG.pt=0;MG.phase=99;}
 function mgClick(x,y){
   if(MG.phase===99)return;
-  if(MG.type==='plant'&&MG.phase===1&&!MG.dropped){MG.dropped=true;MG.dropX=MG.seedX;const s=clamp(1-Math.abs(MG.seedX-210)/70,0,1);MG.score.push(s);MG.pt=0;AU.dirt();}
-  if(MG.type==='trim'&&x!=null){for(const b of MG.buds){if(b.cut)continue;if(Math.hypot(b.x-x,b.y-y)<20){b.cut=true;AU.rustle();for(let k=0;k<6;k++)MG.parts.push({x:b.x,y:b.y,vx:(R()-.5)*160,vy:-R()*120,t:.6,c:'#5fbf5a'});break;}}}
-  if(MG.type==='cook'&&MG.phase===1&&x!=null){for(const c of MG.cracks){if(c.hit)continue;if(Math.hypot(c.x-x,c.y-y)<22){c.hit=true;AU.ping(P.x,P.y);for(let k=0;k<7;k++)MG.parts.push({x:c.x,y:c.y,vx:(R()-.5)*200,vy:(R()-.5)*200,t:.5,c:'#b0784a'});break;}}}
+  if(MG.type==='plant'&&MG.phase===1&&!MG.dropped){MG.dropped=true;MG.dropX=MG.seedX;const s=clamp(1-Math.abs(MG.seedX-210)/70,0,1);MG.score.push(s);MG.pt=0;AU.mgSfx('seed');}
+  if(MG.type==='trim'&&x!=null){for(const b of MG.buds){if(b.cut)continue;if(Math.hypot(b.x-x,b.y-y)<20){b.cut=true;AU.mgSfx('snip');AU.rustle();for(let k=0;k<6;k++)MG.parts.push({x:b.x,y:b.y,vx:(R()-.5)*160,vy:-R()*120,t:.6,c:'#5fbf5a'});break;}}}
+  if(MG.type==='cook'&&MG.phase===1&&x!=null){for(const c of MG.cracks){if(c.hit)continue;if(Math.hypot(c.x-x,c.y-y)<22){c.hit=true;AU.mgSfx('pick');for(let k=0;k<7;k++)MG.parts.push({x:c.x,y:c.y,vx:(R()-.5)*200,vy:(R()-.5)*200,t:.5,c:'#b0784a'});break;}}}
 }
-function mgLoop(now){if(!MG.on)return;const dt=Math.min(0.05,(now-MG.last)/1000);MG.last=now;MG.t+=dt;MG.pt+=dt;
+function mgLoop(now){if(!MG.on){AU.mgMusic(false);return;}const dt=Math.min(0.05,(now-MG.last)/1000);MG.last=now;MG.t+=dt;MG.pt+=dt;
+  {const h=MG.hold&&MG.phase!==99;AU.mgHold('soil',h&&MG.type==='plant'&&MG.phase===0);AU.mgHold('water',h&&MG.type==='plant'&&MG.phase===2);AU.mgHold('mist',h&&MG.type==='cook'&&MG.phase===0&&MG.pt>0.8);}
   const g=mgX,W=mgC.width,H=mgC.height;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,W,H);g.fillStyle='#101114';g.fillRect(0,0,W,H);
   g.font=`700 15px ${FB}`;g.textAlign='center';g.textBaseline='middle';
   if(MG.type==='plant')mgPlant(g,dt,W,H);else if(MG.type==='trim')mgTrim(g,dt,W,H);else mgCook(g,dt,W,H);
   for(const p of MG.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=300*dt;p.t-=dt;g.globalAlpha=Math.max(0,p.t/0.6);g.fillStyle=p.c;g.fillRect(p.x-2,p.y-2,4,4);}g.globalAlpha=1;MG.parts=MG.parts.filter(p=>p.t>0);
   if(MG.phase===99){g.fillStyle='rgba(16,17,20,.82)';g.fillRect(0,0,W,H);const r=MG.res;g.fillStyle=r.col;g.font=`900 38px ${FD}`;g.fillText(r.big,W/2,H/2-18);g.fillStyle='#d7dbe1';g.font=`600 17px ${FB}`;g.fillText(r.sub,W/2,H/2+20);
-    if(MG.pt>1.3){const d=MG.done;MG.on=false;mgEl.hidden=true;d&&d(r);renderStash();return;}}
+    if(MG.pt>1.3){const d=MG.done;MG.on=false;mgEl.hidden=true;AU.mgMusic(false);d&&d(r);renderStash();return;}}
   requestAnimationFrame(mgLoop);}
 function drawPot(g,cx,by,fill,wet,col){g.fillStyle='#6e4630';g.beginPath();g.moveTo(cx-70,by-120);g.lineTo(cx+70,by-120);g.lineTo(cx+52,by);g.lineTo(cx-52,by);g.closePath();g.fill();
   if(fill>0){const fh=Math.min(1.15,fill)*112;g.save();g.beginPath();g.moveTo(cx-66,by-116);g.lineTo(cx+66,by-116);g.lineTo(cx+50,by-4);g.lineTo(cx-50,by-4);g.closePath();g.clip();g.fillStyle=col||'#3b2a1e';g.fillRect(cx-80,by-4-fh,160,fh);
@@ -6515,7 +6541,7 @@ function radioNext(){if(!P.car&&!S.mp3)return;S.radio=(stIdx()+1)%STATIONS.lengt
 function radioTick(){const si=stIdx(),st=STATIONS[si];const want=running&&(P.car||S.mp3)&&st&&st.seq&&!AU.muted;const a=RAD.el;
   if(DJ.on){if(want&&RAD.cur===si)return;djStop();}
   if(!want){if(a&&!a.paused)a.pause();if(!P.car)RAD.cur=-1;else if(RAD.cur!==si){RAD.cur=si;}return;}
-  const b=radioEl();b.volume=Math.min(1,(paused?0.22:0.6)*AU.vol('master')*AU.vol('music'));
+  const b=radioEl();b.volume=Math.min(1,(paused?0.22:0.6)*(MG.on?0.25:1)*AU.vol('master')*AU.vol('music'));
   if(RAD.cur!==si||b.paused){if(st.off==null){const i0=si===1?0:2*((R()*(st.seq.length/2))|0);st.off=startOf(st,i0)-rnow();}const [i,t]=seqAt(st);RAD.cur=si;radioPlay(st,i,t);}}
 setInterval(radioTick,200);
 // ================= car-on-car physics =================
