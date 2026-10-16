@@ -5497,7 +5497,7 @@ function damageNPC(e,d,src,nx,ny){
     else if(e.type==='civ'||e.type==='cust')e.flee=4;else if(e.type==='rival'&&!e.tgt&&DMG_BY){const sh=npcs.find(o=>o.type==='rival'&&o.gang===DMG_BY&&!o.dead&&dist(o,e)<500);if(sh)e.tgt=sh;}}
   else if(e.type==='rival'){e.aggro=8;e.prov=7;if(isMC(e.gang))GANG[e.gang].mad=LAWT+60;for(const o of npcs)if(o.type==='rival'&&o.gang===e.gang&&o!==e&&!o.dead&&dist(o,e)<260)o.prov=Math.max(o.prov||0,4);addBeef(e.gang,0.3);if(CF&&CF.e===e)cfFight(e);
     if(src==='melee'){const w=witness(e.x,e.y);if(w.cop)addHeat(w.cop*.4);}
-    if(e.hp<=0){e.dead=true;addBeef(e.gang,isMC(e.gang)?0.5:1);if(isMC(e.gang))mcLoss(e.gang);dropCash(e.x,e.y,e.hr);
+    if(e.hp<=0){e.dead=true;addBeef(e.gang,isMC(e.gang)?0.5:1);if(isMC(e.gang))mcLoss(e.gang);if(!e.war)dropCash(e.x,e.y,e.hr);
       addInf(hi,'crew',4);addInf(hi,e.gang,-6);gainRep(6);{const gg=GANG[e.gang]||{name:'rival',color:'#c9ccd2'};log(`Dropped ${/^[AEIOU]/.test(gg.name)?'an':'a'} ${gg.name} soldier in ${HN[hi]}.`,gg.color);}refreshOwners();if(src!=='homie')warKill(e,hi);}}
   else if(e.type==='cop'){e.chase=true;
     if(e.hp<=0){e.dead=true;if(e.unit&&!npcs.some(o=>o!==e&&!o.dead&&o.unit===e.unit))unitLost(e.unit);P.heat=5;P.lkx=P.x;P.lky=P.y;P.searchT=0;log('Officer down. The whole DPD is coming.','#e0574b');}
@@ -6285,10 +6285,11 @@ function bodyDied(b){if(!b.alive)return;b.alive=false;const k=b.kind;if(k&&k.cid
 function bodyGone(b){if(b.alive)bodyDied(b);const i=BODIES.indexOf(b);if(i>=0)BODIES.splice(i,1);}
 let tEMS=0;
 function emsTick(dt){
-  for(const b of BODIES){b.age=(b.age||0)+dt;if(b.alive&&!b.claim&&b.age>50)bodyDied(b);if(b.claim)b.t=Math.max(b.t,12);}
+  const inWar=b=>!!S.war&&dist(b,P)<1600;
+  for(const b of BODIES){b.age=(b.age||0)+dt;if(b.alive&&!b.claim&&b.age>50)bodyDied(b);if(b.claim)b.t=Math.max(b.t,12);if(!b.claim&&inWar(b)){b.t=Math.max(b.t,20);b.age=Math.min(b.age,4);}}
   tEMS-=dt;if(tEMS>0)return;tEMS=1;
   const active=cars.filter(c=>c.mode==='ems'&&!c.dead).length;if(active>=2)return;
-  const b=BODIES.find(b=>!b.claim&&!b.carried&&b.age>5&&dist(b,P)<1100);if(!b)return;
+  const b=BODIES.find(b=>!b.claim&&!b.carried&&b.age>5&&dist(b,P)<1100&&!inWar(b));if(!b)return;
   let s=null;for(let k=0;k<8&&!s;k++){const t=spotNear(b.x,b.y,520,900,true);if(t&&!onScreen(t,80))s=t;}if(!s)s=spotNear(b.x,b.y,450,900,true);if(!s)return;
   const q=BODIES.filter(o=>!o.claim&&!o.carried&&dist(o,b)<260);
   const c=baseCar({mode:'ems',type:'ems',model:'EMS Ambulance',color:'#f1efe9',value:0,x:s.x,y:s.y,a:Math.atan2(b.y-s.y,b.x-s.x),v:140,st:'drive',q,medics:[],stk:0,rev:0,lt:0});
