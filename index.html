@@ -5365,9 +5365,12 @@ const angDiff=(a,b)=>{let d=(b-a)%(Math.PI*2);if(d>Math.PI)d-=Math.PI*2;if(d<-Ma
 const okTile=t=>t===WALK||t===ALLEY||t===PARK||t===LOT||t===RIVER||t===ROAD||t===GAS||t===YARD||t===VACANT;
 function spotIn(i,minD){const r=hoodRect(i);for(let k=0;k<120;k++){const x=r.x+R()*r.w,y=r.y+R()*r.h;const t=tileAt((x/T)|0,(y/T)|0);if(okTile(t)&&t!==ROAD&&!hit(x,y,13)&&(!minD||Math.hypot(x-P.x,y-P.y)>minD))return{x,y};}return null;}
 function spotNear(cx,cy,minD,maxD,roadOnly){for(let k=0;k<100;k++){const a=R()*6.283,d=minD+R()*(maxD-minD);const x=cx+Math.cos(a)*d,y=cy+Math.sin(a)*d;const t=tileAt((x/T)|0,(y/T)|0);if((roadOnly?t===ROAD:okTile(t))&&!hit(x,y,16))return{x,y};}return null;}
-function addInf(i,g,v){const h=S.hoods[i];h.inf[g]=Math.max(0,Math.min(100,(h.inf[g]||0)+v));}
-function refreshOwners(){S.hoods.forEach((h,i)=>{const o=calcOwner(h);if(o!==h.owner){const prev=h.owner;h.owner=o;
-  if(o==='crew'){log(`${S.crew} took ${h.name}.`,GANG.crew.color);gainRep(40);}
+const TURF_LOCK_DAYS=7;
+const turfLocked=h=>!!h&&h.owner==='crew'&&(h.lock||0)>S.day;
+function addInf(i,g,v){const h=S.hoods[i];h.inf[g]=Math.max(0,Math.min(100,(h.inf[g]||0)+v));
+  if(turfLocked(h)){if(g==='crew')h.inf.crew=Math.max(h.inf.crew,50);else h.inf[g]=Math.min(h.inf[g],35);}}
+function refreshOwners(){S.hoods.forEach((h,i)=>{if(turfLocked(h))return;const o=calcOwner(h);if(o!==h.owner){const prev=h.owner;h.owner=o;
+  if(o==='crew'){h.lock=S.day+TURF_LOCK_DAYS;log(`${S.crew} took ${h.name}. It's locked down for a week.`,GANG.crew.color);gainRep(40);}
   else if(o)log(`${GANG[o].name} took ${h.name}.`,GANG[o].color);
   else if(prev)log(`${h.name} is up for grabs.`,'#d7dbe1');
   if(P.hood===i)updHoodHud();}});
@@ -5463,7 +5466,8 @@ function populate(){
   for(let k=0;k<3;k++){const s=spotIn(H_DT);if(s)mkCop(s.x,s.y);}
   for(const i of [2,6,7,8,11,13,16,17,18]){const s=spotIn(i);if(s)mkCop(s.x,s.y);}
   for(let k=0;k<24;k++)mkTraffic(false);
-  for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(tiles[y*W+x]===LOT&&hsh(x,y)<.3)cars.push(baseCar({x:x*T+24,y:y*T+26,a:hsh(y,x)<.5?Math.PI/2:-Math.PI/2}));
+  {const taken=new Set();for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(tiles[y*W+x]===LOT&&hsh(x,y)<.3&&!taken.has(x+','+(y-1))){let c;for(let k=0;k<8;k++){c=baseCar({x:x*T+24,y:y*T+26,a:hsh(y,x)<.5?Math.PI/2:-Math.PI/2});if((CDIM[c.type]||CDIM.sedan)[0]<=48)break;}
+    if((CDIM[c.type]||CDIM.sedan)[0]>48)continue;taken.add(x+','+y);cars.push(c);}}
   for(const st of STORES)if(st.kind==='gas'){const c=st.canopy;cars.push(baseCar({x:c.x+c.w*0.3,y:c.y+c.h*0.55,a:0}));if(R()<.6)cars.push(baseCar({x:c.x+c.w*0.75,y:c.y+c.h*0.55,a:Math.PI}));}
   spawnGarage();ensureGuards(true);ensureFollowers();
   {const h=STORES.find(s=>s.kind==='hospital');if(h)cars.push(baseCar({mode:'parked',type:'ems',model:'EMS Ambulance',color:'#f1efe9',value:600,st:'leave',x:h.x+70,y:h.y+30,a:0}));}
@@ -6398,7 +6402,7 @@ function warTick(dt){const W=S.war;if(!W)return;W.t+=dt;if(!GANG[W.g]||GANG[W.g]
     if(W.lostT>12){const all=W.lostT>24;for(const e of npcs){if(!e.war||e.dead||(!all&&onScreen(e,40)))continue;let q=null;for(let i=0;i<12&&!q;i++){const c=spotNear(P.x,P.y,all?520:260,all?760:460,false);if(c&&hoodOf(c.x,c.y)===W.hood&&los(P.x,P.y,c.x,c.y)&&!onScreen(c,20))q=c;}if(q){e.x=q.x;e.y=q.y;e.ht=null;e.aggro=Math.max(e.aggro||0,6);}}if(all)W.lostT=0;}}
   if(alive===0){W.gap-=dt;if(W.gap>0)return;
     if(W.wave>=W.waves){if(W.def){addInf(W.hood,'crew',25);card('Block held',`${HN[W.hood]} stays ${S.crew} turf.`,GANG.crew.color);gainRep(40);}
-      else{const h=S.hoods[W.hood];for(const k in h.inf)h.inf[k]=Math.min(h.inf[k],8);h.inf.crew=78;refreshOwners();card('Turf taken',`${HN[W.hood]} is ${S.crew} turf now.`,GANG.crew.color);gainRep(70);gcHit('/turf-taken','Turf taken in a war',true);addBeef(W.g,1);}
+      else{const h=S.hoods[W.hood];for(const k in h.inf)h.inf[k]=Math.min(h.inf[k],8);h.inf.crew=78;refreshOwners();h.lock=S.day+TURF_LOCK_DAYS;card('Turf taken',`${HN[W.hood]} is ${S.crew} turf now. Nobody can touch it for a week.`,GANG.crew.color);gainRep(70);gcHit('/turf-taken','Turf taken in a war',true);addBeef(W.g,1);}
       S.war=null;return;}
     if(W.wave>0&&P.hp<maxHP()){P.hp=Math.min(maxHP(),P.hp+30);floatText(P.x,P.y-24,'+30','#6cc28a');}
     W.wave++;W.gap=4;warSpawn();log(`Wave ${W.wave} of ${W.waves}. Here they come.`,GANG[W.g].color);}}
@@ -6406,7 +6410,7 @@ function warKill(e,hood){if(S.war||!isRG(e.gang))return;const h=S.hoods[hood];if
   const k=(S.warHeat||(S.warHeat={}));k[hood]=(k[hood]||0)+1;if(k[hood]>=4){k[hood]=0;warStart(hood,e.gang,false);}else if(k[hood]===2)log(`${GANG[e.gang].name} are getting heated. Drop ${4-k[hood]} more in ${HN[hood]} to start a turf war.`,GANG[e.gang].color);}
 let tRaid=120;
 function raidTick(dt){tRaid-=dt;if(tRaid>0||S.war)return;tRaid=150+R()*120;const mine=S.hoods.map((h,i)=>h.owner==='crew'?i:-1).filter(i=>i>=0);if(mine.length<2)return;
-  const opts=[];for(const i of mine)for(const n of hoodNb(i)){const o=S.hoods[n].owner;if(isRG(o)&&!GANG[o].gone)opts.push([i,o]);}if(!opts.length)return;const [hood,g]=pick(opts);
+  const opts=[];for(const i of mine)if(!turfLocked(S.hoods[i]))for(const n of hoodNb(i)){const o=S.hoods[n].owner;if(isRG(o)&&!GANG[o].gone)opts.push([i,o]);}if(!opts.length)return;const [hood,g]=pick(opts);
   warStart(hood,g,true);S.war.respond=75;log(`${GANG[g].name} are rolling on ${HN[hood]}! Get there in 75 seconds.`,GANG[g].color);}
 // ---------- gang lifecycle: elimination + new gangs ----------
 function gangLife(dt){for(const g of rivalGangs()){const own=S.hoods.filter(h=>h.owner===g).length;const G=GANG[g];
@@ -6414,7 +6418,7 @@ function gangLife(dt){for(const g of rivalGangs()){const own=S.hoods.filter(h=>h
   const live=rivalGangs().length,day=S.day,cap=S.gangN??4;
   if((live<Math.min(2,cap)&&(S.lastSprout??-9)<day)||(live<Math.min(4,cap)&&S.day-(S.lastSprout??0)>=4&&R()<dt*0.003)){sproutGang();}}
 function sproutGang(){const used=Object.keys(GANG);const cand=NEW_GANGS.filter(n=>!used.includes(n[0]));if(!cand.length)return;const [id,name,color,tag]=pick(cand);
-  let hs=S.hoods.map((h,i)=>!h.owner?i:-1).filter(i=>i>=0&&i!==H_MID);if(!hs.length)hs=S.hoods.map((h,i)=>h.owner==='crew'&&i!==H_MID?i:-1).filter(i=>i>=0);if(!hs.length)return;
+  let hs=S.hoods.map((h,i)=>!h.owner?i:-1).filter(i=>i>=0&&i!==H_MID);if(!hs.length)hs=S.hoods.map((h,i)=>h.owner==='crew'&&!turfLocked(h)&&i!==H_MID?i:-1).filter(i=>i>=0);if(!hs.length)return;
   const hood=hs.sort((a,b)=>Math.hypot(hoodRect(b).x-P.x,hoodRect(b).y-P.y)-Math.hypot(hoodRect(a).x-P.x,hoodRect(a).y-P.y))[0];
   GANG[id]={name,color,tag};(S.newGangs||(S.newGangs=[])).push({id,name,color,tag});fixRivalCols();S.lastSprout=S.day;
   for(const h of S.hoods)h.inf[id]=h.inf[id]||0;const h=S.hoods[hood];h.inf[id]=70;h.inf.crew=Math.min(h.inf.crew||0,30);refreshOwners();
@@ -6546,7 +6550,7 @@ function drawBike(c,g,x,y){const [L]=CDIM[c.type]||CDIM.rocket;const hl=L/2,ch=c
   g.save();g.translate(x,y);g.rotate(c.a);if(wh>0.01){g.translate(-hl*0.12*wh,0);g.scale(1-0.16*wh,1);}
   {const rate=wreck?0:wheelTick(c);drawTire(g,hl-4.5,0,9,5.2,c.wph||0,wreck?0:(c.wst||0)*0.7,rate);drawTire(g,-hl+5,0,10,6.4,c.wph||0,0,rate);}
   g.fillStyle='#5a5d63';g.fillRect(hl-6,-0.7,3,1.4);g.fillRect(-hl+3.5,-0.8,3,1.6);
-  {const [tx,ty]=vehLift(c,g,x,y,false)(9);g.translate(tx,ty);}
+  {const [tx,ty]=vehLift(c,g,x,y,false)(6);g.translate(tx,ty);}
   const col=wreck?'#2a2622':paintCol(c);
   if(ch){g.strokeStyle='#cfd3d8';g.lineWidth=1.5;g.beginPath();g.moveTo(hl-5,-1.6);g.lineTo(hl-15,-2.6);g.moveTo(hl-5,1.6);g.lineTo(hl-15,2.6);g.stroke();
     g.fillStyle='#9aa0a6';g.fillRect(-hl+1,4,15,1.6);g.fillRect(-hl+1,-5.6,15,1.6);
@@ -7348,7 +7352,7 @@ function rivalTick(){
   for(const g of rivalGangs()){
     const own=S.hoods.map((h,i)=>h.owner===g?i:-1).filter(i=>i>=0);
     own.forEach(i=>addInf(i,g,1.5));
-    let cand=new Set();own.forEach(i=>hoodNb(i).forEach(n=>{if(S.hoods[n].owner!==g)cand.add(n);}));
+    let cand=new Set();own.forEach(i=>hoodNb(i).forEach(n=>{if(S.hoods[n].owner!==g&&!turfLocked(S.hoods[n]))cand.add(n);}));
     cand=[...cand];if(!cand.length&&!own.length)cand=[...Array(NH).keys()];
     const lv=repLvl();
     if(cand.length&&lv>=2){const t=cand[(R()*cand.length)|0];addInf(t,g,1.5+lv*0.6);addInf(t,'crew',-(0.8+lv*0.35));}
@@ -7845,8 +7849,8 @@ function drawCar(c,g2,px,py,pv){const g=g2||ctx;if(isBike(c)){drawBike(c,g,px??(
   g.save();g.translate(x,y);g.rotate(c.a);
   {const rate=wheelTick(c),wst=c.mode==='wreck'?0:c.wst||0;for(const sx of [-L*0.3,L*0.3])for(const sy of [-1,1])drawTire(g,sx,sy*hw+(sy<0?-0.5:0.5),12,4.2,c.wph||0,sx>0?wst:0,rate);}{const rc=rimCol(c);if(rc){g.fillStyle=rc;for(const sx of [-L*0.3,L*0.3])for(const sy of [-1,1])g.fillRect(sx-3,sy*hw-(sy<0?2.6:-0.6),6,2);}}
   const col=c.mode==='wreck'?'#2a2622':paintCol(c);
-  {const[ex,ey]=pq(10);const n=TILT.on&&g===ctx?Math.min(8,Math.max(2,Math.ceil(Math.hypot(ex,ey)/2.5))):2;for(let i=0;i<n;i++){const z=2+i*(8.5/(n-1)),[ax,ay]=pq(z);g.fillStyle=shade(col,-0.6+0.3*i/(n-1));rr(g,-hl+ax,-hw+ay,L,Wd,rad);g.fill();}}
-  const [tx,ty]=pq(11),[ux,uy]=pq(18),cdx=ux-tx,cdy=uy-ty;g.translate(tx,ty);
+  {const[ex,ey]=pq(6);const n=TILT.on&&g===ctx?Math.min(8,Math.max(2,Math.ceil(Math.hypot(ex,ey)/2.5))):2;for(let i=0;i<n;i++){const z=1+i*(4.5/(n-1)),[ax,ay]=pq(z);g.fillStyle=shade(col,-0.6+0.3*i/(n-1));rr(g,-hl+ax,-hw+ay,L,Wd,rad);g.fill();}}
+  const [tx,ty]=pq(6),[ux,uy]=pq(10),cdx=ux-tx,cdy=uy-ty;g.translate(tx,ty);
   g.fillStyle=col;rr(g,-hl,-hw,L,Wd,rad);g.fill();
   const gr=g.createLinearGradient(0,-hw,0,hw);gr.addColorStop(0,'rgba(0,0,0,.32)');gr.addColorStop(.45,'rgba(255,255,255,.16)');gr.addColorStop(.55,'rgba(255,255,255,.1)');gr.addColorStop(1,'rgba(0,0,0,.36)');g.fillStyle=gr;rr(g,-hl,-hw,L,Wd,rad);g.fill();
   g.fillStyle='rgba(0,0,0,.38)';for(const sx of [-L*0.3,L*0.3])for(const sy of [-1,1]){g.beginPath();g.ellipse(sx,sy*hw,7,2.2,0,0,7);g.fill();}
@@ -9429,7 +9433,7 @@ function stashBanners(D,C,D2,C2,z,r){const col=GANG.crew.color,tag=crewTag(),tl=
   }}
 function tiltSet(on){if(TILT.on!==on)chunks.clear();TILT.on=on;$('paTilt').textContent='Buildings: '+(on?'3D':'Flat');}
 $('paTilt').onclick=()=>{tiltSet(!TILT.on);try{localStorage.setItem('mctw-bld',TILT.on?'3d':'flat');}catch(e){}};tiltSet(TILT.on);
-const VLIFT=1.8;
+const VLIFT=1.2;
 function vehLift(c,g,x,y,pv){if(!TILT.on||g!==ctx||pv)return ()=>[0,0];const ca=Math.cos(c.a),sa=Math.sin(c.a),dx=x-vw/2,dy=y-vh/2;
   return z=>{const k=tiltS(z*VLIFT)-1,wx=dx*k,wy=dy*k;return [wx*ca+wy*sa,-wx*sa+wy*ca];};}
 // ================= alley fences: wood and chain-link, cars smash through =================
@@ -9749,7 +9753,9 @@ function drawFreeway(){const F=FWY;if(F.x1-camX<-80||F.x0-camX>vw+80||F.y1-camY<
   if(TILT.on)for(const [px,py] of F.pil)propBox(px-9,py-30,18,60,F.Z,'#8a877f','#6a6760');
   ctx.save();ctx.globalAlpha=under?0.32:1;
   const xs=[];for(let x=F.x0;x<F.x1;x+=T/2)xs.push(x);xs.push(F.x1);
-  if(TILT.on){const side=(y,col)=>{ctx.fillStyle=col;ctx.beginPath();xs.forEach((x,i)=>{const p=fwyPt(x,y);i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);});for(let i=xs.length-1;i>=0;i--)ctx.lineTo(xs[i]-camX,y-camY);ctx.closePath();ctx.fill();};
+  if(TILT.on){const side=(y,col)=>{const bot=[];for(const x of xs){if(x===F.r1)bot.push([x,F.Z-FWY_SLAB]);bot.push([x,(x<=F.r0||x>=F.r1)?0:Math.max(0,fwyZ(x)-FWY_SLAB)]);if(x===F.r0)bot.push([x,F.Z-FWY_SLAB]);}
+      ctx.fillStyle=col;ctx.beginPath();xs.forEach((x,i)=>{const p=fwyPt(x,y);i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);});for(let i=bot.length-1;i>=0;i--){const p=propLift(bot[i][0],y,bot[i][1]);ctx.lineTo(p[0],p[1]);}ctx.closePath();ctx.fill();
+      ctx.fillStyle='rgba(0,0,0,.18)';ctx.beginPath();for(let i=0;i<bot.length;i++){const p=propLift(bot[i][0],y,bot[i][1]+3);i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);}for(let i=bot.length-1;i>=0;i--){const p=propLift(bot[i][0],y,bot[i][1]);ctx.lineTo(p[0],p[1]);}ctx.closePath();ctx.fill();};
     if(cy>F.y1-camY){side(F.y1,'#7a776f');grafFreeway();}if(cy<F.y0-camY)side(F.y0,'#8f8c84');}
   const band=(y0,y1,col)=>{ctx.fillStyle=col;ctx.beginPath();xs.forEach((x,i)=>{const p=fwyPt(x,y0);i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);});for(let i=xs.length-1;i>=0;i--){const p=fwyPt(xs[i],y1);ctx.lineTo(p[0],p[1]);}ctx.closePath();ctx.fill();};
   band(F.y0,F.y1,'#b4b1a8');band(F.y0+6,F.y1-6,'#3e4046');
@@ -9849,7 +9855,8 @@ function grafOnFace(P0,P1,Q0,Q1,len,z,list){const exx=(P1[0]-P0[0])/len,exy=(P1[
 function grafWall(b,D,C,D2,C2,z,rw){if(b.graf)grafOnFace(D,C,D2,C2,rw,z,b.graf);}
 function drawGrafFlat(b){if(!b.graf)return;const W=b.w*T,by=(b.y+b.h)*T-camY,bx=b.x*T-camX;if(bx>vw+20||by<-20||bx+W<-20||by-b.h*T>vh+20)return;
   for(const {p,u} of b.graf){const h=Math.min(p.h,b.h*T*0.5),w=p.w*h/p.h;ctx.globalAlpha=0.9;ctx.drawImage(grafImg(p),bx+u*W-w/2,by-h-4,w,h);}ctx.globalAlpha=1;}
-function grafFreeway(){const F=FWY;if(!TILT.on||vh/2<=F.y1-camY)return;const P0=[F.r0-camX,F.y1-camY],P1=[F.r1-camX,F.y1-camY],Q0=propLift(F.r0,F.y1,F.Z),Q1=propLift(F.r1,F.y1,F.Z);grafOnFace(P0,P1,Q0,Q1,F.r1-F.r0,F.Z,FWY_GRAF);}
+const FWY_SLAB=24;
+function grafFreeway(){const F=FWY;if(!TILT.on||vh/2<=F.y1-camY)return;const zb=F.Z-FWY_SLAB-6,P0=propLift(F.r0,F.y1,zb),P1=propLift(F.r1,F.y1,zb),Q0=propLift(F.r0,F.y1,F.Z),Q1=propLift(F.r1,F.y1,F.Z);grafOnFace(P0,P1,Q0,Q1,F.r1-F.r0,F.Z-zb,FWY_GRAF);}
 // ================= bag inventory: square grid for pockets (4), backpack (12), gym bag (20); stash locker for the rest =================
 const STK={kit:5,'9mm':34,shells:16,'7.62':60,food:4};
 const GSIZE={knife:1,bat:2,glock:1,sawed:2,draco:2};
