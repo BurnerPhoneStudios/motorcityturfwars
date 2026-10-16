@@ -6477,12 +6477,13 @@ function drawPickups(){for(const p of PICKUPS){const x=p.x-camX,y=p.y-camY;if(x<
 const RDUR={motor_city_mayhem:128,turf_authority:104,concrete_kingdom:121.2,night_drive_drift:206.7,alone_on_the_moon:245.4,rings_of_saturn:243.1,space_jazz:113,killmonger:193,no_smoke:97,murder_she_wrote_mix_2:180.4,westcoasttypeshit:214.3,to_the_grave:123.7,projectasteroidz1:122.3,test_run_remastered:208.4,when_the_devil_screams:337.5,the_carnival:265.4,the_assault:158.9,the_art_of_war:291.9,the_clean_up:266.8,underwater:24.4,revenge:11.7};
 const SR=' - Saint Reject',RP=' - Rican Playa';
 const STATIONS=[{name:'Radio off'},
-  {name:'313.7 The Block',pubIdent:'underwater',tracks:[['alone_on_the_moon','Alone on the Moon'+SR,1],['killmonger','Killmonger'+SR],['motor_city_mayhem','Motor City Mayhem'+RP],['rings_of_saturn','Rings of Saturn'+SR,1],['no_smoke','No Smoke'+SR],['murder_she_wrote_mix_2','Murder She Wrote (Mix 2)'+SR,1],['westcoasttypeshit','westcoasttypeshit'+SR,1],['turf_authority','Turf Authority'+RP],['to_the_grave','To The Grave'+SR,1]]},
-  {name:'101.9 The Moon',ident:'underwater',pubIdent:'underwater',tracks:[['test_run_remastered','Spacecraft Test Drive'+SR,1],['night_drive_drift','Night Drive Drift'+RP],['projectasteroidz1','ProjectAsteroidZ'+SR]]},
-  {name:"66.6 Devil's Night",ident:'revenge',tracks:[['when_the_devil_screams','When The Devil Screams'+SR,1],['the_carnival','The Carnival'+SR,1],['the_assault','The Assault'+SR,1],['the_art_of_war','The Art Of War'+SR,1],['concrete_kingdom','Concrete Kingdom'+RP],['the_clean_up','The Clean Up'+SR,1]]},
-  {name:'88.7 Paradise Valley Jazz',tracks:[['space_jazz','Space Jazz'+SR,1]]}];
+  {name:'313.7 The Block',dj:'Lowkey on 313.7 The Block',pubIdent:'underwater',tracks:[['alone_on_the_moon','Alone on the Moon'+SR,1],['sc:antonyo-st-john/murder-rap','Murder Rap'+SR,1],['rings_of_saturn','Rings of Saturn'+SR,1],['sc:antonyo-st-john/im-coming-thru','I\'m Coming Thru'+SR,1],['sc:antonyo-st-john/chains','Chains'+SR,1],['sc:antonyo-st-john/saint-reject','Saint Reject'+SR,1],['sc:antonyo-st-john/fading-away','Fading Away'+SR,1],['sc:antonyo-st-john/something-dark','Something Dark'+SR,1],['sc:antonyo-st-john/the-storm-album-version','The Storm (Album Version)'+SR,1],['sc:antonyo-st-john/m-i-c-g-o-d','M.I.C. G.O.D.'+SR,1],['sc:antonyo-st-john/buriedalive','Buried Alive'+SR,1]]},
+  {name:'96.3 The Beat Lab',dj:'Cutz on 96.3 The Beat Lab',pubIdent:'underwater',tracks:[['murder_she_wrote_mix_2','Murder She Wrote (Mix 2)'+SR,1],['killmonger','Killmonger'+SR],['westcoasttypeshit','westcoasttypeshit'+SR,1],['motor_city_mayhem','Motor City Mayhem'+RP],['no_smoke','No Smoke'+SR],['to_the_grave','To The Grave'+SR,1],['turf_authority','Turf Authority'+RP]]},
+  {name:'101.9 The Moon',dj:'Luna on 101.9 The Moon',ident:'underwater',pubIdent:'underwater',tracks:[['test_run_remastered','Spacecraft Test Drive'+SR,1],['night_drive_drift','Night Drive Drift'+RP],['projectasteroidz1','ProjectAsteroidZ'+SR]]},
+  {name:"66.6 Devil's Night",dj:"the Reverend on 66.6 Devil's Night",ident:'revenge',tracks:[['when_the_devil_screams','When The Devil Screams'+SR,1],['the_carnival','The Carnival'+SR,1],['the_assault','The Assault'+SR,1],['the_art_of_war','The Art Of War'+SR,1],['concrete_kingdom','Concrete Kingdom'+RP],['the_clean_up','The Clean Up'+SR,1]]},
+  {name:'88.7 Paradise Valley Jazz',dj:'Smooth Earl on 88.7 Paradise Valley Jazz',tracks:[['space_jazz','Space Jazz'+SR,1]]}];
 if(PUBLIC_BUILD){for(let k=STATIONS.length-1;k>0;k--){const st=STATIONS[k];st.tracks=st.tracks.filter(t=>t[2]);st.ident=st.pubIdent;if(!st.tracks.length)STATIONS.splice(k,1);}}
-for(const st of STATIONS){if(!st.tracks)continue;st.seq=[];st.tracks.forEach((t,i)=>{if(st.ident&&i%2===0)st.seq.push({id:st.ident,title:'',ident:true});st.seq.push({id:t[0],title:t[1]});});st.total=st.seq.reduce((a,x)=>a+RDUR[x.id],0);st.off=null;}
+for(const st of STATIONS){if(!st.tracks)continue;for(const t of st.tracks)if(t[0].startsWith('sc:')&&!RDUR[t[0]])RDUR[t[0]]=200;st.seq=[];st.tracks.forEach((t,i)=>{if(st.ident&&i%2===0)st.seq.push({id:st.ident,title:'',ident:true});st.seq.push({id:t[0],title:t[1]});});st.total=st.seq.reduce((a,x)=>a+RDUR[x.id],0);st.off=null;}
 const RAD={el:null,cur:-1,item:-1,shown:0,err:false,seekTo:0};
 const rnow=()=>performance.now()/1000;
 const stIdx=()=>S.radio==null?1:Math.min(S.radio,STATIONS.length-1);
@@ -6491,9 +6492,29 @@ function startOf(st,i){let s=0;for(let k=0;k<i;k++)s+=RDUR[st.seq[k].id];return 
 function radioEl(){if(!RAD.el){const a=RAD.el=new Audio();a.preload='auto';
     a.addEventListener('error',()=>{RAD.err=true;});
     a.addEventListener('loadedmetadata',()=>{if(RAD.seekTo>1&&Math.abs(a.currentTime-RAD.seekTo)>1){try{a.currentTime=RAD.seekTo;}catch(e){}}});
-    a.addEventListener('ended',()=>{const st=STATIONS[RAD.cur];if(!st||!st.seq)return;const n=(RAD.item+1)%st.seq.length;if(!st.seq[RAD.item].ident&&(DJ.q.length||R()<0.3)){djSpeak(st,n);return;}st.off=startOf(st,n)-rnow();radioPlay(st,n,0);});}
+    a.addEventListener('ended',radioEnded);}
   return RAD.el;}
-function radioPlay(st,i,t){const a=radioEl(),it=st.seq[i];RAD.item=i;RAD.seekTo=t;const src=RADIO_BASE+it.id+'.mp3';if(!a.src.endsWith(src)){a.src=src;RAD.err=false;}try{a.currentTime=t;}catch(e){}
+function radioEnded(){const st=STATIONS[RAD.cur];if(!st||!st.seq)return;const n=(RAD.item+1)%st.seq.length;if(!st.seq[RAD.item].ident&&(DJ.q.length||R()<0.3)){djSpeak(st,n);return;}st.off=startOf(st,n)-rnow();radioPlay(st,n,0);}
+// ---- SoundCloud tracks (Saint Reject): played through SoundCloud's embed player so plays count on his page ----
+const SCP={w:null,f:null,ready:false,want:null,loaded:null,playing:false,vol:60};
+function scEnsure(req){if(SCP.f)return;const f=SCP.f=document.createElement('iframe');f.allow='autoplay';f.title='SoundCloud radio';
+  f.style.cssText='position:fixed;width:1px;height:1px;left:-10px;bottom:0;opacity:0;pointer-events:none;border:0';
+  document.body.appendChild(f);const go=()=>{const W=window.SC&&SC.Widget;if(!W)return;const w=SCP.w=W(f);
+    w.bind(W.Events.READY,()=>{SCP.ready=true;SCP.loaded=SCP.first;w.setVolume(SCP.vol);const q=SCP.want;SCP.want=null;if(q){if(q.id===SCP.first.id){if(q.t>2)w.seekTo(q.t*1000);w.play();}else scLoad(q);}});
+    w.bind(W.Events.PLAY,()=>{SCP.playing=true;w.getDuration(d=>{const id=SCP.loaded&&SCP.loaded.id;if(id&&d>1000){RDUR[id]=d/1000;for(const st of STATIONS)if(st.seq)st.total=st.seq.reduce((a,x)=>a+RDUR[x.id],0);}});});
+    w.bind(W.Events.PAUSE,()=>{SCP.playing=false;});
+    w.bind(W.Events.FINISH,()=>{SCP.playing=false;if(RAD.sc)radioEnded();});
+    w.bind(W.Events.ERROR,()=>{RAD.err=true;SCP.playing=false;radioShow();if(RAD.sc)setTimeout(()=>{if(RAD.sc)radioEnded();},3000);});};
+  SCP.first=req;f.src='https://w.soundcloud.com/player/?url='+encodeURIComponent('https://soundcloud.com/'+req.id.slice(3))+'&auto_play=false&visual=false&show_artwork=false';
+  if(window.SC&&SC.Widget)f.onload=go;else{const sj=document.createElement('script');sj.src='https://w.soundcloud.com/player/api.js';sj.onload=()=>{f.onload=null;go();};sj.onerror=()=>{RAD.err=true;};document.head.appendChild(sj);}}
+function scLoad(req){SCP.want=null;const url='https://soundcloud.com/'+req.id.slice(3);
+  SCP.w.load(url,{auto_play:true,visual:false,show_artwork:false,show_comments:false,callback:()=>{SCP.loaded=req;SCP.w.setVolume(SCP.vol);if(req.t>2)SCP.w.seekTo(req.t*1000);SCP.w.play();}});}
+function scPlay(id,t){RAD.sc=true;const req={id,t};scEnsure(req);if(!SCP.ready){SCP.want=req;return;}
+  if(SCP.loaded&&SCP.loaded.id===id){SCP.w.play();return;}scLoad(req);}
+function scPause(){RAD.sc=false;SCP.want=null;if(SCP.w&&SCP.ready)SCP.w.pause();SCP.playing=false;}
+function radioPlay(st,i,t){const a=radioEl(),it=st.seq[i];RAD.item=i;RAD.seekTo=t;
+  if(it.id.startsWith('sc:')){if(!a.paused)a.pause();RAD.err=false;scPlay(it.id,t);radioShow(it.title+' (SoundCloud)');return;}
+  if(RAD.sc)scPause();const src=RADIO_BASE+it.id+'.mp3';if(!a.src.endsWith(src)){a.src=src;RAD.err=false;}try{a.currentTime=t;}catch(e){}
   const pr=a.play();if(pr&&pr.catch)pr.catch(()=>{});if(!it.ident)radioShow(it.title);}
 function radioShow(song){const st=STATIONS[stIdx()],box=$('radio');$('rSta').textContent=st.name;
   if(song==null&&st.seq){if(st.off==null)song='';else{const it=st.seq[seqAt(st)[0]];song=it.ident?'':it.title;}}
@@ -6502,9 +6523,11 @@ const mp3On=()=>!P.car&&!!S.mp3&&!!STATIONS[stIdx()].seq;
 function radioNext(){if(!P.car&&!S.mp3)return;S.radio=(stIdx()+1)%STATIONS.length;RAD.cur=-1;radioShow();AU.ping&&AU.ping(P.x,P.y);}
 function radioTick(){const si=stIdx(),st=STATIONS[si];const want=running&&(P.car||S.mp3)&&st&&st.seq&&!AU.muted;const a=RAD.el;
   if(DJ.on){if(want&&RAD.cur===si)return;djStop();}
-  if(!want){if(a&&!a.paused)a.pause();if(!P.car)RAD.cur=-1;else if(RAD.cur!==si){RAD.cur=si;}return;}
+  if(!want){if(a&&!a.paused)a.pause();if(RAD.sc)scPause();if(!P.car)RAD.cur=-1;else if(RAD.cur!==si){RAD.cur=si;}return;}
   const b=radioEl();b.volume=Math.min(1,(paused?0.22:0.6)*AU.vol('master')*AU.vol('music'));
-  if(RAD.cur!==si||b.paused){if(st.off==null){const i0=si===1?0:2*((R()*(st.seq.length/2))|0);st.off=startOf(st,i0)-rnow();}const [i,t]=seqAt(st);RAD.cur=si;radioPlay(st,i,t);}}
+  const sv=Math.round(b.volume*100);if(SCP.ready&&SCP.vol!==sv){SCP.vol=sv;SCP.w.setVolume(sv);}else SCP.vol=sv;
+  const idle=RAD.sc?false:b.paused;
+  if(RAD.cur!==si||idle){if(st.off==null){const i0=si===1?0:2*((R()*(st.seq.length/2))|0);st.off=startOf(st,i0)-rnow();}const [i,t]=seqAt(st);RAD.cur=si;radioPlay(st,i,t);}}
 setInterval(radioTick,200);
 // ================= car-on-car physics =================
 const carR=c=>isBike(c)?11:((CDIM[c.type]||CDIM.sedan)[0]*0.4);
@@ -6963,7 +6986,7 @@ const NEWSRE=/^(Gang wiped out|New gang in town|Turf taken|Block held|Trap house
 function djNews(big,sub){if(running&&NEWSRE.test(big))djQueue(sub.replace(/\byour\b/gi,'somebody\'s'));}
 function wxLine(){const k=(S.wx&&S.wx.k)||'clear';return k==='rain'?'Rain over the city right now. Roads are slick, so watch the turns out there.':k==='snow'?'Snow coming off the river. Streets are ice, and the 12 is skidding too.':'Skies are clearing up over Detroit.';}
 function djLine(si){const own=S.hoods.filter(h=>h.owner==='crew').length,top=rivalGangs().map(g=>[g,S.hoods.filter(h=>h.owner===g).length]).sort((a,b)=>b[1]-a[1])[0];
-  const opts=[`${fmtT(S.clock)} in the Motor City. This is ${DJS[si]}.`,wxLine()];
+  const opts=[`${fmtT(S.clock)} in the Motor City. This is ${(STATIONS[si]&&STATIONS[si].dj)||'the Motor City'}.`,wxLine()];
   if(top&&top[1])opts.push(`Word is the ${GANG[top[0]].name} are holding ${top[1]} blocks. Stay out their way.`);
   if(own>=2)opts.push(`Shout out to the ${S.crew}. ${own} hoods and counting.`);
   if(P.heat>=2)opts.push('DPD is out heavy tonight. Keep it moving.');
