@@ -297,6 +297,12 @@ body.touch #prompt{bottom:calc(206px + env(safe-area-inset-bottom,0px))}
 .st-head{grid-area:head;display:flex;align-items:center;gap:20px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:14px}
 .st-title{flex:1 1 320px;min-width:0}.st-title h2{margin-bottom:4px}.st-title .sub{margin:0;max-width:62ch}
 .stashm .inv{flex:0 1 380px;margin:0}
+.stashm .inv{flex:0 1 600px;gap:10px}.stashm .inv div{padding:12px 16px;background:rgba(255,255,255,.04);border-width:2px}
+.stashm .inv .lbl{font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.stashm .inv .val{font-family:var(--display);font-weight:900;font-size:34px;line-height:1.05;margin-top:4px}
+#sCash{color:#6cc28a}#sWeed{color:#9be36b}#sSeeds{color:#e3b23c}
+.seedchip{display:flex;align-items:center;gap:10px;padding:6px 14px;border:2px solid #e3b23c;background:rgba(227,178,60,.1)}.seedchip span{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}.seedchip b{font-family:var(--display);font-weight:900;font-size:30px;color:#e3b23c;line-height:1}.seedchip.none{border-color:#e0574b;background:rgba(224,87,75,.1)}.seedchip.none b{color:#e0574b}
+@media (max-width:700px){.stashm .inv .val{font-size:24px}.stashm .inv div{padding:8px 10px}}
 .st-btns{display:flex;flex-direction:column;gap:8px;flex:0 0 auto}
 .st-main{grid-area:main;min-width:0}.st-side{grid-area:side;min-width:0}
 .stashm .grow{gap:12px;margin-bottom:14px}
@@ -673,6 +679,7 @@ button.isq:hover{border-color:var(--sodium)!important}.isq.over{border-color:var
       <div class="sec" id="gLbl">Grow room</div>
       <div class="grow" id="growGrid"></div>
       <div class="acts">
+        <div class="seedchip" aria-live="polite"><span>Seeds</span><b id="sSeeds2">0</b></div>
         <button type="button" id="btnSeed">Seed + soil · $50</button>
         <button type="button" id="btnSeed5">5 seeds + soil · $235</button>
         <button type="button" id="btnPlant">Plant a seed</button>
@@ -5749,7 +5756,7 @@ function renderStashLive(){if(!renderStashLive.open){carryMsg='';}renderStashLiv
     if(short.length)ch+=`<button type="button" data-deal="1">Grab what my deals need · ${short.map(p=>fmtQ(p,nd[p]-inv(p))+' '+DRUGS[p].slang).join(' + ')}</button>`;
     for(const p of PRODS){if(!prodOn(p)&&!inv(p)&&!stored(p))continue;const nm=DRUGS[p].name,steps=p==='weed'?[1,3,7,14,28]:p==='coke'?[1,3,7]:[1,3,6];
     ch+=`<div class="crow3"><b class="cnm">${nm}</b><div class="cboxes"><div class="cbox"><span>In the stash</span><i>${fmtQ(p,stored(p))}</i></div><div class="carr" aria-hidden="true">→</div><div class="cbox me"><span>In your ${bagName().toLowerCase()}</span><i>${fmtQ(p,inv(p))}</i></div></div><div class="bt">${steps.map(n=>`<button type="button" data-tk="${p}" data-n="${n}" ${stored(p)<=0?'disabled':''}>+${DRUGS[p].per==='gram'?n+'g':n}</button>`).join('')}<button type="button" data-tk="${p}" data-n="999" ${stored(p)<=0?'disabled':''}>All I can carry</button></div><button type="button" class="cback" data-si="${p}" ${inv(p)<=0?'disabled':''}>Put ${fmtQ(p,inv(p))} back in the stash</button></div>`;}
-   setHTML($('carryBox'),ch);setHTML($('lockerBox'),lockerHtml());$('cLbl').textContent=`Take product for the street · ${bagName()} ${Math.round(load())}/${prodCap()} full${S.bag?'':' · a backpack or gym bag carries more'}`;}$('sSeeds').textContent=S.seeds;
+   setHTML($('carryBox'),ch);setHTML($('lockerBox'),lockerHtml());$('cLbl').textContent=`Take product for the street · ${bagName()} ${Math.round(load())}/${prodCap()} full${S.bag?'':' · a backpack or gym bag carries more'}`;}$('sSeeds').textContent=S.seeds;$('sSeeds2').textContent=S.seeds;$('sSeeds2').parentNode.classList.toggle('none',S.seeds<1);
   let gh='';for(let i=0;i<S.slots;i++){const p=S.plants[i];
     if(!p){gh+=`<div class="pl"><i class="pa art-weed-pot-soil"></i><b>Empty</b><span>Plant a seed</span></div>`;continue;}
     const ready=p.g>=1,dry=!ready&&p.w<=0;const left=Math.ceil((1-p.g)*GROW.time/60/(p.boost||1));
@@ -5760,7 +5767,7 @@ function renderStashLive(){if(!renderStashLive.open){carryMsg='';}renderStashLiv
   $('gLbl').textContent=`Grow room · ${S.slots} pot${S.slots>1?'s':''} · room for ${S.space} · each plant $50 → 10 to 28 g, based on how well you plant it`;
   $('btnPot').disabled=S.slots>=S.space||!(S.kits>0);$('btnPot').textContent=S.slots>=S.space?'Room is full':S.kits>0?`Set up pot · ${S.kits} kit${S.kits>1?'s':''}`:'Need a grow kit';
   $('btnSeed').disabled=S.cash<GROW.seed;$('btnSeed5').disabled=S.cash<235;
-  $('btnPlant').disabled=!canPot()||S.seeds<1||S.cash<GROW.soil;$('btnPlant').textContent=!canPot()?(S.slots>=S.space?'Grow room is full':'No empty pot · buy a grow kit'):S.seeds<1?'Need a seed':S.cash<GROW.soil?`Need $${GROW.soil} for soil`:free>0?'Plant a seed':'Set up a kit and plant';
+  $('btnPlant').disabled=!canPot()||S.seeds<1||S.cash<GROW.soil;$('btnPlant').textContent=!canPot()?(S.slots>=S.space?'Grow room is full':'No empty pot · buy a grow kit'):S.seeds<1?'Need a seed':S.cash<GROW.soil?`Need $${GROW.soil} for soil`:(free>0?'Plant a seed':'Set up a kit and plant')+` · ${S.seeds} left`;
   $('btnWater').disabled=S.drip||!S.plants.some(p=>p.g<1&&p.w<0.7);$('btnWater').textContent=S.drip?'Drip irrigation on':'Water plants';
   $('btnHarvest').disabled=!nReady;$('btnHarvest').textContent=nReady?`Harvest · trim ${nReady} plant${nReady>1?'s':''}`:'Nothing ready';
   $('btnRush').disabled=!nReady;$('btnRush').textContent=nReady?`Rush harvest all · ${S.plants.filter(p=>p.g>=1).reduce((a,p)=>a+Math.round((p.yl||28)*0.78),0)} g (skip trimming)`:'Rush harvest · nothing ready';
