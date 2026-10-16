@@ -5415,7 +5415,7 @@ function walk(e,dt,sp){if(e.idle>0){e.idle-=dt;return;}if(e.look&&e.look.old)sp*
   if(e.t<=0||Math.hypot(e.x-ox,e.y-oy)<sp*dt*0.3){if(onRoad)toSidewalk(e);else pickDirP(e);}}
 function goHome(e,dt,sp,home){e.hwT=(e.hwT||0)+dt;if(e.hwT>3){const dd=e.ht?Math.hypot(e.x-e.ht.x,e.y-e.ht.y):0;if(e.hwd!=null&&e.ht&&dd>e.hwd-20){e.ht=null;e.detour=0;}e.hwT=0;e.hwd=e.ht?dd:null;}if(!e.ht||e.htH!==home||(e.htT=(e.htT||0)+dt)>30){e.ht=null;for(let k=0;k<6&&!e.ht;k++){const q=spotIn(home);if(q&&!(e.type==='rival'&&atPD(q.x,q.y)))e.ht=q;}if(!e.ht)e.ht={x:e.x,y:e.y};e.htH=home;e.htT=0;}seek(e,e.ht.x,e.ht.y,sp,dt);if(Math.hypot(e.x-e.ht.x,e.y-e.ht.y)<40){e.ht=null;e.homing=false;}}
 function wander(e,dt,sp){e.t-=dt;const ox=e.x,oy=e.y;moveEnt(e,e.dx*sp*dt,e.dy*sp*dt);if(e.dx||e.dy){e.fx=e.dx;e.fy=e.dy;}if(e.t<=0||Math.hypot(e.x-ox,e.y-oy)<sp*dt*0.3)pickDir(e);}
-function seek(e,tx,ty,sp,dt,away){let dx=tx-e.x,dy=ty-e.y;const d=Math.hypot(dx,dy)||1;dx/=d;dy/=d;if(away){dx=-dx;dy=-dy;}
+function seek(e,tx,ty,sp,dt,away){let dx=tx-e.x,dy=ty-e.y;const d0=Math.hypot(dx,dy),d=d0||1;if(!away&&d0<=sp*dt){moveEnt(e,tx-e.x,ty-e.y);return;}dx/=d;dy/=d;if(away){dx=-dx;dy=-dy;}
   if(e.detour>0){e.detour-=dt;e.dTot=(e.dTot||0)+dt;const ax=Math.abs(dx)>=Math.abs(dy);
     if(e.dTot<12&&hit(e.x+(ax?Math.sign(dx):0)*26,e.y+(ax?0:Math.sign(dy))*26,e.r))e.detour=Math.max(e.detour,0.15);dx=e.ddx;dy=e.ddy;}else e.dTot=0;
   const ox=e.x,oy=e.y;moveEnt(e,dx*sp*dt,dy*sp*dt);e.fx=dx;e.fy=dy;
@@ -7303,7 +7303,7 @@ function update(dt){
       if(e.chase){e.cd-=dt;
         const armed=gunOut()&&!P.car&&sees&&dP<320;if(armed&&!e.yelled){e.yelled=true;say(e,pick(COPYELL),2);if(P.heat<3)addHeat(3-P.heat,P.x,P.y);}if(!gunOut())e.yelled=false;
         if((P.heat>=4||armed)&&sees&&dP<380&&dP>60&&e.cd<=0){e.cd=1.4+R()*.8;npcShoot(e,7);}
-        if(sees){e.lookOff=0;seek(e,P.x,P.y,Math.min(150,104+P.heat*9),dt);}
+        if(sees){e.lookOff=0;if(dP>22)seek(e,P.x,P.y,Math.min(150,104+P.heat*9),dt);else{e.fx=(P.x-e.x)/(dP||1);e.fy=(P.y-e.y)/(dP||1);}}
         else{const dl=Math.hypot(e.x-P.lkx,e.y-P.lky);
           if(dl>70&&!e.sweep)seek(e,P.lkx,P.lky,100,dt);
           else{e.sweep=true;e.sT=(e.sT||0)-dt;if(!e.sx||e.sT<=0||Math.hypot(e.x-e.sx,e.y-e.sy)<30){const sp=spotNear(P.lkx,P.lky,40,120+P.heat*40,false);if(sp){e.sx=sp.x;e.sy=sp.y;}e.sT=3+R()*3;}if(e.sx)seek(e,e.sx,e.sy,58,dt);}}
