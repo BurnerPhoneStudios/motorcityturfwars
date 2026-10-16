@@ -834,6 +834,12 @@ body[data-bd] #tip.hint{border-left-color:#b58cff}
     <button type="button" class="ghost" id="devClose" style="width:100%">Close (` or Esc)</button>
   </div>
 </div>
+<div class="overlay" id="lmv" hidden>
+  <div class="modal" role="dialog" aria-labelledby="lmTitle" style="max-width:460px">
+    <h2 id="lmTitle"></h2><div class="sub" id="lmSub"></div>
+    <div class="pbtns" id="lmActs"></div><div class="sub" id="lmMsg" style="min-height:1.3em;margin-top:8px"></div>
+  </div>
+</div>
 <div class="overlay" id="casino" hidden>
   <div class="modal casm" role="dialog" aria-labelledby="csTitle">
     <div class="cshead"><h2 id="csTitle">Casino</h2><span id="csCash"></span></div>
@@ -5666,6 +5672,7 @@ function actE(){
   if(payHere()){payTalk();return;}
   if(impoundHere()){impoundPay();return;}
   if(dist(P,STASH)<72||inGarage(P.x,P.y)){openStash();return;}
+  {const lz=nearLM();if(lz){openLM(lz);return;}}
   {const cz=nearCasino();if(cz){openCasino(cz);return;}}
   {const tp=nearTrap();if(tp&&(trapOf(tp)||S.hoods[tp.hood].owner==='crew')){openTrap(tp);return;}}
   if(atmHere()){atmUse();return;}
@@ -8140,7 +8147,7 @@ function renderWorld(){
   if(CREW.mark&&!CREW.mark.dead){const m=CREW.mark,mx=m.x-camX,my=m.y-camY,r=22+Math.sin(clockT*8)*3;ctx.save();ctx.strokeStyle='#e0574b';ctx.lineWidth=2.5;ctx.shadowColor='#e0574b';ctx.shadowBlur=8;for(const [sx,sy] of [[-1,-1],[1,-1],[-1,1],[1,1]]){ctx.beginPath();ctx.moveTo(mx+sx*r,my+sy*(r-8));ctx.lineTo(mx+sx*r,my+sy*r);ctx.lineTo(mx+sx*(r-8),my+sy*r);ctx.stroke();}ctx.restore();}
   for(const f of fx){if(f.k!=='txt')continue;ctx.globalAlpha=Math.min(1,f.t);ctx.fillStyle='#000';ctx.fillText(f.text,f.x-camX+1,f.y-camY+2);ctx.fillStyle=f.color;ctx.fillText(f.text,f.x-camX,f.y-camY);}ctx.globalAlpha=1;
   if(running&&S.job)edgeArrow(S.job.x,S.job.y,'#f2a33a',`DELIVERY · ${Math.ceil(S.job.t)}s`);
-  drawTraps();drawWaypoint();
+  drawTraps();drawLMDoors();drawWaypoint();
   if(running){const d=nextDeal();if(d){const c=CL(d.cid);edgeArrow(d.spot.x,d.spot.y,GANG.crew.color,`${c.name.toUpperCase()} · ${fmtQ(d.p||'weed',d.qty).toUpperCase()} · ${n>=d.start?'until '+fmtT(d.end):fmtT(d.start)}`);}}
   if(rob){const x=P.x-camX,y=P.y-camY;ctx.strokeStyle='rgba(0,0,0,.6)';ctx.lineWidth=7;ctx.beginPath();ctx.arc(x,y,30,0,7);ctx.stroke();ctx.strokeStyle='#e0574b';ctx.lineWidth=5;ctx.beginPath();ctx.arc(x,y,30,-Math.PI/2,-Math.PI/2+Math.PI*2*rob.t/5);ctx.stroke();ctx.fillStyle='#e0574b';ctx.font=`900 ${fpx(15)}px ${FD}`;ctx.fillText('ROBBING',x,y-44);}
   if(P.reloadT>0){const x=P.x-camX,y=P.y-camY;ctx.fillStyle='#d7dbe1';ctx.font=`700 ${fpx(13)}px ${FB}`;ctx.fillText('RELOADING',x,y+28);}
@@ -8215,6 +8222,7 @@ function updHud(){document.body.classList.toggle('crouch',!!P.crouch);updStreet(
     else if(payHere())txt=`<kbd>${kE}</kbd>${payTxt()}`;
     else if(impoundHere())txt=`<kbd>${kE}</kbd>${impoundTxt()}`;
     else if(dist(P,STASH)<72||inGarage(P.x,P.y)){const rd=S.plants.filter(p=>p.g>=1).length,dr=!S.drip&&S.plants.some(p=>p.g<1&&p.w<=0);txt=`<kbd>${kE}</kbd>Open the stash`+(rd?` · ${rd} plant${rd>1?'s':''} ready`:dr?' · plants thirsty':'');}
+    else if(nearLM())txt=`<kbd>${kE}</kbd>Go into ${esc(nearLM().name)}`;
     else if(nearCasino())txt=`<kbd>${kE}</kbd>Go into ${esc(nearCasino().name)} · slots, roulette, blackjack, baccarat, poker`;
     else if(nearTrap()&&(trapOf(nearTrap())||S.hoods[nearTrap().hood].owner==='crew')){const t=nearTrap(),o=trapOf(t);txt=o?`<kbd>${kE}</kbd>Trap house${o.cash?` · $${o.cash.toLocaleString()} waiting`:''}`:`<kbd>${kE}</kbd>Trap house for sale · $${t.cost.toLocaleString()}`;}
     else{const s=nearestStore(62);const ad=activeDealNear();
@@ -8639,6 +8647,36 @@ else{const go=ev=>{if(INTRO.over||!INTRO.aged)return;if(ev&&ev.type==='keydown')
 $('ageYes').onclick=ageOK;
 // ================= casinos: slots, roulette, blackjack, baccarat, video poker =================
 const CASINOS=buildings.filter(b=>b.kind==='casino'||b.kind==='casino2').map(b=>{const cx=(b.x+b.w/2)*T;const y=[(b.y+b.h)*T+12,b.y*T-12].find(y=>!solidPx(cx,y));return y==null?null:{x:cx,y,name:b.name,b};}).filter(Boolean);
+
+// ---- landmark entrances: every landmark has a door; walk up and press E ----
+const LMK=['rencen','fisher','arena','stadium','ballpark','station','conv','shed','factory','tunnel'];
+const LMDOORS=buildings.filter(b=>LMK.includes(b.kind)).map(b=>{const cx=(b.x+b.w/2)*T,cy=(b.y+b.h/2)*T;
+  const tries=[[cx,(b.y+b.h)*T+12,0],[cx,b.y*T-12,Math.PI],[(b.x+b.w)*T+12,cy,-Math.PI/2],[b.x*T-12,cy,Math.PI/2]];const d=tries.find(([x,y])=>!solidPx(x,y));return d?{x:d[0],y:d[1],a:d[2],name:b.name,kind:b.kind,b}:null;}).filter(Boolean);
+const nearLM=()=>P.car?null:LMDOORS.find(d=>dist(d,P)<60)||null;
+const LMV={d:null};const elLM=document.getElementById('lmv');
+function lmSpend(n){if(S.cash<n){LMV.msg=`You need $${n}.`;return false;}payDirtyFirst(n);AU.cash();return true;}
+const LMACT={
+  arena:[['Catch a game · $45','Two hours in the nosebleeds. You come out loose and fresh. Health full.',()=>{if(!lmSpend(45))return;P.hp=maxHP();S.clock+=120;}],['Work the concourse','Scope the crowd for buyers. Somebody might hit your line.',()=>lmScout()]],
+  stadium:[['Tailgate in the lot · $25','Grill smoke and loud speakers. Health full.',()=>{if(!lmSpend(25))return;P.hp=maxHP();S.clock+=90;}],['Work the concourse','Scope the crowd for buyers.',()=>lmScout()]],
+  ballpark:[['Bleacher seats · $20','Hot dog, cold drink, two hours gone. Health full.',()=>{if(!lmSpend(20))return;P.hp=maxHP();S.clock+=120;}],['Work the stands','Scope the crowd for buyers.',()=>lmScout()]],
+  station:[['Blend into the crowd','Commuters everywhere. Low heat (2 stars or less) cools off.',()=>{if(P.heat>2){LMV.msg='Too hot. Transit cops are posted at every door.';return;}if(P.heat<=0.05){LMV.msg='Nobody is looking for you right now.';return;}P.heat=0;P.searchT=0;descClear();S.clock+=20;LMV.msg='You rode a train two stops and walked back. The cops lost you.';}]],
+  rencen:[['Hotel room · $120','Sleep till 7 AM in a real bed. Health full.',()=>{if(nightAmt()<0.3&&(S.clock/60)%24>8&&(S.clock/60)%24<18){LMV.msg='Check-in starts at 6 PM.';return;}if(!lmSpend(120))return;P.hp=maxHP();const h=(S.clock/60)%24;S.clock+=((31-h)%24)*60;LMV.msg='Room service, blackout curtains. You wake up at 7 AM.';}],['Ride the glass elevator','Top floor view of the whole city.',()=>{S.clock+=10;LMV.msg='From up here you can see every hood. Somebody down there needs product.';lmScout();}]],
+  fisher:[['Law office, 26th floor','Put a lawyer on retainer for $1,200. Busts never cost clean cash and you get half the dirty back.',()=>{if(S.lawyer){LMV.msg='Your lawyer already picks up on the first ring.';return;}if(!lmSpend(1200))return;S.lawyer=true;LMV.msg='Signed. You have a lawyer on retainer.';}],['Gold lobby','Marble, gold leaf, a security guard who watches you the whole time.',()=>{LMV.msg='Nice place. You touch nothing.';}]],
+  conv:[['Auto show · $15','The new models are out. Some of the concept cars look stealable.',()=>{if(!lmSpend(15))return;S.clock+=45;LMV.msg='You clocked three cars worth stealing. Eight Mile Elite Autos sells the real thing.';}]],
+  shed:[['Grab a plate · $8','Corned beef, smoked fish, fresh fruit. +40 health.',()=>{if(!lmSpend(8))return;P.hp=Math.min(maxHP(),P.hp+40);}],['Buy bulk seed · $220','Five seeds from the plant stall, a little cheaper than House Depo.',()=>{if(!lmSpend(220))return;S.seeds+=5;LMV.msg='Five seeds in a paper bag.';}]],
+  factory:[['Scrap for parts','Dig through the burned-out plant. Once a day.',()=>{if(S.scrapDay===S.day){LMV.msg='You already picked this place clean today.';return;}S.scrapDay=S.day;const v=15+Math.round(R()*45);earnDirty(v);S.clock+=40;LMV.msg=`Copper wire and an old radiator. Sold for $${v} dirty.`;}]],
+  tunnel:[['Border crossing','The tunnel to Windsor stays shut for now.',()=>{LMV.msg='A CBP officer waves you back. "Closed. Come back later."';}]]};
+function lmScout(){S.clock+=30;if(S.scoutDay===S.day){if(!LMV.msg)LMV.msg='You already worked this crowd today.';return;}S.scoutDay=S.day;const pool=S.roster.filter(c=>!c.known&&!c.contact&&!c.hurt);if(pool.length&&R()<0.6){const c=pick(pool);c.contact=true;LMV.msg=`${c.name} asked if you had anything. They hang around ${HN[c.home]}. Look for the ?.`;}else if(!LMV.msg)LMV.msg='Nobody biting today.';}
+function openLM(d){LMV.d=d;LMV.msg='';paused=true;elLM.hidden=false;renderLM();AU.door&&AU.door();}
+function closeLM(){elLM.hidden=true;paused=false;LMV.d=null;save();}
+function renderLM(){const d=LMV.d;if(!d)return;$('lmTitle').textContent=d.name;$('lmSub').textContent=`Cash $${S.cash.toLocaleString()}${dirtyNow()?` · $${Math.floor(dirtyNow()).toLocaleString()} dirty, spent first`:''}`;
+  const acts=LMACT[d.kind]||[];$('lmActs').innerHTML=acts.map((a,i)=>`<button type="button" class="ghost" data-i="${i}" style="text-align:left;display:block"><b>${esc(a[0])}</b><br><span style="font-size:14px;color:var(--dim);text-transform:none;letter-spacing:0">${esc(a[1])}</span></button>`).join('')+`<button type="button" data-x="1">Back to the street (Esc)</button>`;
+  $('lmMsg').textContent=LMV.msg||'';}
+$('lmActs').onclick=ev=>{const t=ev.target.closest('button');if(!t)return;if(t.dataset.x){closeLM();return;}const a=(LMACT[LMV.d.kind]||[])[+t.dataset.i];LMV.msg='';const c0=S.cash;if(a)a[2]();if(!LMV.msg&&S.cash!==c0)LMV.msg=`${a[0].split(' · ')[0]}. Done.`;renderLM();};
+addEventListener('keydown',e=>{if(!elLM.hidden&&e.key==='Escape'){e.stopImmediatePropagation();closeLM();}},true);
+function drawLMDoors(){for(const d of LMDOORS){const x=d.x-camX,y=d.y-camY;if(x<-40||y<-40||x>vw+40||y>vh+40)continue;const near=dist(d,P)<60;
+  ctx.save();ctx.translate(x,y);ctx.rotate(d.a);ctx.fillStyle='rgba(0,0,0,.45)';ctx.fillRect(-15,-15,30,8);ctx.fillStyle=near?'#f2a33a':'#d9b25a';ctx.fillRect(-13,-14,26,5);
+  ctx.fillStyle='rgba(242,163,58,'+(near?0.35:0.14)+')';ctx.beginPath();ctx.moveTo(-14,-9);ctx.lineTo(14,-9);ctx.lineTo(20,8);ctx.lineTo(-20,8);ctx.closePath();ctx.fill();ctx.restore();}}
 const nearCasino=()=>CASINOS.find(c=>dist(c,P)<70)||null;
 const CS={open:false,c:null,game:'slots',bet:50,busy:false,msg:'',bj:null,vp:null,bac:'player',rou:'red',num:17,reels:['7','7','7'],last:null};
 const BETS=[20,50,100,500,1000];
