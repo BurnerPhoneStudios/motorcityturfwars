@@ -573,6 +573,19 @@ body[data-bd] :is(.panel,#goals,#cf,#prompt,#radio){border:6px solid transparent
 body[data-bd] #goals{border-left:6px solid #6cc28a}body[data-bd] #cf{border-left-width:6px;border-left-style:solid}body[data-bd] #radio{border-left:6px solid var(--crew)}
 body[data-bd] .in-warn{padding:22px 26px}
 button,input,select,textarea,option{font-family:inherit}
+
+#tip{position:fixed;left:16px;top:calc(var(--hudl,392px) + env(safe-area-inset-top,0px));width:min(330px,calc(100% - 32px));background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--sodium);padding:9px 12px 10px;z-index:5;display:flex;flex-direction:column;gap:3px;transform:translateX(-12px);opacity:0;transition:opacity .35s,transform .35s;pointer-events:auto}
+#tip.on{opacity:1;transform:none}
+#tip .tiph{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#tip .tiph span{font:700 12px/1 var(--body);letter-spacing:.16em;text-transform:uppercase;color:var(--sodium)}
+#tip.hint .tiph span{color:#b58cff}#tip.hint{border-left-color:#b58cff}
+#tip b{font:900 19px/1.1 var(--display);text-transform:uppercase;letter-spacing:.02em}
+#tip>span{font-size:15px;line-height:1.3;color:#c9cdd3}
+#tip kbd{font:500 12px var(--mono);background:var(--sodium);color:#111;padding:0 5px;margin:0 1px}
+#tipX{flex:none;min-height:0;padding:3px 8px;font:700 12px var(--body);letter-spacing:.08em;text-transform:uppercase;background:transparent;border:1px solid var(--line);color:var(--chrome);cursor:pointer}
+body[data-bd] #tip{border:6px solid transparent;border-left:6px solid var(--sodium);background:linear-gradient(var(--acc),var(--acc)) right top/18px 3px no-repeat border-box,linear-gradient(var(--acc),var(--acc)) right top/3px 18px no-repeat border-box,linear-gradient(var(--panel),var(--panel)) padding-box,linear-gradient(rgba(10,11,14,.9),rgba(10,11,14,.9)) border-box;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}
+body[data-bd] #tip.hint{border-left-color:#b58cff}
+@media (max-width:700px){#tip{top:auto;bottom:calc(150px + env(safe-area-inset-bottom,0px))}}
 </style>
 
 <canvas id="game"></canvas>
@@ -636,6 +649,7 @@ button,input,select,textarea,option{font-family:inherit}
       <button type="button" class="ghost" id="paPhone">Phone size: Large</button>
       <button type="button" class="ghost" id="paTilt">Buildings: Flat</button>
       <button type="button" class="ghost" id="paBorder">UI borders: Random</button>
+      <button type="button" class="ghost" id="paTips">Tips: On</button>
       <button type="button" class="ghost" id="paFull">Fullscreen: Off (F11)</button>
       <button type="button" class="ghost" id="paDev">Dev menu &amp; cheats (`)</button>
       <button type="button" class="ghost v3only" id="paView">View: Overhead view</button>
@@ -650,6 +664,7 @@ button,input,select,textarea,option{font-family:inherit}
 <button type="button" id="phoneBtn" hidden><span class="ico"></span>Phone<span id="phKey" class="lbl">P</span><span class="bdg" id="phBadge" hidden>0</span></button>
 <div id="callouts" hidden></div>
 <div id="goals" hidden></div>
+<div id="tip" hidden><div class="tiph"><span id="tipK"></span><button type="button" id="tipX" aria-label="Got it">Got it</button></div><b id="tipT"></b><span id="tipB"></span></div>
 <div class="overlay" id="bigmap" hidden>
   <div class="modal mapm" role="dialog" aria-labelledby="mapTitle">
     <div class="maph"><h2 id="mapTitle">Detroit</h2><span class="mapb mapz"><button type="button" class="ghost" id="mapZout" aria-label="Zoom out">&minus;</button><b id="mapZ">300%</b><button type="button" class="ghost" id="mapZin" aria-label="Zoom in">+</button><button type="button" class="ghost" id="mapZme">Me</button><button type="button" class="ghost" id="mapZall">Whole city</button></span><span class="mapb"><button type="button" id="mapRyde">RydeMe to waypoint</button><button type="button" class="ghost" id="mapCar">Call your car · $50</button><button type="button" class="ghost" id="mapClose">Close (M / Esc)</button></span></div>
@@ -715,6 +730,7 @@ button,input,select,textarea,option{font-family:inherit}
         <button type="button" id="btnSeed5">5 seeds + soil · $235</button>
         <button type="button" id="btnPlant">Plant a seed</button>
         <button type="button" id="btnWater">Water plants</button>
+        <button type="button" id="btnAuto" hidden>Auto-grow: Off</button>
         <button type="button" id="btnPot">Set up pot</button>
         <button type="button" id="btnHarvest">Harvest</button>
         <button type="button" class="ghost" id="btnRush" style="grid-column:1/-1">Rush harvest all · 22 g each</button>
@@ -5451,7 +5467,8 @@ const heal=n=>{P.hp=Math.min(maxHP(),P.hp+n);};
 const REPN=['Nobody','Corner Kid','Known','Respected','Connected','Kingpin'];
 const REPX=[0,60,180,420,850,1600];
 const repLvl=()=>{let l=0;for(let i=0;i<REPX.length;i++)if((S.rep||0)>=REPX[i])l=i;return l;};
-function gainRep(v){const before=repLvl();S.rep+=v;const after=repLvl();if(after>before){AU.chime();card(REPN[after],repUnlockText(after),'#f2a33a');log(`Rep up: ${REPN[after]}.`,'#f2a33a');}}
+const REP_RATE=0.5;
+function gainRep(v){const before=repLvl();if(v>0)v*=REP_RATE;S.rep=Math.round(((S.rep||0)+v)*10)/10;const after=repLvl();if(after>before){AU.chime();card(REPN[after],repUnlockText(after),'#f2a33a');log(`Rep up: ${REPN[after]}.`,'#f2a33a');}}
 function repUnlockText(l){return ['','Drip irrigation, LED grow lights, the Glok 17 and body armor are unlocked. Client budgets grow with your rep.','The gangs know your name now. Some rivals carry pistols. Grow tents at House Depo, a basement grow room, the lawyer, the extended mag and the sawed-off are unlocked.',"Clients spend more. Exotic genetics and Golden Teacher shrooms are unlocked. The Drako is in Uncle Rell's back room.",'Word travels fast. Blue Meanies shrooms unlocked.','Every corner in the city knows who you are.'][l]||'';}
 
 // ================= npcs =================
@@ -5783,6 +5800,7 @@ const UPG=[
   {id:'drip',name:'Drip irrigation',desc:'Plants water themselves.',cost:350,lvl:1,has:()=>S.drip,buy:()=>S.drip=true},
   {id:'led',name:'LED grow lights',desc:'Grow Loud. Market value $14 a gram, and picky clients are happy.',cost:600,lvl:1,has:()=>qOf('weed')>=2,buy:()=>{S.q.weed=2;if(S.prices.weed<14)S.prices.weed=14;}},
   {id:'base',name:'Basement grow room',desc:'Room for 8 pots instead of 4.',cost:1000,lvl:2,has:()=>S.space>=8,buy:()=>S.space=8},
+  {id:'auto',name:'Grow manager',desc:'Toggle auto-grow in the grow room: buys seed and soil for empty pots, plants a steady 20 g plant, waters it and harvests it into the stash.',cost:1500,lvl:1,has:()=>!!S.autoGrow,buy:()=>{S.autoGrow=true;S.autoOn=true;}},
   {id:'gym',name:'Home gym',desc:'Bench and bag in the back. Work out from here to hit harder and run faster.',cost:300,lvl:0,has:()=>S.gym,buy:()=>S.gym=true},
   {id:'law',name:'Lawyer on retainer',desc:'Getting busted never costs clean cash, and you get half the dirty cash back.',cost:1200,lvl:2,has:()=>S.lawyer,buy:()=>S.lawyer=true},
   {id:'burn',name:'Pro humidifier',desc:'Shroom flushes grow twice as fast.',cost:600,lvl:2,has:()=>S.fastCook,buy:()=>S.fastCook=true,need:()=>S.labs>0},
@@ -5825,6 +5843,7 @@ function renderStashLive(){if(!renderStashLive.open){carryMsg='';}renderStashLiv
   $('gLbl').textContent=`Grow room · ${S.slots} pot${S.slots>1?'s':''} · room for ${S.space} · each plant $50 → 10 to 28 g, based on how well you plant it`;
   $('btnPot').disabled=S.slots>=S.space||!(S.kits>0);$('btnPot').textContent=S.slots>=S.space?'Room is full':S.kits>0?`Set up pot · ${S.kits} kit${S.kits>1?'s':''}`:'Need a grow kit';
   $('btnSeed').disabled=S.cash<GROW.seed;$('btnSeed5').disabled=S.cash<235;
+  {const ba=$('btnAuto');ba.hidden=!S.autoGrow;ba.textContent='Auto-grow: '+(S.autoOn?'On':'Off');ba.classList.toggle('ghost',!S.autoOn);}
   $('btnPlant').disabled=!canPot()||S.seeds<1||S.cash<GROW.soil;$('btnPlant').textContent=!canPot()?(S.slots>=S.space?'Grow room is full':'No empty pot · buy a grow kit'):S.seeds<1?'Need a seed':S.cash<GROW.soil?`Need $${GROW.soil} for soil`:(free>0?'Plant a seed':'Set up a kit and plant')+` · ${S.seeds} left`;
   $('btnWater').disabled=S.drip||!S.plants.some(p=>p.g<1&&p.w<0.7);$('btnWater').textContent=S.drip?'Drip irrigation on':'Water plants';
   $('btnHarvest').disabled=!nReady;$('btnHarvest').textContent=nReady?`Harvest · trim ${nReady} plant${nReady>1?'s':''}`:'Nothing ready';
@@ -5853,6 +5872,16 @@ document.getElementById('carryBox').onclick=ev=>{const t=ev.target.closest('butt
 document.getElementById('btnSeed').onclick=()=>{if(S.cash>=GROW.seed){S.cash-=GROW.seed;S.seeds++;renderStash();}};
 document.getElementById('btnSeed5').onclick=()=>{if(S.cash>=235){S.cash-=235;S.seeds+=5;renderStash();}};
 document.getElementById('btnPlant').onclick=plantOne;
+document.getElementById('btnAuto').onclick=()=>{S.autoOn=!S.autoOn;log(S.autoOn?'Auto-grow on. Empty pots get planted and ready plants get harvested.':'Auto-grow off. You are back to planting by hand.',S.autoOn?'#6cc28a':'#8a8f98');autoGrowTick(true);renderStash();};
+let autoT=0;
+function autoGrowTick(now,dt){if(!S.autoGrow||!S.autoOn||MG.on)return;if(!now){autoT-=dt||0;if(autoT>0)return;}autoT=5;let planted=0,cut=0,g=0,broke=false;
+  for(const pl of [...S.plants])if(pl.g>=1){S.plants=S.plants.filter(x=>x!==pl);S.store.weed+=pl.yl||20;g+=pl.yl||20;cut++;}
+  for(const pl of S.plants)if(pl.auto)pl.w=1;
+  while(S.plants.length<S.slots){if(S.seeds<1){if(S.cash<GROW.seed+GROW.soil){broke=true;break;}S.cash-=GROW.seed;S.seeds++;}S.seeds--;S.cash-=GROW.soil;S.plants.push({g:0,w:1,boost:1,yl:20,auto:1});planted++;}
+  if(cut){S.readyWarn=false;log(`Grow manager harvested ${cut} plant${cut>1?'s':''}: +${g} g in the stash.`,'#6cc28a');}
+  if(planted)log(`Grow manager planted ${planted} pot${planted>1?'s':''}.`,'#6cc28a');
+  if(broke&&!S.autoBrokeWarn){S.autoBrokeWarn=true;log(`Grow manager needs $${GROW.seed+GROW.soil} to plant. Empty pots are waiting.`,'#f2a33a');}else if(!broke)S.autoBrokeWarn=false;
+  if((cut||planted)&&!elStash.hidden)renderStash();}
 document.getElementById('btnPot').onclick=()=>{if(S.slots<S.space&&S.kits>0){S.kits--;S.slots++;AU.dirt();log('New pot set up under the light.','#6cc28a');renderStash();}};
 document.getElementById('btnWater').onclick=()=>{for(const p of S.plants)p.w=1;S.dryWarn=false;AU.pour();renderStash();};
 document.getElementById('btnHarvest').onclick=()=>{const i=S.plants.findIndex(p=>p.g>=1);if(i>=0)harvestOne(i);};
@@ -6863,11 +6892,11 @@ function clubState(){const n=clubNight();if(!S.club||S.club.night!==n){
   S.dancers=S.dancers||{};return S.club;}
 function danceLook(name){if(CLUB.looks[name])return CLUB.looks[name];const d=DANCERS.find(x=>x[0]===name);const L=makeLook('civ');L.style='tee';L.top=d[1];L.hair=pick(['long','bun','long','afro','braids']);L.hairCol=pick(['#1a1a1a','#3b2416','#d9b25c','#8a2a2a','#ff7fc8']);L.shoes=d[1];L.chain=R()<.5;return CLUB.looks[name]=L;}
 function openClub(st){if(P.heat>0.5){log("Bouncer: \"Not with 12 on you. Come back when you're clean.\"",'#f2a33a');return;}
-  const C=clubState();if(!C.paid){if(S.cash<CLUBP.cover){log(`Cover is $${CLUBP.cover}. You're short.`,'#f2a33a');return;}S.cash-=CLUBP.cover;C.paid=true;}
+  const C=clubState();if(!C.paid){if(S.cash<CLUBP.cover){log(`Cover is $${CLUBP.cover}. You're short.`,'#f2a33a');return;}payDirtyFirst(CLUBP.cover);C.paid=true;}
   CLUB.open=true;CLUB.st=st;paused=true;elClub.hidden=false;$('clMsg').textContent='';renderClub();requestAnimationFrame(clubLoop);AU.music&&AU.music(P.x,P.y);}
 function closeClub(){CLUB.open=false;elClub.hidden=true;paused=false;const C=S.club;if(C&&C.viceHit){C.viceHit=false;addHeat(1.4,P.x,P.y);log('That "patron" was Vice. DPD knows your face now.','#e0574b');}save();}
 function clubSay(t,col){const m=$('clMsg');m.textContent=t;m.style.color=col||'#d7dbe1';}
-function spend(n){if(S.cash<n){clubSay(`You need $${n}. You have $${S.cash}.`,'#e0574b');return false;}S.cash-=n;AU.cash();return true;}
+function spend(n){if(S.cash<n){clubSay(`You need $${n}. You have $${S.cash}.`,'#e0574b');return false;}payDirtyFirst(n);AU.cash();return true;}
 function rapport(name,n){const D=S.dancers[name]||(S.dancers[name]={spent:0,intro:false});D.spent+=n;const C=S.club;
   const rp=Math.min(Math.round(n/40),Math.max(0,14-C.rep));if(rp>0){C.rep+=rp;gainRep(rp);}
   if(!D.intro&&D.spent>=300){const pool=S.roster.filter(c=>!c.known&&!c.contact&&!c.hurt);if(pool.length){D.intro=true;const c=pick(pool);c.contact=true;c.budget=Math.round(c.budget*1.6)+40;c.std=Math.max(c.std,2);
@@ -6892,7 +6921,7 @@ function renderClub(){const C=clubState();let b='';
   for(const id of C.pats){const c=CL(id),p=sampleP(c),done=C.pitched.includes(id),ch=Math.round(clamp(pitchChance(c,p)+0.1+(C.vip?0.15:0),0.1,0.95)*100);
     b+=`<div class="crow2"><div><b>${esc(c.name)}${c.known?' · client':''}</b><span>From ${HN[c.home]} · wants ${p==='weed'?DRUGS.weed.qn[Math.max(1,c.std)]:'shrooms'} · budget ~$${Math.round(budgetNow(c))}</span></div><div class="bt"><button type="button" ${done||c.known?'disabled class="ghost"':''} data-cl="pitch" data-n="${id}">${c.known?'Your client':done?'Already tried':`Free sample · ${ch}%`}</button></div></div>`;}
   b+=`<div class="note" style="margin-top:8px">Carrying ${lossTxt(Object.fromEntries(PRODS.map(p=>[p,inv(p)])))}. Spend $300 on one dancer and she will introduce you to a big spender.</div>`;
-  $('clBody').innerHTML=b+clubOwnHtml();$('clSub').textContent=`XXX · ${isNight()?'Packed tonight':'Day shift, half empty'} · Cash $${S.cash.toLocaleString()}`;}
+  $('clBody').innerHTML=b+clubOwnHtml();$('clSub').textContent=`XXX · ${isNight()?'Packed tonight':'Day shift, half empty'} · Cash $${S.cash.toLocaleString()}${dirtyNow()?` ($${Math.floor(dirtyNow()).toLocaleString()} dirty, spent first)`:''}`;}
 document.getElementById('club').addEventListener('click',ev=>{const t=ev.target.closest('[data-cl]');if(!t||t.disabled)return;const a=t.dataset.cl,n=t.dataset.n;const C=S.club;const i=C.ds.indexOf(n);const x=i<0?280:110+i*170;
   if(a==='tip'){if(!spend(CLUBP.tip))return;rain(4,x);clubSay(rapport(n,CLUBP.tip)||`${n} winks and keeps it moving.`,'#ff7fc8');}
   else if(a==='rain'){if(!spend(CLUBP.rain))return;rain(40,x);clubSay(rapport(n,CLUBP.rain)||`You made it rain on ${n}. The whole club is looking.`,'#ff7fc8');}
@@ -7133,6 +7162,7 @@ function sceneWalk(e,dt){if(!e.scene)return false;if(dist(e,e.scene)>150){seek(e
 // crime pays in dirty cash; spending burns dirty cash first; a bust seizes the dirty cash; fronts wash it every hour for a cut
 const FRONTS=[{id:'laundro',name:'Spin City Laundromat',cost:6000,rate:250,fee:0.15,desc:'Coin-op laundromat. Drop dirty cash at the counter; it washes $250 an hour for a 15% cut.'},
   {id:'carwash',name:'Motor City Car Wash',cost:15000,rate:600,fee:0.12,desc:'Hand car wash. Drop dirty cash at the counter; it washes $600 an hour for a 12% cut.'}];
+function payDirtyFirst(n){const d=Math.min(dirtyNow(),n);S.dirty=Math.max(0,(S.dirty||0)-d);S.cash-=n;lastC=S.cash;return d;}
 function earnDirty(n){if(!n)return;S.cash+=n;S.dirty=(S.dirty||0)+n;}
 const dirtyNow=()=>Math.min(S.dirty||0,Math.max(0,S.cash));
 let washHr=-1,lastC=null;
@@ -7279,7 +7309,7 @@ function updCruiser(c,dt){
 }
 function update(dt){
   const prevDay=S.day;
-  S.clock+=DEV.on.freeze?0:dt*CLOCK_RATE;if(S.clock>=24*60){S.clock-=24*60;S.day++;}LAWT+=dt;tShotG-=dt;waypointTick();goalsTick(dt);trapTick();weatherTick();wordTick();magicTick();profTick();trackerTick(dt);sceneTick();launderTick();jobTick();bizTick(dt);heistTick(dt);bodyTick();cashTick(dt);campTick(dt);if(running)towTick(dt);crewTick();if(running){packTick(dt);mcParkTick(dt);}
+  S.clock+=DEV.on.freeze?0:dt*CLOCK_RATE;if(S.clock>=24*60){S.clock-=24*60;S.day++;}LAWT+=dt;tShotG-=dt;waypointTick();goalsTick(dt);tipsTick(dt);autoGrowTick(false,dt);trapTick();weatherTick();wordTick();magicTick();profTick();trackerTick(dt);sceneTick();launderTick();jobTick();bizTick(dt);heistTick(dt);bodyTick();cashTick(dt);campTick(dt);if(running)towTick(dt);crewTick();if(running){packTick(dt);mcParkTick(dt);}
   if(S.day!==prevDay){dayRecap(prevDay);for(const g of rivalGangs())addBeef(g,-0.6);for(const c of S.roster)if(c.known&&nowM()-c.lastDeal>1440)c.add=Math.max(0,c.add-0.07);}
   if(S.cooks)for(const c of S.cooks){if(!c||c.g>=1)continue;c.g=Math.min(1,c.g+dt*CLOCK_RATE/COOK.time*(S.fastCook?2:1));if(c.g>=1&&!S.cookWarn){S.cookWarn=true;log('A shroom flush is ready. Pick it at the stash.','#f2a33a');}}
   {const gm=dt*CLOCK_RATE*bonusMul('grow');for(const p of S.plants){if(S.drip)p.w=1;if(p.g>=1)continue;if(p.w>0){p.g=Math.min(1,p.g+gm/GROW.time*(p.boost||1));p.w=Math.max(0,p.w-gm/GROW.dry);}}
@@ -7466,7 +7496,7 @@ function ambientPop(){for(const e of npcs)if((e.type==='civ'||e.amb)&&!e.payCop&
   if(n>cap+3){const f=npcs.find(e=>e.type==='civ'&&!onScreen(e,80)&&dist(e,P)>650);if(f)f.dead=true;}}
 function respawn(){descClear();heistLost();if(P.car){P.car.mode='parked';P.car.v=0;P.car=null;}rob=null;if(CF)cfEnd();GR=null;if(S.war){S.war=null;for(const e of npcs)e.war=false;}bullets=[];P.x=STASH.x;P.y=STASH.y;P.hp=maxHP();P.heat=0;P.searchT=0;P.reloadT=0;
   for(const e of npcs){if(e.type==='cop')e.chase=false;if(e.type==='rival')e.aggro=0;}for(const c of cars)if(c.mode==='cop')c.dead=true;cars=cars.filter(c=>!c.dead);}
-function busted(){gcHit('/busted','Busted',true);const dt0=dirtyNow(),clean=S.cash-dt0,lost=Math.round(dt0*(S.lawyer?0.5:1))+(S.lawyer?0:Math.round(clean*0.1));S.dirty=dt0-Math.round(dt0*(S.lawyer?0.5:1));const hk=S.hidden?0.5:1,lostM={};for(const p of PRODS){lostM[p]=Math.ceil(inv(p)*hk);S.inv[p]=inv(p)-lostM[p];}S.cash-=lost;
+function busted(){(S.tipEv||(S.tipEv={})).busted=1;gcHit('/busted','Busted',true);const dt0=dirtyNow(),clean=S.cash-dt0,lost=Math.round(dt0*(S.lawyer?0.5:1))+(S.lawyer?0:Math.round(clean*0.1));S.dirty=dt0-Math.round(dt0*(S.lawyer?0.5:1));const hk=S.hidden?0.5:1,lostM={};for(const p of PRODS){lostM[p]=Math.ceil(inv(p)*hk);S.inv[p]=inv(p)-lostM[p];}S.cash-=lost;
   const guns=S.weapons.filter(w=>!WD[w].melee);S.weapons=S.weapons.filter(w=>WD[w].melee);if(!S.weapons.includes(S.cur))S.cur='fists';S.ammo={'9mm':0,shells:0,'7.62':0};S.clip={glock:0,sawed:0,draco:0};S.extMag=false;S.glockSw=false;
   AU.sting();card('Busted',`Lost ${lossTxt(lostM)}${lost?`, $${lost}`:''}${guns.length?` and your ${guns.map(g=>WD[g].name).join(', ')}`:''}.${dt0?(S.lawyer?' Your lawyer got half the dirty cash back.':' They seized every dirty dollar on you.'):''}`,'#e0574b');respawn();save();}
 function wasted(){gcHit('/died','Died',true);const lostM={};for(const p of PRODS){lostM[p]=Math.ceil(inv(p)/2);S.inv[p]=inv(p)-lostM[p];}const lost=Math.round(S.cash*0.2);S.cash-=lost;
@@ -8402,6 +8432,44 @@ function nextDeal(){if(!running||!S.deals||!S.deals.length)return null;return S.
 function waypointTick(){if(S.wp&&Math.hypot(S.wp.x-P.x,S.wp.y-P.y)<90){S.wp=null;log('You made it to your waypoint.','#ff4fd8');}}
 function drawWaypoint(){if(!running||!S.wp)return;const d=Math.round(Math.hypot(S.wp.x-P.x,S.wp.y-P.y)/T);edgeArrow(S.wp.x,S.wp.y,'#ff4fd8',`WAYPOINT · ${d} BLOCKS`);
   const x=S.wp.x-camX,y=S.wp.y-camY;if(x>-20&&y>-20&&x<vw+20&&y<vh+20){const r=10+Math.sin(clockT*5)*2;ctx.strokeStyle='#ff4fd8';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,y-r*1.6);ctx.lineTo(x+r,y);ctx.lineTo(x,y+r*1.6);ctx.lineTo(x-r,y);ctx.closePath();ctx.stroke();}}
+
+// ---- street smarts: tips that unlock as you play; "word on the street" ones only hint ----
+const K=k=>`<kbd>${k}</kbd>`;
+const TIPS=[
+  {id:'phone',w:()=>TIP.play>40,t:'Your burner is the business',b:()=>`${K('P')} opens your phone. Clients text when they want product. Prices, deals and contacts all live there.`},
+  {id:'map',w:()=>TIP.play>150,t:'Know the city',b:()=>`${K('M')} opens the map. Click anywhere to drop a pink waypoint and follow it.`},
+  {id:'zoom',w:()=>!!P.car,t:'Pull the camera back',b:()=>`${K('V')} cycles the camera zoom. Go wide when you are moving fast.`},
+  {id:'radio',w:()=>!!P.car&&TIP.carT>20,t:'Detroit on the dial',b:()=>`${K('N')} flips the radio. 313.7 The Block runs local rap, 96.3 The Beat Lab runs instrumentals.`},
+  {id:'heat',w:()=>P.heat>=1,t:'Stars mean heat',b:()=>`Break line of sight and stay out of view to lose them. Pulling into your stash garage hides you fastest.`},
+  {id:'crouch',w:()=>P.heat>0.3&&!P.car&&TIP.seen.heat,t:'Stay low',b:()=>`${K('C')} crouches. Crouched, people notice you later and you hit harder from behind.`},
+  {id:'stop',w:()=>!!(S.tipEv||{}).stop&&!CF,t:'You always have a choice',b:()=>`When DPD stops you: drop the gun and they hold fire, run, fight, or pay. Some cops are dirty and take the money.`},
+  {id:'full',w:()=>load()>=prodCap()-1&&!S.bag,t:'Pockets full',b:()=>`A backpack or gym bag from Avenue Threads or House Depo carries way more product.`},
+  {id:'night',hint:1,w:()=>nightAmt()>0.6&&TIP.play>400,t:'Late night money',b:()=>`They say clients pay more after 10 PM. Fewer eyes on the street too. Mostly.`},
+  {id:'prices',w:()=>S.roster.filter(c=>c.deals>0).length>=2,t:'Set your price',b:()=>`Change prices on your phone under Products. Higher prices, fewer buyers. Loyal clients pay more.`},
+  {id:'ontime',hint:1,w:()=>S.roster.some(c=>c.deals>=2),t:'Regulars talk',b:()=>`Show up on time and keep them happy. Somebody who trusts you might bring a friend.`},
+  {id:'grade',w:()=>!!(S.goalsHit||{}).plant,t:'Plant clean, get the full zip',b:()=>`Pour soil into the band, drop the seed dead center, water into the band. Perfect plants give 28 g.`},
+  {id:'dirty',w:()=>(S.dirty||0)>=400,t:'Dirty money',b:()=>`Dirty cash gets seized when you are booked. Buy a front from the stash (Fronts) to wash it clean.`},
+  {id:'locker',w:()=>S.weapons.some(w=>!WD[w].melee)&&TIP.play>300,t:'Leave the heat at home',b:()=>`Get busted and you lose the guns on you. The stash locker keeps them safe.`},
+  {id:'callouts',w:()=>followers().length>0,t:'Talk to your crew',b:()=>`${K('T')} opens crew callouts. Tell your homies to fight, open fire, chill or hold their shots.`},
+  {id:'turf',w:()=>S.hoods.filter(h=>h.owner==='crew').length>=2,t:'Your blocks, your rules',b:()=>`A block you take is locked for 7 days. After that, rival gangs can roll on it. Show up when they do.`},
+  {id:'war',hint:1,w:()=>repLvl()>=1&&TIP.play>600,t:'Smoke on their block',b:()=>`Word is if you keep dropping a gang's soldiers on their own block, they will call a turf war. Win it and the block is yours.`},
+  {id:'van',hint:1,w:()=>S.day>=2,t:'Somebody is selling iron',b:()=>`There is a van moving around the city every day. Not a food truck.`},
+  {id:'ward',w:()=>S.day>=2&&TIP.seen.heat,t:'Change your fit',b:()=>`The stash wardrobe changes your look and crew colors. A new fit throws off the description DPD has on you.`},
+  {id:'tow',w:()=>cars.some(c=>c.owned&&!c.dead)&&TIP.play>500,t:'Park it right',b:()=>`Leave a car on the sidewalk and a tow truck takes it. Wrecks get towed too. Your rides end up at the impound by DPD HQ.`},
+  {id:'tracker',hint:1,w:()=>!!P.car&&!P.car.owned&&P.heat>0.5,t:'Hot ride',b:()=>`Some cars phone home. If dispatch keeps finding you, the car might be the snitch.`},
+  {id:'busted',w:()=>!!(S.tipEv||{}).busted,t:'Got booked',b:()=>`Busted costs your dirty cash, product and guns on you. A lawyer gets half the dirty cash back. Keep less on you.`},
+  {id:'tent',hint:1,w:()=>repLvl()>=2,t:'Something else grows in the dark',b:()=>`House Depo has more than pots once people know your name. Ask about grow tents.`},
+  {id:'bike',w:()=>!!P.car&&isBike(P.car),t:'Pop a wheelie',b:()=>`Hold ${K('Shift')} on a bike to pull a wheelie.`},
+  {id:'save',w:()=>TIP.play>900,t:'Your progress',b:()=>`The game saves itself. ${K('Esc')} to save to a file, switch borders, or change the camera.`}];
+const TIP={play:0,gap:45,carT:0,cur:null,hideT:0,seen:{}};
+function tipShow(tp){const el=$('tip');TIP.cur=tp;el.classList.toggle('hint',!!tp.hint);$('tipK').textContent=tp.hint?'Word on the street':'Burner tip';$('tipT').textContent=tp.t;$('tipB').innerHTML=tp.b();
+  el.hidden=false;requestAnimationFrame(()=>el.classList.add('on'));TIP.hideT=16;AU.buzz&&AU.buzz();}
+function tipHide(){const el=$('tip');el.classList.remove('on');setTimeout(()=>{if(!el.classList.contains('on'))el.hidden=true;},400);TIP.cur=null;}
+$('tipX').onclick=()=>{tipHide();TIP.gap=Math.max(TIP.gap,30);};
+function tipsTick(dt){if(!running)return;{const lt='Tips: '+(S.tipsOff?'Off':'On');if(TIP.lt!==lt){TIP.lt=lt;$('paTips').textContent=lt;}}TIP.play+=dt;TIP.carT=P.car?TIP.carT+dt:0;const seen=S.tipsSeen||(S.tipsSeen=[]);TIP.seen=Object.fromEntries(seen.map(k=>[k,1]));
+  if(TIP.cur){TIP.hideT-=dt;if(TIP.hideT<=0||S.tipsOff)tipHide();return;}
+  if(S.tipsOff||CF||MG.on||P.heat>=3)return;TIP.gap-=dt;if(TIP.gap>0)return;
+  for(const tp of TIPS){if(seen.includes(tp.id))continue;let ok=false;try{ok=tp.w();}catch(e){}if(ok){seen.push(tp.id);tipShow(tp);TIP.gap=tp.hint?120:80;return;}}TIP.gap=5;}
 // ---- getting started ----
 const GOALS=[
   {id:'sample',t:'Hand a free sample to someone with a ?',hint:'Walk up to a ? and press E. Samples turn people into clients.',done:()=>S.roster.some(c=>c.known),cash:50,rep:5},
@@ -8893,7 +8961,7 @@ const v3x=document.createElement('div');v3x.id='v3x';v3x.hidden=true;document.bo
 const v3P=(x,y,h)=>[x/PXM,h,y/PXM];
 function v3Canvas(w,h,fn){const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);return c;}
 function v3Tex(c,rep){const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;if(rep){t.wrapS=t.wrapT=THREE.RepeatWrapping;}t.anisotropy=v3r.capabilities.getMaxAnisotropy();return t;}
-const v3BH={house:7,walkup:11,store:6,stash:7,hq:16,rencen:95,fisher:62,casino:34,casino2:30,arena:20,stadium:22,conv:14,station:8,factory:15,shed:6,plaza:4,plaza2:4,ramp:1.4,tunnel:5};
+const v3BH={house:7,walkup:11,store:6,stash:7,hq:16,rencen:95,fisher:70,casino:34,casino2:30,arena:20,stadium:22,conv:14,station:42,factory:15,shed:6,plaza:4,plaza2:4,ramp:1.4,tunnel:5};
 const v3WALL=['#9c6a52','#b5a58a','#8e9196','#6c7078','#c9bfa6','#7d5a48','#a7a49c'];
 function v3BuildCity(){
   const tx0=-16,tx1=144,ty0=-16,ty1=WSR+18,GS=24;
@@ -9212,7 +9280,7 @@ function sneakMul(e,dx,dy,w){if(!P.crouch||e.aggro>0||e.chase||e.flee>0||e.hands
 // ================= police stops: cops step out, you give up, pay off a dirty cop, or run =================
 const bribeCost=()=>Math.round(150+Math.max(1,P.heat)*120);
 function copStopLine(far){return P.car?pick(['Step out of the vehicle! Hands where I can see them!','DPD! Shut it off and step out of the car!']):gunOut()?pick(['DROP THE WEAPON! Hands where I can see them!','DPD! Drop the gun, NOW!']):far?pick(['FREEZE! DPD!',"Police! Don't move!",'Freeze! Hands up, now!']):pick(['Hands behind your back!','On the ground, now!',"Don't move! You're under arrest!",'Turn around. Hands on your head.']);}
-function copStopOpen(e,far){if(CF||rob)return;const T0=far?6:7;CF={e,cop:true,far:!!far,inCar:!!P.car,px:P.x,py:P.y,t0:LAWT,stage:1,t:T0,max:T0,line:copStopLine(far)};
+function copStopOpen(e,far){if(CF||rob)return;(S.tipEv||(S.tipEv={})).stop=1;const T0=far?6:7;CF={e,cop:true,far:!!far,inCar:!!P.car,px:P.x,py:P.y,t0:LAWT,stage:1,t:T0,max:T0,line:copStopLine(far)};
   say(e,CF.line,7);for(const o of npcs)if(o.type==='cop'&&!o.dead&&dist(o,P)<560){o.chase=true;o.warned=true;}copBuild();AU.huh&&AU.huh();}
 function copFight(e,why){cfEnd();P.copCD=25;if(P.heat<4)addHeat(4-P.heat,P.x,P.y);
   for(const o of npcs)if(o.type==='cop'&&!o.dead&&dist(o,P)<800){o.chase=true;o.warned=true;o.cd=Math.min(o.cd||0,0.4);}
@@ -9447,6 +9515,58 @@ function drawProp(p,night){
 function drawProps(){const night=nightAmt(),cx0=Math.floor(camX/CHP)-1,cy0=Math.floor(camY/CHP)-1,cx1=Math.floor((camX+vw)/CHP)+1,cy1=Math.floor((camY+vh)/CHP)+1;
   for(let cy=cy0;cy<=cy1;cy++)for(let cx=cx0;cx<=cx1;cx++){const c=chunks.get(cx+','+cy);if(!c||!c.props)continue;
     for(const p of c.props){if(inDeck(p.x,p.y))continue;const x=p.x-camX,y=p.y-camY;if(x<-60||y<-60||x>vw+60||y>vh+60)continue;drawProp(p,night);}}}
+
+// ---- landmark 3D: each real landmark gets its own shape instead of a plain box ----
+const LMC=()=>[camX+vw/2,camY+vh/2];
+function lmQuad(a,b,c,d,col){ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.lineTo(c[0],c[1]);ctx.lineTo(d[0],d[1]);ctx.closePath();ctx.fill();}
+function lmLight(nx,ny){return -0.12*nx-0.2*ny;}
+// prism over a world polygon: visible sides (facing the screen centre) far-to-near, then the lid
+function lmPrism(pts,z0,z1,col,o){o=o||{};const C=LMC(),n=pts.length;let mx=0,my=0;for(const p of pts){mx+=p[0];my+=p[1];}mx/=n;my/=n;const fs=[];
+  for(let i=0;i<n;i++){const a=pts[i],b=pts[(i+1)%n];let nx=b[1]-a[1],ny=-(b[0]-a[0]);const l=Math.hypot(nx,ny)||1;nx/=l;ny/=l;const fx=(a[0]+b[0])/2,fy=(a[1]+b[1])/2;if(nx*(fx-mx)+ny*(fy-my)<0){nx=-nx;ny=-ny;}
+    if(nx*(C[0]-fx)+ny*(C[1]-fy)>0)fs.push({a,b,nx,ny,d:Math.hypot(C[0]-fx,C[1]-fy),len:Math.hypot(b[0]-a[0],b[1]-a[1])});}
+  fs.sort((p,q)=>q.d-p.d);const night=nightAmt();
+  for(const f of fs){const c=shade(col,lmLight(f.nx,f.ny)+(o.dark||0)),p0=propLift(f.a[0],f.a[1],z0),p1=propLift(f.b[0],f.b[1],z0),q0=propLift(f.a[0],f.a[1],z1),q1=propLift(f.b[0],f.b[1],z1);
+    if(o.win)tiltFace(p0,p1,q0,q1,c,Math.max(1,Math.round((z1-z0)/o.win)),o.lit!==false,o.dead?0:night,f.len,o.seed||7);else lmQuad(p0,p1,q1,q0,c);
+    if(o.band){const t=o.band[0],h=o.band[1],at=(u,tt)=>{const A=propLift(f.a[0]+(f.b[0]-f.a[0])*u,f.a[1]+(f.b[1]-f.a[1])*u,z0+(z1-z0)*tt);return A;};
+      ctx.save();if(night>0.3&&o.band[3]){ctx.shadowColor=o.band[2];ctx.shadowBlur=10;}lmQuad(at(0,t),at(1,t),at(1,t+h),at(0,t+h),o.band[2]);ctx.restore();}
+    if(o.ribs){ctx.strokeStyle='rgba(0,0,0,.28)';ctx.lineWidth=1;const k=Math.max(2,Math.round(f.len/o.ribs));ctx.beginPath();for(let j=1;j<k;j++){const u=j/k,A=propLift(f.a[0]+(f.b[0]-f.a[0])*u,f.a[1]+(f.b[1]-f.a[1])*u,z0),B=propLift(f.a[0]+(f.b[0]-f.a[0])*u,f.a[1]+(f.b[1]-f.a[1])*u,z1);ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);}ctx.stroke();}}
+  if(o.top!==null){ctx.fillStyle=o.top||shade(col,0.12);ctx.beginPath();pts.forEach((p,i)=>{const q=propLift(p[0],p[1],z1);i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]);});ctx.closePath();ctx.fill();
+    if(o.lip){ctx.strokeStyle=o.lip;ctx.lineWidth=2;ctx.stroke();}}}
+const lmRect=(x,y,w,h)=>[[x,y],[x+w,y],[x+w,y+h],[x,y+h]];
+const lmCirc=(cx,cy,rx,ry,n)=>Array.from({length:n||20},(_,i)=>{const a=i/(n||20)*Math.PI*2;return [cx+Math.cos(a)*rx,cy+Math.sin(a)*ry];});
+function lmPyr(pts,z0,z1,col){const C=LMC(),n=pts.length;let mx=0,my=0;for(const p of pts){mx+=p[0];my+=p[1];}mx/=n;my/=n;const ap=propLift(mx,my,z1),fs=[];
+  for(let i=0;i<n;i++){const a=pts[i],b=pts[(i+1)%n],fx=(a[0]+b[0])/2,fy=(a[1]+b[1])/2;let nx=fx-mx,ny=fy-my;const l=Math.hypot(nx,ny)||1;nx/=l;ny/=l;fs.push({a,b,nx,ny,d:Math.hypot(C[0]-fx,C[1]-fy)});}
+  fs.sort((p,q)=>q.d-p.d);for(const f of fs){const p0=propLift(f.a[0],f.a[1],z0),p1=propLift(f.b[0],f.b[1],z0);ctx.fillStyle=shade(col,lmLight(f.nx,f.ny)*1.6);ctx.beginPath();ctx.moveTo(p0[0],p0[1]);ctx.lineTo(p1[0],p1[1]);ctx.lineTo(ap[0],ap[1]);ctx.closePath();ctx.fill();}}
+function lmGable(x,y,w,h,z0,z1,wall,roof){const ridgeX=w>=h;lmPrism(lmRect(x,y,w,h),0,z0,wall,{top:null,win:30,seed:x|0});
+  const C=LMC();if(ridgeX){const r0=propLift(x,y+h/2,z1),r1=propLift(x+w,y+h/2,z1),A=propLift(x,y,z0),B=propLift(x+w,y,z0),Cc=propLift(x+w,y+h,z0),D=propLift(x,y+h,z0);
+      const nFirst=C[1]<y+h/2;const s1=()=>lmQuad(A,B,r1,r0,shade(roof,0.12)),s2=()=>lmQuad(D,Cc,r1,r0,shade(roof,-0.2));if(nFirst){s2();s1();}else{s1();s2();}
+      ctx.fillStyle=shade(wall,-0.1);for(const [e,rr] of [[[A,D],r0],[[B,Cc],r1]]){ctx.beginPath();ctx.moveTo(e[0][0],e[0][1]);ctx.lineTo(e[1][0],e[1][1]);ctx.lineTo(rr[0],rr[1]);ctx.closePath();ctx.fill();}
+      ctx.strokeStyle='rgba(255,255,255,.18)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(r0[0],r0[1]);ctx.lineTo(r1[0],r1[1]);ctx.stroke();}
+  else lmPrism(lmRect(x,y,w,h),z0,z1,roof,{});}
+function lmSign(x,y,z,txt,col,size){const p=propLift(x,y,z);ctx.save();ctx.font=`900 ${fpx(size)}px ${FD}`;ctx.textAlign='center';ctx.textBaseline='middle';if(nightAmt()>0.3){ctx.shadowColor=col;ctx.shadowBlur=12;}ctx.lineWidth=4;ctx.strokeStyle='rgba(0,0,0,.6)';ctx.strokeText(txt,p[0],p[1]);ctx.fillStyle=col;ctx.fillText(txt,p[0],p[1]);ctx.restore();}
+const LM3={
+  rencen(b,r){const {x,y,w,h}=r,cx=x+w/2,cy=y+h/2,m=Math.min(w,h);lmPrism(lmRect(x,y,w,h),0,70,'#59626b',{win:24,top:'#6c757e',seed:3});
+    const tw=[[x+m*0.2,y+m*0.2],[x+w-m*0.2,y+m*0.2],[x+w-m*0.2,y+h-m*0.2],[x+m*0.2,y+h-m*0.2]].map(p=>[p,Math.hypot(LMC()[0]-p[0],LMC()[1]-p[1])]).sort((a,c)=>c[1]-a[1]);
+    for(const [[px,py]] of tw)lmPrism(lmCirc(px,py,m*0.13,m*0.13,16),70,520,'#3f5f6e',{win:26,top:'#8fa6b0',seed:px|0,lip:'#b9cbd2'});
+    lmPrism(lmCirc(cx,cy,m*0.2,m*0.2,22),70,900,'#36586a',{win:26,top:'#9db3bd',seed:11,lip:'#c9d8de'});lmPrism(lmCirc(cx,cy,m*0.12,m*0.12,18),900,950,'#22333d',{top:'#5f7782',band:[0.35,0.3,'#4fd1ff',1]});},
+  fisher(b,r){const {x,y,w,h}=r,cx=x+w/2,cy=y+h/2;lmPrism(lmRect(x,y,w,h),0,200,'#b9ad95',{win:34,top:'#a89c84',seed:5});
+    lmPrism(lmRect(cx-w*0.24,cy-h*0.24,w*0.48,h*0.48),200,560,'#c4b89e',{win:34,top:'#b0a48a',seed:6});lmPrism(lmRect(cx-w*0.17,cy-h*0.17,w*0.34,h*0.34),560,610,'#b0a48a',{top:null});
+    lmPyr(lmRect(cx-w*0.17,cy-h*0.17,w*0.34,h*0.34),610,720,'#c9a23a');lmPrism(lmCirc(cx,cy,3,3,6),720,760,'#e3c565',{top:'#fff1b0'});},
+  casino(b,r){const {x,y,w,h}=r;lmPrism(lmRect(x,y,w,h),0,90,'#2a1f3a',{top:'#3a2d4f',band:[0.72,0.12,'#ff4fd8',1],seed:9});
+    lmPrism(lmRect(x+w*0.42,y+h*0.12,w*0.5,h*0.62),90,340,'#3b3f52',{win:26,top:'#4a4f66',seed:10,band:[0.92,0.05,'#ff4fd8',1]});lmSign(x+w*0.25,y+h*0.6,92,'CASINO','#ff4fd8',22);},
+  casino2(b,r){const {x,y,w,h}=r;lmPrism(lmRect(x,y,w,h),0,75,'#3a2a1a',{top:'#4b3824',band:[0.7,0.12,'#ffd34f',1],seed:12});
+    lmPrism(lmRect(x+w*0.2,y+h*0.2,w*0.55,h*0.5),75,280,'#6b7380',{win:26,top:'#7d8592',seed:13});lmPrism(lmRect(x+w*0.25,y+h*0.25,w*0.45,h*0.4),280,305,'#c9a23a',{top:'#e3c565',band:[0.3,0.4,'#ffd34f',1]});lmSign(x+w*0.48,y+h*0.85,78,'OLYMPUS','#ffd34f',18);},
+  arena(b,r){const {x,y,w,h}=r,cx=x+w/2,cy=y+h/2;lmPrism(lmCirc(cx,cy,w*0.5,h*0.5,28),0,120,'#2b2f38',{top:null,band:[0.15,0.55,'#7d8fa3',0],ribs:22});
+    lmPrism(lmCirc(cx,cy,w*0.47,h*0.47,28),120,170,'#9aa3ad',{top:null});lmPrism(lmCirc(cx,cy,w*0.38,h*0.38,24),170,200,'#7d8691',{top:'#5d6670',ribs:16});lmSign(cx,cy,200,"BIG CAESAR'S",'#e0574b',20);},
+  shed(b,r){const {x,y,w,h}=r,n=3,gap=10,sh=(h-gap*(n-1))/n;const C=LMC(),ord=[...Array(n).keys()].sort((a,c)=>Math.abs(C[1]-(y+c*(sh+gap)+sh/2))-Math.abs(C[1]-(y+a*(sh+gap)+sh/2)));
+    for(const i of ord){const yy=y+i*(sh+gap);lmGable(x,yy,w,sh,28,62,'#8e6a4f','#b8342b');lmSign(x+w/2,yy+sh/2,64,'SHED '+(i+2),'#f1efe9',16);}},
+  station(b,r){const {x,y,w,h}=r;lmPrism(lmRect(x+w*0.08,y,w*0.84,h*0.55),0,420,'#a89c86',{win:24,top:'#968a74',seed:14,lip:'#c4b89e'});
+    lmPrism(lmRect(x,y+h*0.5,w,h*0.5),0,130,'#bfb39b',{win:44,top:'#9c917c',seed:15});lmSign(x+w/2,y+h*0.75,132,'CENTRAL DEPOT','#f1efe9',16);},
+  conv(b,r){const {x,y,w,h}=r;lmPrism(lmRect(x,y,w,h),0,140,'#5d6670',{top:'#8a939c',band:[0.35,0.4,'#7fa3bf',0],ribs:30,seed:16});lmPrism(lmRect(x+w*0.1,y+h*0.2,w*0.8,h*0.6),140,165,'#9aa3ac',{top:'#aab2ba',ribs:18});},
+  factory(b,r){const {x,y,w,h}=r;lmPrism(lmRect(x,y,w,h),0,150,'#6b4a3a',{win:30,top:'#4a3a30',seed:17,dead:1,lit:false});
+    for(let k=0;k<4;k++){const xx=x+w*0.08+k*w*0.22;lmPrism(lmRect(xx,y+h*0.15,w*0.16,h*0.7),150,175,'#5a4034',{top:k===2?'#1d1916':'#6e5244'});}
+    lmPrism(lmCirc(x+w*0.88,y+h*0.2,8,8,10),0,320,'#7a4a36',{top:'#2a1d18'});}
+};
 function drawTilt(){drawProps();drawPumpsTilt();const cx=vw/2,cy=vh/2,night=nightAmt(),list=[],pts=[];
   for(const e of npcs)if(tiltWatch(e))pts.push(e.x-camX,e.y-camY);
   for(const c of cars)if(!c.dead&&c!==P.car&&(Math.abs(c.v)>5||c.mode==='cop'||c.mode==='resp'))pts.push(c.x-camX,c.y-camY);
@@ -9459,7 +9579,7 @@ function drawTilt(){drawProps();drawPumpsTilt();const cx=vw/2,cy=vh/2,night=nigh
     const rx0=cx+(x0-cx)*s,ry0=cy+(y0-cy)*s,rx1=cx+(x1-cx)*s,ry1=cy+(y1-cy)*s;let under=false;
     for(let i=0;i<pts.length&&!under;i+=2)under=pts[i]>rx0&&pts[i]<rx1&&pts[i+1]>ry0&&pts[i+1]<ry1;
     b._ta=(b._ta??1)+((under?0.35:1)-(b._ta??1))*0.2;
-    const walls=()=>{if(inside)return;const col=tiltWallCol(b),nF=Math.max(1,Math.min(20,Math.round(z/42))),lit=(b.id*7)%3!==0;
+    const walls=()=>{if(inside||LM3[b.kind])return;const col=tiltWallCol(b),nF=Math.max(1,Math.min(20,Math.round(z/42))),lit=(b.id*7)%3!==0;
         const A=[x0,y0],B=[x1,y0],C=[x1,y1],D=[x0,y1],A2=up(...A),B2=up(...B),C2=up(...C),D2=up(...D);
         if(cy<y0)tiltFace(A,B,A2,B2,shade(col,0.08),nF,lit,night,r.w,b.id*31+1);
         if(cy>y1){tiltFace(D,C,D2,C2,shade(col,-0.28),nF,lit,night,r.w,b.id*31+2);grafWall(b,D,C,D2,C2,z,r.w);}
@@ -9469,7 +9589,7 @@ function drawTilt(){drawProps();drawPumpsTilt();const cx=vw/2,cy=vh/2,night=nigh
         if(b.dealer&&cy>y1)dealerFront(D,C,D2,C2,z);
         if(isHospB(b)&&cy>y1)hospFront(D,C,D2,C2,z);
         if(BANK&&b===BANK.b&&BANKBACK){const f=BANKBACK.face;if(f==='n'&&cy<y0)backDoorFace(A,B,A2,B2,r.w,z);else if(f==='s'&&cy>y1)backDoorFace(D,C,D2,C2,r.w,z);else if(f==='w'&&cx<x0)backDoorFace(A,D,A2,D2,r.h,z);else if(f==='e'&&cx>x1)backDoorFace(B,C,B2,C2,r.h,z);}};
-    const roof=()=>{const fx=r.x-b.x*T,fy=r.y-b.y*T,k=chunkScale;
+    const roof=()=>{if(LM3[b.kind]){if(!inside)LM3[b.kind](b,r);return;}const fx=r.x-b.x*T,fy=r.y-b.y*T,k=chunkScale;
       ctx.save();ctx.translate(cx,cy);ctx.scale(s,s);ctx.translate(-cx,-cy);ctx.drawImage(tiltRoof(b),fx*k,fy*k,r.w*k,r.h*k,x0,y0,r.w,r.h);
       if(b.dealer)dealerRoof(x0,y0,r.w,r.h);if(isHospB(b))hospRoof(x0,y0,r.w,r.h);if(b.kind==='store')drawStoreSign(b);else drawTag(b);if(b===STASHB)drawHideout(true);ctx.restore();};
     const paint=f=>{if(inside){ctx.globalAlpha=0.18;f();}
@@ -9516,6 +9636,7 @@ function tiltSet(on){if(TILT.on!==on)chunks.clear();TILT.on=on;$('paTilt').textC
 const BORDERS=[['random','Random'],['tape','Caution Tape'],['chain','Chain Link'],['brick','Brick'],['rope','Gold Rope'],['drip','Spray Paint'],['clean','Clean']];
 let borderPick='random';try{borderPick=localStorage.getItem('mctw-border')||'random';}catch(e){}
 function borderApply(){const real=BORDERS.slice(1,-1).map(b=>b[0]);let k=borderPick==='random'?real[(Math.random()*real.length)|0]:borderPick;if(k==='clean')delete document.body.dataset.bd;else document.body.dataset.bd=k;$('paBorder').textContent='UI borders: '+(BORDERS.find(b=>b[0]===borderPick)||BORDERS[0])[1];}
+$('paTips').onclick=()=>{S.tipsOff=!S.tipsOff;$('paTips').textContent='Tips: '+(S.tipsOff?'Off':'On');if(S.tipsOff&&TIP.cur)tipHide();};
 $('paBorder').onclick=()=>{const i=BORDERS.findIndex(b=>b[0]===borderPick);borderPick=BORDERS[(i+1)%BORDERS.length][0];try{localStorage.setItem('mctw-border',borderPick);}catch(e){}borderApply();};borderApply();
 $('paTilt').onclick=()=>{tiltSet(!TILT.on);try{localStorage.setItem('mctw-bld',TILT.on?'3d':'flat');}catch(e){}};tiltSet(TILT.on);
 const VLIFT=1.2;
