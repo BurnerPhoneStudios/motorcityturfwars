@@ -6728,10 +6728,10 @@ function pdBackOff(e,dt){if(e.war||!(atPD(e.x,e.y)||e.aggro>0&&atPD(P.x,P.y)))re
 const COPYELL=['DROP THE WEAPON!','Shots fired! Shots fired!','Gun! Gun!','Police! Get on the ground!','DPD! Drop it!'];
 function copsWatching(x,y){let n=0;for(const o of npcs){if(o.type!=='cop'||o.dead||o.stun>0||o.down>0)continue;const d=Math.hypot(o.x-x,o.y-y);if(d<420&&(d<150||los(o.x,o.y,x,y)))n++;}
   for(const c of cars)if(!c.dead&&(c.mode==='cop'||c.mode==='resp'||c.police)&&c.mode!=='wreck'&&Math.hypot(c.x-x,c.y-y)<460)n++;return n;}
-function nerveOK(e){if(e.bold==null)e.bold=R();if(e.prov>0)return true;
+function nerveOK(e){if(e.bold==null)e.bold=R();if(e.prov>0||e.war)return true;
   if(!(e.nvAt>LAWT)){e.nvAt=LAWT+0.4;e.cw=copsWatching(e.x,e.y);}
   if(!e.cw)return true;
-  return e.bold>0.86||(e.war&&e.bold>0.6)||(e.hp<14&&e.bold>0.45);}
+  return e.bold>0.86||(e.hp<14&&e.bold>0.45);}
 function holdUp(e,dt,dP){e.hold=true;e.aggro=Math.max(e.aggro,2);
   if(dP<120)seek(e,P.x,P.y,60,dt,true);else if(dP>300)seek(e,P.x,P.y,50,dt);
   const a=Math.atan2(P.y-e.y,P.x-e.x);e.fx=Math.cos(a);e.fy=Math.sin(a);
