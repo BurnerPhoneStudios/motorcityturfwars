@@ -12695,7 +12695,7 @@ const WK={a:{},cd:{},room:null,hotT:0,warned:false};
 const wkOn=r=>!!(S.hires&&S.hires[r]);
 // the lookout is always Vicki, watching over the stash
 const VICKI_HAIR='#c9a865';   // dirty blonde, worn up in a bun
-function vickiLook(){let L=makeLook('civ');for(let k=0;k<40&&!(L.fem&&!L.old);k++)L=makeLook('civ');Object.assign(L,{skin:'#f2d3b4',hair:'bun',hairCol:VICKI_HAIR,style:'tee',top:'#141416',pants:'#5ad13a',build:'medium',tats:true});delete L.bag;return L;}
+function vickiLook(){let L=makeLook('civ');for(let k=0;k<40&&!(L.fem&&!L.old);k++)L=makeLook('civ');Object.assign(L,{skin:'#f2d3b4',hair:'bun',hairCol:VICKI_HAIR,style:'tee',top:'#141416',pants:GANG.crew.color,build:'medium',tats:true});delete L.bag;return L;}
 const wkName=r=>r==='look'?'Vicki':S.hires[r].nm;
 function wkCanHire(r){const R0=WK_ROLES[r];if(wkOn(r))return 'on';if(repLvl()<R0.lvl)return 'rep';if(r!=='look'&&!(S.slots>0))return 'pot';
   if(((S.wkBack||{})[r]||0)>S.day)return 'cd';if(S.cash<R0.wage)return 'cash';return 'ok';}
@@ -12746,7 +12746,7 @@ document.getElementById('crewHire').onclick=ev=>{const b=ev.target.closest('butt
 // ── Live in the walk-in rooms: walk the aisle, step up to a pot, do the job ──
 const wkHere=r=>(r==='look')===(ROOM.id==='stash');
 function wkSpot(i,r){const sp=(GROOM.spots||[]).find(s=>s.i===i);if(!sp)return null;return [clamp(sp.u+(r==='trim'?0.07:-0.07),-0.93,0.93),sp.z+((S.space||4)>4&&sp.z>0.5?-0.13:0.15)];}
-function wkActor(r){if(r==='look'&&S.hires.look&&(S.hires.look.nm!=='Vicki'||!S.hires.look.look.fem||S.hires.look.look.hairCol!==VICKI_HAIR||!S.hires.look.look.tats)){S.hires.look.nm='Vicki';S.hires.look.look=vickiLook();}let a=WK.a[r];if(!a){a=WK.a[r]={u:r==='look'?-0.74:r==='grow'?-0.45:0.35,z:r==='look'?0.36:growAisle(),face:r==='look'?-1:1,back:false,walk:0,path:[],job:null,t:0,idle:0.5+R()};}return a;}
+function wkActor(r){if(r==='look'&&S.hires.look&&(S.hires.look.nm!=='Vicki'||!S.hires.look.look.fem||S.hires.look.look.hairCol!==VICKI_HAIR||!S.hires.look.look.tats)){S.hires.look.nm='Vicki';S.hires.look.look=vickiLook();}if(r==='look'&&S.hires.look)S.hires.look.look.pants=GANG.crew.color;let a=WK.a[r];if(!a){a=WK.a[r]={u:r==='look'?-0.74:r==='grow'?-0.45:0.35,z:r==='look'?0.36:growAisle(),face:r==='look'?-1:1,back:false,walk:0,path:[],job:null,t:0,idle:0.5+R()};}return a;}
 function wkRoom(dt){if(WK.room!==ROOM.id){WK.room=ROOM.id;WK.a={};}
   for(const r of Object.keys(S.hires||{})){if(!wkHere(r))continue;const a=wkActor(r);if(a.pop){a.pop.a-=dt*0.8;if(a.pop.a<=0)a.pop=null;}
     if(r==='look'){a.t+=dt;a.walk=0;if(a.t>4){a.t=0;a.face=-a.face;}a.phone=ROOM.t%7>4.5;continue;}
