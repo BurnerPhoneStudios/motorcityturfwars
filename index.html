@@ -8766,7 +8766,7 @@ function drawHuman(x,y,a,L,ph,mv,o){
   const sleeve=(L.style==='tee'||L.style==='jersey')?L.skin:shade(top,-0.08);
   const seg=(x1,y1,x2,y2,c,w)=>{g.lineCap='round';g.strokeStyle=shade(c,-0.35);g.lineWidth=w+1.1;g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();g.strokeStyle=c;g.lineWidth=w;g.stroke();
     const ox=LD[0]*w*0.26,oy=LD[1]*w*0.26;g.strokeStyle=shade(c,0.3);g.lineWidth=w*0.3;g.beginPath();g.moveTo(x1+ox,y1+oy);g.lineTo(x2+ox,y2+oy);g.stroke();};
-  const arm=(sx,sy,hx,hy)=>{sy*=BR*BD.sh;const aw=BD.arm;if(sleeve===L.skin&&!o.stun){seg(sx,sy,hx,hy,L.skin,4.4*aw);seg(sx,sy,sx+(hx-sx)*0.38,sy+(hy-sy)*0.38,top,5.4*aw);}else seg(sx,sy,hx,hy,sleeve,5*aw);if(L.watch&&sy<0){const wx=sx+(hx-sx)*0.82,wy=sy+(hy-sy)*0.82;g.fillStyle=L.watch;g.beginPath();g.arc(wx,wy,1.7,0,7);g.fill();if(L.iced){g.fillStyle='#fff';g.fillRect(wx-0.5,wy-0.5,1,1);}}volSkin(g,hx,hy,2.8,2.8,L.skin,LD);};
+  const arm=(sx,sy,hx,hy)=>{sy*=BR*BD.sh;const aw=BD.arm;if(sleeve===L.skin&&!o.stun){seg(sx,sy,hx,hy,L.skin,4.4*aw);if(L.tats)seg(sx+(hx-sx)*0.38,sy+(hy-sy)*0.38,sx+(hx-sx)*0.8,sy+(hy-sy)*0.8,'rgba(46,52,64,.62)',2.8*aw);seg(sx,sy,sx+(hx-sx)*0.38,sy+(hy-sy)*0.38,top,5.4*aw);}else seg(sx,sy,hx,hy,sleeve,5*aw);if(L.watch&&sy<0){const wx=sx+(hx-sx)*0.82,wy=sy+(hy-sy)*0.82;g.fillStyle=L.watch;g.beginPath();g.arc(wx,wy,1.7,0,7);g.fill();if(L.iced){g.fillStyle='#fff';g.fillRect(wx-0.5,wy-0.5,1,1);}}volSkin(g,hx,hy,2.8,2.8,L.skin,LD);};
   const sp=o.swingP==null?-1:o.swingP,swinging=sp>=0;const ez=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
   let wth=0,whx=0,why=0;const kO=o.kOpen==null?1:o.kOpen,kPunch=o.melee==='knife'&&kO<1&&swinging;
   if(o.melee==='bat'){wth=swinging?(sp<0.25?2.1+sp*1.2:2.4-ez((sp-0.25)/0.75)*4.0):2.55-(o.bPrac||0)*1.7;whx=2+Math.cos(wth)*8;why=4+Math.sin(wth)*8;}
@@ -12694,8 +12694,8 @@ const WK={a:{},cd:{},room:null,hotT:0,warned:false};
 // ── Hiring, firing, wages ──
 const wkOn=r=>!!(S.hires&&S.hires[r]);
 // the lookout is always Vicki, watching over the stash
-const VICKI_HAIR='#e2c47a';   // blonde
-function vickiLook(){let L=makeLook('civ');for(let k=0;k<40&&!(L.fem&&!L.old);k++)L=makeLook('civ');L.top=WK_ROLES.look.top;L.style='hoodie';L.hair='long';L.hairCol=VICKI_HAIR;delete L.bag;return L;}
+const VICKI_HAIR='#c9a865';   // dirty blonde, worn up in a bun
+function vickiLook(){let L=makeLook('civ');for(let k=0;k<40&&!(L.fem&&!L.old);k++)L=makeLook('civ');Object.assign(L,{skin:'#f2d3b4',hair:'bun',hairCol:VICKI_HAIR,style:'tee',top:'#141416',pants:'#5ad13a',build:'medium',tats:true});delete L.bag;return L;}
 const wkName=r=>r==='look'?'Vicki':S.hires[r].nm;
 function wkCanHire(r){const R0=WK_ROLES[r];if(wkOn(r))return 'on';if(repLvl()<R0.lvl)return 'rep';if(r!=='look'&&!(S.slots>0))return 'pot';
   if(((S.wkBack||{})[r]||0)>S.day)return 'cd';if(S.cash<R0.wage)return 'cash';return 'ok';}
@@ -12746,7 +12746,7 @@ document.getElementById('crewHire').onclick=ev=>{const b=ev.target.closest('butt
 // ── Live in the walk-in rooms: walk the aisle, step up to a pot, do the job ──
 const wkHere=r=>(r==='look')===(ROOM.id==='stash');
 function wkSpot(i,r){const sp=(GROOM.spots||[]).find(s=>s.i===i);if(!sp)return null;return [clamp(sp.u+(r==='trim'?0.07:-0.07),-0.93,0.93),sp.z+((S.space||4)>4&&sp.z>0.5?-0.13:0.15)];}
-function wkActor(r){if(r==='look'&&S.hires.look&&(S.hires.look.nm!=='Vicki'||!S.hires.look.look.fem||S.hires.look.look.hairCol!==VICKI_HAIR)){S.hires.look.nm='Vicki';S.hires.look.look=vickiLook();}let a=WK.a[r];if(!a){a=WK.a[r]={u:r==='look'?-0.74:r==='grow'?-0.45:0.35,z:r==='look'?0.36:growAisle(),face:r==='look'?-1:1,back:false,walk:0,path:[],job:null,t:0,idle:0.5+R()};}return a;}
+function wkActor(r){if(r==='look'&&S.hires.look&&(S.hires.look.nm!=='Vicki'||!S.hires.look.look.fem||S.hires.look.look.hairCol!==VICKI_HAIR||!S.hires.look.look.tats)){S.hires.look.nm='Vicki';S.hires.look.look=vickiLook();}let a=WK.a[r];if(!a){a=WK.a[r]={u:r==='look'?-0.74:r==='grow'?-0.45:0.35,z:r==='look'?0.36:growAisle(),face:r==='look'?-1:1,back:false,walk:0,path:[],job:null,t:0,idle:0.5+R()};}return a;}
 function wkRoom(dt){if(WK.room!==ROOM.id){WK.room=ROOM.id;WK.a={};}
   for(const r of Object.keys(S.hires||{})){if(!wkHere(r))continue;const a=wkActor(r);if(a.pop){a.pop.a-=dt*0.8;if(a.pop.a<=0)a.pop=null;}
     if(r==='look'){a.t+=dt;a.walk=0;if(a.t>4){a.t=0;a.face=-a.face;}a.phone=ROOM.t%7>4.5;continue;}
